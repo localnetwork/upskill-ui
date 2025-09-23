@@ -28,6 +28,8 @@ export default function Register() {
       email: e.target.email.value,
       password: e.target.password.value,
       confirm_password: e.target.confirm_password.value,
+      firstname: e.target.firstname.value,
+      lastname: e.target.lastname.value,
     };
 
     try {
