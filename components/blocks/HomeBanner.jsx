@@ -3,11 +3,11 @@ import Link from "next/link";
 
 export default function HomeBanner() {
   return (
-    <div className="banner bg-[#F0F6FF] pt-[100px]">
+    <div className="banner bg-[#F0F6FF] pt-[150px]">
       <div className="container">
         <div className="flex">
           <div className="w-[55%] lg:pr-20 pb-[100px]">
-            <p className="text-[50px] lg:text-5xl font-semibold mb-6 lg:mb-0 text-center lg:text-left">
+            <p className="text-[50px] lg:text-5xl font-semibold mb-6 lg:mb-0 text-center lg:text-left text-[#0F1114]">
               Achieve your career goals with
             </p>
 
@@ -21,8 +21,8 @@ export default function HomeBanner() {
 
             <div>
               <Link
-                href="#"
-                className="bg-[#0056D2] text-white font-semibold px-[30px] py-[10px] rounded-[50px] mt-6 inline-block min-w-[203px] text-[30px] text-center"
+                href="/browse"
+                className="bg-[#0056D2] hover:bg-[#0f3c7c] leading-[45px] text-white font-semibold px-[30px] py-[10px] rounded-[50px] mt-6 inline-block min-w-[203px] text-[30px] text-center"
               >
                 Start Now
               </Link>
