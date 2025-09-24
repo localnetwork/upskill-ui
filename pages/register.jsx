@@ -8,6 +8,7 @@ import Spinner from "@/components/icons/Spinner";
 import { extractErrors } from "@/lib/services/errorsExtractor";
 import toast from "react-hot-toast";
 import { EyeIcon, EyeOffIcon } from "lucide-react"; // 👁️ Icons
+import Check from "@/components/icons/Check";
 
 export default function Register() {
   const router = useRouter();
@@ -17,6 +18,7 @@ export default function Register() {
   // 👁️ Password visibility toggles
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [selectedRole, setSelectedRole] = useState("3"); // default Student
 
   const onRegister = async (e) => {
     toast.dismiss();
@@ -30,6 +32,7 @@ export default function Register() {
       confirm_password: e.target.confirm_password.value,
       firstname: e.target.firstname.value,
       lastname: e.target.lastname.value,
+      role: e.target.role.value,
     };
 
     try {
@@ -56,9 +59,118 @@ export default function Register() {
 
           {/* RIGHT FORM */}
           <div className="py-[50px]">
-            <h2 className="text-3xl font-bold mb-6">Create Your Account</h2>
+            <h2 className="text-3xl font-bold mb-[30px]">
+              Create Your Account
+            </h2>
 
             <form className="flex flex-col gap-y-[20px]" onSubmit={onRegister}>
+              {/* ROLE SELECTION */}
+              <div className="relative">
+                <label className="text-[#9a9999] text-center w-full mb-2 block">
+                  Are you a
+                </label>
+
+                <div className="grid grid-cols-2 gap-[15px] mt-6 border-[#ddd] pb-[30px] mb-[30px] border-b">
+                  {/* ✅ STUDENT */}
+                  <div className="relative">
+                    <label
+                      htmlFor="role-student"
+                      className={`${
+                        selectedRole === "3"
+                          ? "border-[#3588FC] shadow-md shadow-gray-200"
+                          : "border-[#ddd]"
+                      } cursor-pointer w-full text-left block select-none p-[10px] rounded-lg border-[2px]  hover:shadow-md hover:shadow-gray-200`}
+                    >
+                      <div className="flex flex-wrap bg-[#F5F5F7] py-[20px] px-[20px] rounded-lg relative">
+                        <div className="w-[70px] mx-auto">
+                          <Image
+                            src="/student.svg"
+                            alt="Student"
+                            width={50}
+                            height={50}
+                            className="h-[100px]"
+                          />
+                        </div>
+                        <div className="w-full text-center mt-3 text-black">
+                          <span className="font-bold">Student</span>
+                          <p className="text-[12px] text-gray-600 mt-1">
+                            I am a student looking to learn new skills.
+                          </p>
+
+                          <input
+                            type="radio"
+                            id="role-student"
+                            name="role"
+                            value="3"
+                            checked={selectedRole === "3"}
+                            onChange={(e) => setSelectedRole(e.target.value)}
+                            className="absolute opacity-0 cursor-pointer"
+                          />
+                        </div>
+
+                        {/* ✅ Show only if selected */}
+                        {selectedRole === "3" && (
+                          <div className="absolute top-[20px] right-[20px] w-[50px] flex items-center justify-end">
+                            <span className="rounded-full p-[5px] border-[#3588FC] bg-[#3588FC] border-[3px] w-[30px] h-[30px] inline-flex items-center justify-center">
+                              <Check className="text-white w-[20px]" />
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </label>
+                  </div>
+
+                  {/* ✅ TEACHER */}
+                  <div className="relative">
+                    <label
+                      htmlFor="role-teacher"
+                      className={`${
+                        selectedRole === "2"
+                          ? "border-[#3588FC] shadow-md shadow-gray-200"
+                          : "border-[#ddd]"
+                      } cursor-pointer w-full text-left block select-none p-[10px] rounded-lg border-[2px]  hover:shadow-md hover:shadow-gray-200`}
+                    >
+                      <div className="flex flex-wrap bg-[#F5F5F7] py-[20px] px-[20px] rounded-lg relative">
+                        <div className="w-[70px] mx-auto">
+                          <Image
+                            src="/teacher.svg"
+                            alt="Teacher"
+                            width={50}
+                            height={50}
+                            className="h-[100px]"
+                          />
+                        </div>
+                        <div className="w-full text-center mt-3 text-black">
+                          <span className="font-bold">Teacher</span>
+                          <p className="text-[12px] text-gray-600 mt-1">
+                            I am a teacher looking to share knowledge.
+                          </p>
+
+                          <input
+                            type="radio"
+                            id="role-teacher"
+                            name="role"
+                            value="2"
+                            checked={selectedRole === "2"}
+                            onChange={(e) => setSelectedRole(e.target.value)}
+                            className="absolute opacity-0 cursor-pointer"
+                          />
+                        </div>
+
+                        {/* ✅ Show only if selected */}
+                        {selectedRole === "2" && (
+                          <div className="absolute top-[20px] right-[20px] w-[50px] flex items-center justify-end">
+                            <span className="rounded-full p-[5px] border-[#3588FC] bg-[#3588FC] border-[3px] w-[30px] h-[30px] inline-flex items-center justify-center">
+                              <Check className="text-white w-[20px]" />
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
               {/* USERNAME */}
               <div className="relative">
                 <label className="absolute top-[8px] left-[10px] text-[12px] text-[#9a9999]">
