@@ -1,0 +1,27 @@
+[
+  {
+    "name": "My Learning",
+    "link": "/my-learning",
+    "access": "view-own-learnings"
+  },
+  {
+    "name": "Edit Profile",
+    "link": "/profile/edit",
+    "access": ["*"]
+  },
+  {
+    "name": "Instructor Dashboard",
+    "link": "/instructor/courses",
+    "access": ["add-course"]
+  },
+  {
+    "name": "Account Settings",
+    "link": "/settings",
+    "access": ["*"]
+  },
+  {
+    "name": "Help and Support",
+    "link": "/contact-us",
+    "access": ["*"]
+  }
+]

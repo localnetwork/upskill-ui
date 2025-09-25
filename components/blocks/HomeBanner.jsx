@@ -24,7 +24,7 @@ export default function HomeBanner() {
                 href="/browse"
                 className="bg-[#0056D2] hover:bg-[#0f3c7c] leading-[45px] text-white font-semibold px-[30px] py-[10px] rounded-[50px] mt-6 inline-block min-w-[203px] text-[30px] text-center"
               >
-                Start Now
+                Get Started
               </Link>
             </div>
           </div>

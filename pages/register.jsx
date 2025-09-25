@@ -9,6 +9,8 @@ import { extractErrors } from "@/lib/services/errorsExtractor";
 import toast from "react-hot-toast";
 import { EyeIcon, EyeOffIcon } from "lucide-react"; // 👁️ Icons
 import Check from "@/components/icons/Check";
+import Input from "@/components/forms/Input";
+import Password from "@/components/forms/Password";
 
 export default function Register() {
   const router = useRouter();
@@ -19,6 +21,19 @@ export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [selectedRole, setSelectedRole] = useState("3"); // default Student
+  const [payload, setPayload] = useState({});
+
+  const [isFocused, setIsFocused] = useState(false);
+
+  const onChange = (e) => {
+    setPayload({ ...payload, [e.target.name]: e.target.value });
+  };
+
+  const onFocus = (e) => {
+    setIsFocused({
+      [e.target.name]: true,
+    });
+  };
 
   const onRegister = async (e) => {
     toast.dismiss();
@@ -48,29 +63,26 @@ export default function Register() {
     }
   };
 
+  console.log("isFocused", isFocused);
+
   return (
     <div className="bg-[#F5F5F7] min-h-[calc(100vh-92px)]">
       <div className="container py-[50px]">
         <div className="grid grid-cols-2 bg-white min-h-[500px] rounded-lg shadow border-[#ddd] border p-[30px] max-w-[1140px] mx-auto">
           {/* LEFT IMAGE */}
-          <div className="pr-[50px] flex items-end">
+          <div className="pr-[50px] flex justify-end flex-col">
+            <h2 className="text-3xl font-bold mb-[30px] grow">
+              Create Your Account
+            </h2>
             <Image src="/register.svg" alt="Login" width={1200} height={800} />
           </div>
 
           {/* RIGHT FORM */}
-          <div className="py-[50px]">
-            <h2 className="text-3xl font-bold mb-[30px]">
-              Create Your Account
-            </h2>
-
+          <div className="">
             <form className="flex flex-col gap-y-[20px]" onSubmit={onRegister}>
               {/* ROLE SELECTION */}
               <div className="relative">
-                <label className="text-[#9a9999] text-center w-full mb-2 block">
-                  Are you a
-                </label>
-
-                <div className="grid grid-cols-2 gap-[15px] mt-6 border-[#ddd] pb-[30px] mb-[30px] border-b">
+                <div className="grid grid-cols-2 gap-[15px] border-[#ddd] pb-[30px] mb-[20px] border-b">
                   {/* ✅ STUDENT */}
                   <div className="relative">
                     <label
@@ -81,7 +93,11 @@ export default function Register() {
                           : "border-[#ddd]"
                       } cursor-pointer w-full text-left block select-none p-[10px] rounded-lg border-[2px]  hover:shadow-md hover:shadow-gray-200`}
                     >
-                      <div className="flex flex-wrap bg-[#F5F5F7] py-[20px] px-[20px] rounded-lg relative">
+                      <div
+                        className={`${
+                          selectedRole === "3" ? "bg-[#ddebff]" : "bg-[#F5F5F7]"
+                        } flex flex-wrap  py-[20px] px-[20px] rounded-lg relative`}
+                      >
                         <div className="w-[70px] mx-auto">
                           <Image
                             src="/student.svg"
@@ -130,7 +146,11 @@ export default function Register() {
                           : "border-[#ddd]"
                       } cursor-pointer w-full text-left block select-none p-[10px] rounded-lg border-[2px]  hover:shadow-md hover:shadow-gray-200`}
                     >
-                      <div className="flex flex-wrap bg-[#F5F5F7] py-[20px] px-[20px] rounded-lg relative">
+                      <div
+                        className={`${
+                          selectedRole === "2" ? "bg-[#ddebff]" : "bg-[#F5F5F7]"
+                        } flex flex-wrap  py-[20px] px-[20px] rounded-lg relative`}
+                      >
                         <div className="w-[70px] mx-auto">
                           <Image
                             src="/teacher.svg"
@@ -171,167 +191,73 @@ export default function Register() {
                 </div>
               </div>
 
-              {/* USERNAME */}
-              <div className="relative">
-                <label className="absolute top-[8px] left-[10px] text-[12px] text-[#9a9999]">
-                  Username
-                </label>
-                <input
-                  type="text"
+              <div className="grid grid-cols-2 gap-[15px]">
+                {/* USERNAME */}
+                <Input
                   id="username"
                   name="username"
-                  className={`border min-h-[50px] pt-[30px] border-gray-300 rounded-lg py-3 px-[10px] w-full bg-[#F5F5F7] ${
-                    extractErrors(errors, "username")
-                      ? "border-red-500 shadow-md shadow-red-200"
-                      : ""
-                  }`}
+                  label="Username"
+                  value={payload.username || ""}
+                  onChange={onChange}
+                  onFocus={onFocus}
+                  error={extractErrors(errors, "username")}
                 />
-                {extractErrors(errors, "username") && (
-                  <p className="text-red-500 text-[12px] mt-1">
-                    {extractErrors(errors, "username")}
-                  </p>
-                )}
-              </div>
 
-              <div className="grid grid-cols-2 gap-[15px]">
-                {/* FIRSTNAME */}
-                <div className="relative">
-                  <label className="absolute top-[8px] left-[10px] text-[12px] text-[#9a9999]">
-                    Firstname
-                  </label>
-                  <input
-                    type="text"
-                    id="firstname"
-                    name="firstname"
-                    className={`border min-h-[50px] pt-[30px] border-gray-300 rounded-lg py-3 px-[10px] w-full bg-[#F5F5F7] ${
-                      extractErrors(errors, "firstname")
-                        ? "border-red-500 shadow-md shadow-red-200"
-                        : ""
-                    }`}
-                  />
-                  {extractErrors(errors, "firstname") && (
-                    <p className="text-red-500 text-[12px] mt-1">
-                      {extractErrors(errors, "firstname")}
-                    </p>
-                  )}
-                </div>
-
-                {/* LASTNAME */}
-                <div className="relative">
-                  <label className="absolute top-[8px] left-[10px] text-[12px] text-[#9a9999]">
-                    Lastname
-                  </label>
-                  <input
-                    type="text"
-                    id="lastname"
-                    name="lastname"
-                    className={`border min-h-[50px] pt-[30px] border-gray-300 rounded-lg py-3 px-[10px] w-full bg-[#F5F5F7] ${
-                      extractErrors(errors, "lastname")
-                        ? "border-red-500 shadow-md shadow-red-200"
-                        : ""
-                    }`}
-                  />
-                  {extractErrors(errors, "lastname") && (
-                    <p className="text-red-500 text-[12px] mt-1">
-                      {extractErrors(errors, "lastname")}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              {/* EMAIL */}
-              <div className="relative">
-                <label className="absolute top-[8px] left-[10px] text-[12px] text-[#9a9999]">
-                  Email Address
-                </label>
-                <input
-                  type="text"
+                <Input
                   id="email"
                   name="email"
-                  className={`border min-h-[50px] pt-[30px] border-gray-300 rounded-lg py-3 px-[10px] w-full bg-[#F5F5F7] ${
-                    extractErrors(errors, "email")
-                      ? "border-red-500 shadow-md shadow-red-200"
-                      : ""
-                  }`}
+                  label="Email"
+                  value={payload.email || ""}
+                  onChange={onChange}
+                  onFocus={onFocus}
+                  error={extractErrors(errors, "email")}
                 />
-                {extractErrors(errors, "email") && (
-                  <p className="text-red-500 text-[12px] mt-1">
-                    {extractErrors(errors, "email")}
-                  </p>
-                )}
-              </div>
 
-              {/* PASSWORD */}
-              <div className="relative">
-                <label className="absolute top-[8px] left-[10px] text-[12px] text-[#9a9999]">
-                  Password
-                </label>
-                <input
-                  type={showPassword ? "text" : "password"}
+                <Input
+                  id="firstname"
+                  name="firstname"
+                  label="First Name"
+                  value={payload.firstname || ""}
+                  onChange={onChange}
+                  onFocus={onFocus}
+                  error={extractErrors(errors, "firstname")}
+                />
+
+                <Input
+                  id="lastname"
+                  name="lastname"
+                  label="Last Name"
+                  value={payload.lastname || ""}
+                  onChange={onChange}
+                  onFocus={onFocus}
+                  error={extractErrors(errors, "lastname")}
+                />
+
+                <Password
                   id="password"
                   name="password"
-                  className={`border min-h-[50px] pt-[30px] border-gray-300 rounded-lg py-3 px-[10px] w-full bg-[#F5F5F7] ${
-                    extractErrors(errors, "password")
-                      ? "border-red-500 shadow-md shadow-red-200"
-                      : ""
-                  }`}
+                  label="Password"
+                  value={payload.password || ""}
+                  onChange={onChange}
+                  onFocus={onFocus}
+                  error={extractErrors(errors, "password")}
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((prev) => !prev)}
-                  className="absolute top-[18px] right-3 text-gray-500 hover:text-gray-700"
-                >
-                  {showPassword ? (
-                    <EyeOffIcon size={20} />
-                  ) : (
-                    <EyeIcon size={20} />
-                  )}
-                </button>
-                {extractErrors(errors, "password") && (
-                  <p className="text-red-500 text-[12px] mt-1">
-                    {extractErrors(errors, "password")}
-                  </p>
-                )}
-              </div>
-
-              {/* CONFIRM PASSWORD */}
-              <div className="relative">
-                <label className="absolute top-[8px] left-[10px] text-[12px] text-[#9a9999]">
-                  Confirm Password
-                </label>
-                <input
-                  type={showConfirmPassword ? "text" : "password"}
+                <Password
                   id="confirm_password"
                   name="confirm_password"
-                  className={`border min-h-[50px] pt-[30px] border-gray-300 rounded-lg py-3 px-[10px] w-full bg-[#F5F5F7] ${
-                    extractErrors(errors, "confirm_password")
-                      ? "border-red-500 shadow-md shadow-red-200"
-                      : ""
-                  }`}
+                  label="Confirm Password"
+                  value={payload.confirm_password || ""}
+                  onChange={onChange}
+                  onFocus={onFocus}
+                  error={extractErrors(errors, "confirm_password")}
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword((prev) => !prev)}
-                  className="absolute top-[18px] right-3 text-gray-500 hover:text-gray-700"
-                >
-                  {showConfirmPassword ? (
-                    <EyeOffIcon size={20} />
-                  ) : (
-                    <EyeIcon size={20} />
-                  )}
-                </button>
-                {extractErrors(errors, "confirm_password") && (
-                  <p className="text-red-500 text-[12px] mt-1">
-                    {extractErrors(errors, "confirm_password")}
-                  </p>
-                )}
               </div>
 
               {/* SUBMIT */}
               <div>
                 <button
                   type="submit"
-                  className={`bg-[#0056D2] text-white font-semibold px-[30px] py-[10px] rounded-[50px] inline-flex justify-center items-center gap-[10px] text-[18px] text-center min-w-[150px] ${
+                  className={`shadow-md bg-[#0056D2] w-full text-white font-semibold px-[30px] py-[10px] rounded-[50px] inline-flex justify-center items-center gap-[10px] text-[18px] text-center min-w-[150px] ${
                     isLoading ? "opacity-70" : "hover:opacity-90 cursor-pointer"
                   }`}
                   disabled={isLoading}
