@@ -25,14 +25,14 @@ export async function getServerSideProps(context) {
   };
 }
 
-export default function CurriculumPage({ course }) {
+export default function IntendedLearners({ course }) {
   return (
     <CourseManagementLayout
       course={course}
-      activeTab="curriculum"
-      title="Curriculum"
+      activeTab="intended-learners"
+      title="Intended Learners"
     >
-      {course?.title}
+      Hello World
     </CourseManagementLayout>
   );
 }
