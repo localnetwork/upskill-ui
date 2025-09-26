@@ -1,14 +1,14 @@
 import React, { useRef } from "react";
 import { Editor } from "@tinymce/tinymce-react";
 
-export default function TextEditor({ handleChange, payload, name }) {
+export default function TextEditor({ onChange, payload, name, initialValue }) {
   const editorRef = useRef(null);
 
   return (
     <Editor
       apiKey={process.env.NEXT_PUBLIC_TINYMCE_API_KEY}
-      onInit={(evt, editor) => (editorRef.current = editor)}
-      initialValue={payload.description}
+      onInit={(_, editor) => (editorRef.current = editor)}
+      initialValue={initialValue || ""}
       name={name}
       init={{
         height: 400,
@@ -23,7 +23,15 @@ export default function TextEditor({ handleChange, payload, name }) {
           "bold italic | alignleft aligncenter " +
           "removeformat",
       }}
-      onEditorChange={handleChange}
+      // ✅ Wrap the content into an object that matches handleChange
+      onEditorChange={(content) =>
+        onChange({
+          target: {
+            name, // same name prop you passed
+            value: content, // TinyMCE editor content
+          },
+        })
+      }
     />
   );
 }

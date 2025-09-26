@@ -6,6 +6,8 @@ import courseStore from "@/lib/store/courseStore";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import ImageUpload from "@/components/forms/ImageUpload";
+import Spinner from "@/components/icons/Spinner";
+import toast from "react-hot-toast";
 
 const TextEditor = dynamic(() => import("@/components/forms/TextEditor"), {
   ssr: false, // 👈 disables SSR for this component
@@ -33,26 +35,67 @@ export async function getServerSideProps(context) {
 
 export default function CourseBasics({ course }) {
   const courseManagement = courseStore((state) => state.courseManagement);
+  const [isLoading, setIsLoading] = useState(false);
 
   const [payload, setPayload] = useState({
     title: courseManagement?.title || course?.title || "",
     description: courseManagement?.description || course?.description || "",
     subtitle: courseManagement?.subtitle || course?.subtitle || "",
-    course_image: courseManagement?.course_image || course?.course_image || "",
+    cover_image: courseManagement?.cover_image || course?.cover_image || "",
   });
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
+  const handleChange = (eOrPayload, maybe) => {
+    let target = null;
+
+    if (maybe && maybe.target) {
+      target = maybe.target;
+    } else if (eOrPayload && eOrPayload.target) {
+      target = eOrPayload.target;
+    } else if (
+      eOrPayload &&
+      typeof eOrPayload === "object" &&
+      "name" in eOrPayload &&
+      "value" in eOrPayload
+    ) {
+      target = eOrPayload;
+    }
+
+    if (!target) {
+      console.warn("handleChange: no target found", { eOrPayload, maybe });
+      return;
+    }
+
+    const { name, value } = target;
+    if (!name) {
+      console.warn("handleChange: target has no name", target);
+      return;
+    }
+
     setPayload((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
-    console.log("submitted!!!");
+  const handleSubmit = async (e) => {
+    setIsLoading(true);
     e.preventDefault();
     courseStore.setState({
       courseManagement: { ...courseManagement, ...payload },
     });
-    console.log("Updated Store:", payload);
+
+    try {
+      const response = await BaseApi.put(
+        `${process.env.NEXT_PUBLIC_API_URL}/courses/${course?.uuid}`,
+        payload
+      );
+      setIsLoading(false);
+      toast.success("Course updated successfully");
+    } catch (error) {
+      console.log("error", error);
+      toast.error(
+        error?.data?.message || "An error occured. Please try again later."
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -70,7 +113,7 @@ export default function CourseBasics({ course }) {
       </p>
 
       <form
-        className="mt-[30px] flex flex-col gap-y-[10px]"
+        className="mt-[30px] flex flex-col gap-y-[15px]"
         onSubmit={handleSubmit}
       >
         <div>
@@ -128,11 +171,15 @@ export default function CourseBasics({ course }) {
           <label className="mb-2 block font-normal" htmlFor="description">
             Course Description
           </label>
+
           <div className="relative z-1">
             <TextEditor
               name="description"
               onChange={handleChange}
               payload={payload}
+              initialValue={
+                courseManagement?.description || course?.description || ""
+              }
             />
 
             <span className="text-[12px] absolute top-[15px] right-[15px] text-[oklch(30.98%_0.005_261.63deg)]">
@@ -168,8 +215,9 @@ export default function CourseBasics({ course }) {
 
         <ImageUpload
           onChange={handleChange}
-          value={payload.course_image}
-          name="course_image"
+          value={courseManagement?.cover_image || payload.cover_image}
+          title={payload.title}
+          name="cover_image"
           label="Course Image"
           description="Upload your course image here. It must meet our course image quality
             standards to be accepted. Important guidelines: 750x422 pixels;
@@ -179,9 +227,14 @@ export default function CourseBasics({ course }) {
         <div className="mt-[20px]">
           <button
             type="submit"
-            className="bg-[#0056D2] min-w-[200px] font-semibold text-white px-[30px] py-[10px] rounded-[5px] hover:bg-[#1d6de0]"
+            className={`bg-[#0056D2] flex items-center justify-center min-w-[200px] font-semibold text-white px-[30px] py-[10px] rounded-[5px] hover:bg-[#1d6de0] ${
+              isLoading ? "opacity-50 pointer-events-none" : ""
+            }`}
           >
-            Update
+            {isLoading && (
+              <Spinner className="w-5 h-5 text-white animate-spin opacity-30 mr-2" />
+            )}
+            {isLoading ? "Updating..." : "Update"}
           </button>
         </div>
       </form>
