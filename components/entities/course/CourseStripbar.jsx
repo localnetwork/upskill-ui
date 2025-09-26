@@ -1,6 +1,7 @@
 import Link from "next/link";
-
+import courseStore from "@/lib/store/courseStore";
 export default function CourseStripBar({ course }) {
+  const courseManagement = courseStore((state) => state.courseManagement);
   return (
     <div className="bg-[#16161D] z-10 sticky top-[95px] py-[20px] text-white text-[18px] divider-top">
       <div className="container flex items-center gap-[20px] justify-between">
@@ -27,7 +28,9 @@ export default function CourseStripBar({ course }) {
               Back to courses
             </Link>
           </span>
-          <span className="font-bold">{course.title}</span>
+          <span className="font-bold">
+            {courseManagement?.title || course.title}
+          </span>
         </div>
         <div className="pr-[30px]">
           <div className="border flex items-center border-white p-[5px] px-[20px] pr-[5px] rounded-md cursor-pointer">

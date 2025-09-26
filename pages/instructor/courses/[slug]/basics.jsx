@@ -1,14 +1,14 @@
 import CourseManagementLayout from "@/components/partials/CourseManagementLayout";
 import InstructorLayout from "@/components/partials/InstructorLayout";
 import BaseApi from "@/lib/api/_base.api";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import courseStore from "@/lib/store/courseStore";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import ImageUpload from "@/components/forms/ImageUpload";
 import Spinner from "@/components/icons/Spinner";
 import toast from "react-hot-toast";
-
+import { extractErrors } from "@/lib/services/errorsExtractor";
 const TextEditor = dynamic(() => import("@/components/forms/TextEditor"), {
   ssr: false, // 👈 disables SSR for this component
 });
@@ -42,7 +42,12 @@ export default function CourseBasics({ course }) {
     description: courseManagement?.description || course?.description || "",
     subtitle: courseManagement?.subtitle || course?.subtitle || "",
     cover_image: courseManagement?.cover_image || course?.cover_image || "",
+    instructional_level:
+      courseManagement?.instructional_level ||
+      course?.instructional_level ||
+      "",
   });
+  const [errors, setErrors] = useState(null);
 
   const handleChange = (eOrPayload, maybe) => {
     let target = null;
@@ -80,7 +85,7 @@ export default function CourseBasics({ course }) {
     courseStore.setState({
       courseManagement: { ...courseManagement, ...payload },
     });
-
+    toast.dismiss();
     try {
       const response = await BaseApi.put(
         `${process.env.NEXT_PUBLIC_API_URL}/courses/${course?.uuid}`,
@@ -88,15 +93,34 @@ export default function CourseBasics({ course }) {
       );
       setIsLoading(false);
       toast.success("Course updated successfully");
+      setErrors(null);
     } catch (error) {
-      console.log("error", error);
       toast.error(
         error?.data?.message || "An error occured. Please try again later."
       );
+      setErrors(error?.data.errors || null);
     } finally {
       setIsLoading(false);
     }
   };
+
+  // ⬇️ ADD THIS
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Ctrl+S (Windows/Linux) or Cmd+S (Mac)
+      if ((e.ctrlKey || e.metaKey) && e.key === "s") {
+        e.preventDefault(); // stop browser save dialog
+        // Manually trigger form submission
+        const form = document.querySelector("form[data-save-form]");
+        if (form) {
+          form.requestSubmit(); // modern way to trigger submit event
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   return (
     <CourseManagementLayout
@@ -115,6 +139,7 @@ export default function CourseBasics({ course }) {
       <form
         className="mt-[30px] flex flex-col gap-y-[15px]"
         onSubmit={handleSubmit}
+        data-save-form
       >
         <div>
           <label className="mb-2 block font-normal" htmlFor="title">
@@ -129,11 +154,21 @@ export default function CourseBasics({ course }) {
               placeholder="e.g. Learn PHP Programming from scratch."
               type="text"
               maxLength={60}
-              className="border border-[oklch(67.22%_0.0355_279.77deg)] rounded-[5px] p-[10px] w-full"
+              className={`${
+                errors?.title
+                  ? "border-red-500"
+                  : "border-[oklch(67.22%_0.0355_279.77deg)]"
+              } border rounded-[5px] p-[10px] w-full`}
             />
             <span className="text-[12px] absolute top-[15px] right-[15px] text-[oklch(30.98%_0.005_261.63deg)]">
               {payload.title.length}/60
             </span>
+
+            {errors?.title && (
+              <p className="text-red-500 text-[12px] mt-1 errrr">
+                {extractErrors(errors, "title")}
+              </p>
+            )}
           </div>
 
           <p className="text-[14px] text-[oklch(30.98%_0.005_261.63deg)] mt-[10px]">
@@ -154,8 +189,17 @@ export default function CourseBasics({ course }) {
               placeholder="Insert your course subtitle"
               type="text"
               maxLength={60}
-              className="border border-[oklch(67.22%_0.0355_279.77deg)] rounded-[5px] p-[10px] w-full"
+              className={`${
+                errors?.subtitle
+                  ? "border-red-500"
+                  : "border-[oklch(67.22%_0.0355_279.77deg)]"
+              } border rounded-[5px] p-[10px] w-full`}
             />
+            {errors?.subtitle && (
+              <p className="text-red-500 text-[12px] mt-1 errrr">
+                {extractErrors(errors, "subtitle")}
+              </p>
+            )}
             <span className="text-[12px] absolute top-[15px] right-[15px] text-[oklch(30.98%_0.005_261.63deg)]">
               {payload.title.length}/120
             </span>
@@ -172,7 +216,11 @@ export default function CourseBasics({ course }) {
             Course Description
           </label>
 
-          <div className="relative z-1">
+          <div
+            className={`relative z-1 rounded-md ${
+              errors?.description ? "border border-red-500" : ""
+            }`}
+          >
             <TextEditor
               name="description"
               onChange={handleChange}
@@ -181,11 +229,15 @@ export default function CourseBasics({ course }) {
                 courseManagement?.description || course?.description || ""
               }
             />
-
-            <span className="text-[12px] absolute top-[15px] right-[15px] text-[oklch(30.98%_0.005_261.63deg)]">
-              {payload.title.length}/500
-            </span>
           </div>
+          {errors?.description && (
+            <p className="text-red-500 text-[12px] mt-1 errrr">
+              {extractErrors(errors, "description")}
+            </p>
+          )}
+          <span className="text-[12px] text-[oklch(30.98%_0.005_261.63deg)]">
+            {payload.description.length}/5000
+          </span>
 
           <p className="text-[14px] text-[oklch(30.98%_0.005_261.63deg)] mt-[10px]">
             Description should have minimum 200 words.
@@ -197,14 +249,17 @@ export default function CourseBasics({ course }) {
             className="mb-2 block font-normal"
             htmlFor="instructional_level"
           >
-            Course Level
+            Course
           </label>
           <div className="relative">
             <select
               id="instructional_level"
               name="instructional_level"
               className="border border-[oklch(67.22%_0.0355_279.77deg)] rounded-[5px] p-[10px] w-full"
+              value={payload.instructional_level}
+              onChange={handleChange}
             >
+              <option value="">-- Select level --</option>
               <option value="1">Beginner</option>
               <option value="2">Intermediate</option>
               <option value="3">Advanced</option>
