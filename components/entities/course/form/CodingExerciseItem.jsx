@@ -1,27 +1,49 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Editor from "@monaco-editor/react";
 import prettier from "prettier/standalone";
 import parserBabel from "prettier/parser-babel";
 
-/**
- * CodingExerciseItem
- *
- * Runs JS code for real (captures console.log).
- * Simulates output for PHP and Java by extracting string literals from common print statements:
- *  - PHP: echo '...', echo "...", print '...', print "..."
- *  - Java: System.out.println("..."), System.out.println('...') (single quotes rare in Java)
- *
- * NOTE: This does not actually execute PHP/Java code. For real execution use a backend or API (Judge0, container, etc).
- */
 export default function CodingExerciseItem({ exercise, onClose }) {
   const [title, setTitle] = useState(exercise?.title || "");
   const [description, setDescription] = useState("");
   const [language, setLanguage] = useState("javascript"); // javascript | php | java
-  const [starterCode, setStarterCode] = useState("// write your code here");
+  const [starterCode, setStarterCode] = useState("");
   const [expectedOutput, setExpectedOutput] = useState("");
   const [consoleOutput, setConsoleOutput] = useState("");
   const [isSimulated, setIsSimulated] = useState(false);
+
+  // Default starter codes
+  const defaultCodes = {
+    javascript: `console.log("Hello, world!");
+console.log("Sum of 2 + 3 =", 2 + 3);`,
+    php: `<?php
+echo 'Hello, PHP world!';
+echo " Sum of 2 + 3 = 5";
+print ' This is a test.';`,
+    java: `System.out.println("Hello, Java world!");
+System.out.println("Sum of 2 + 3 = " + (2 + 3));
+String name = "Alice";
+System.out.println("Hello, " + name + "!");`,
+  };
+
+  const defaultOutputs = {
+    javascript: `Hello, world!
+Sum of 2 + 3 = 5`,
+    php: `Hello, PHP world!
+ Sum of 2 + 3 = 5
+ This is a test.`,
+    java: `Hello, Java world!
+Sum of 2 + 3 = 
+Hello, !`,
+  };
+
+  // Initialize default code and console output
+  useEffect(() => {
+    setStarterCode(defaultCodes[language]);
+    setConsoleOutput(defaultOutputs[language]);
+    setIsSimulated(language !== "javascript");
+  }, [language]);
 
   const handleSave = () => {
     console.log("Saved Coding Exercise:", {
@@ -34,44 +56,32 @@ export default function CodingExerciseItem({ exercise, onClose }) {
     onClose?.();
   };
 
-  /* ---------- Helpers for simulation ---------- */
-
-  // Extract string literal matches from a regex with capture group for the string content
+  // ---------- Helpers for simulation ----------
   function extractStringCaptures(code, regex) {
     const matches = [];
     let m;
     while ((m = regex.exec(code)) !== null) {
-      // m[2] is the inner content if regex has group for quote and content
-      // some patterns below use different groups; normalize to last captured group
       const group = m.slice(1).reverse().find(Boolean);
       if (group !== undefined) matches.push(group);
-      // avoid infinite loop for zero-length matches
       if (regex.lastIndex === m.index) regex.lastIndex++;
     }
     return matches;
   }
 
-  // Simulate PHP output: find echo/print string literals
   function simulatePhpOutput(code) {
-    // match: echo 'hello'; echo "hello"; print 'a';
     const regex = /\b(?:echo|print)\s+(['"`])([\s\S]*?)\1\s*;?/gi;
     return extractStringCaptures(code, regex);
   }
 
-  // Simulate Java output: find System.out.println("..."); and similar
   function simulateJavaOutput(code) {
-    // match System.out.println("...");  (captures inner string)
     const regex = /System\.out\.println\s*\(\s*(['"`])([\s\S]*?)\1\s*\)\s*;?/gi;
     return extractStringCaptures(code, regex);
   }
 
-  // Generic simulator orchestrator
   function simulateOutput(code, lang) {
     setIsSimulated(true);
-    setConsoleOutput(""); // clear previous
-    if (!code || !code.trim()) {
-      return ["(no output)"];
-    }
+    setConsoleOutput("");
+    if (!code || !code.trim()) return ["(no output)"];
     if (lang === "php") {
       const lines = simulatePhpOutput(code);
       return lines.length ? lines : ["(no printable strings found)"];
@@ -85,7 +95,7 @@ export default function CodingExerciseItem({ exercise, onClose }) {
     return ["(simulation not available for this language)"];
   }
 
-  /* ---------- Run code (JS real, others simulated) ---------- */
+  // ---------- Run code ----------
   const runCode = () => {
     setIsSimulated(false);
     setConsoleOutput("");
@@ -95,16 +105,10 @@ export default function CodingExerciseItem({ exercise, onClose }) {
       const originalConsoleLog = console.log;
       try {
         console.log = (...args) => {
-          // join with space for display
           logs.push(args.map((a) => String(a)).join(" "));
           originalConsoleLog(...args);
         };
-
-        // eslint-disable-next-line no-eval
-        // run in component scope; still sandboxed to browser env (unsafe code could do window modifications)
-        // We purposely only run JS here. Make sure to trust users' input or sandbox better in production.
         eval(starterCode);
-
         setConsoleOutput(
           logs.join("\n") || "Code executed (no console output)."
         );
@@ -116,19 +120,18 @@ export default function CodingExerciseItem({ exercise, onClose }) {
       return;
     }
 
-    // Simulate for PHP/Java (no execution)
     const simulated = simulateOutput(starterCode, language);
     setConsoleOutput(simulated.join("\n"));
   };
 
-  /* ---------- Format code (Prettier for JS) ---------- */
+  // ---------- Format code ----------
   const formatCode = () => {
     if (language !== "javascript") {
       setConsoleOutput("Formatting is supported only for JavaScript.");
       return;
     }
     try {
-      const formatted = prettier.format(starterCode, {
+      const formatted = prettier.format(starterCode || "", {
         parser: "babel",
         plugins: [parserBabel],
         semi: true,
@@ -139,17 +142,6 @@ export default function CodingExerciseItem({ exercise, onClose }) {
       setConsoleOutput(`Formatting Error: ${err.message}`);
     }
   };
-
-  /* ---------- (Optional) Example: run on remote runner (Judge0-like) ----------
-     This is commented-out example code showing how you'd call an execution API.
-     DO NOT run here without setting up a safe backend and API key.
-  async function runOnJudge0(code, langId) {
-    const payload = { source_code: code, language_id: langId };
-    const resp = await fetch("/api/run", { method: "POST", body: JSON.stringify(payload) });
-    const json = await resp.json();
-    setConsoleOutput(json.stdout || json.stderr || json.token || "No output");
-  }
-  ----------------------------------------------------------------------------- */
 
   return (
     <div className="border p-4 rounded bg-white shadow space-y-4">
@@ -177,7 +169,7 @@ export default function CodingExerciseItem({ exercise, onClose }) {
         />
       </div>
 
-      {/* Problem Description */}
+      {/* Description */}
       <div>
         <label className="block text-sm font-medium mb-1">
           Problem Description
@@ -198,9 +190,6 @@ export default function CodingExerciseItem({ exercise, onClose }) {
           value={language}
           onChange={(e) => {
             setLanguage(e.target.value);
-            // small hint: reset console when switching languages
-            setConsoleOutput("");
-            setIsSimulated(false);
           }}
           className="border rounded p-1 text-sm"
         >
@@ -210,7 +199,7 @@ export default function CodingExerciseItem({ exercise, onClose }) {
         </select>
       </div>
 
-      {/* Code Editor */}
+      {/* Editor */}
       <div className="border rounded overflow-hidden">
         <Editor
           height="300px"
@@ -227,15 +216,14 @@ export default function CodingExerciseItem({ exercise, onClose }) {
         />
       </div>
 
-      {/* Buttons: Run & Format */}
+      {/* Buttons */}
       <div className="flex items-center gap-3">
         <button
           onClick={runCode}
           className="px-4 py-1 border rounded text-white bg-purple-600 hover:bg-purple-700 text-sm"
         >
-          ▶️ Run{language === "javascript" ? " (exec JS)" : " (simulate)"}
+          ▶️ Run {language === "javascript" ? "(JS exec)" : "(simulate)"}
         </button>
-
         {language === "javascript" && (
           <button
             onClick={formatCode}
@@ -244,8 +232,6 @@ export default function CodingExerciseItem({ exercise, onClose }) {
             ✨ Format Code
           </button>
         )}
-
-        {/* quick helper to clear console */}
         <button
           onClick={() => {
             setConsoleOutput("");

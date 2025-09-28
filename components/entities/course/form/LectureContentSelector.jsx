@@ -1,5 +1,9 @@
 "use client";
 import { useState } from "react";
+import Video from "./Video";
+import VideoSlide from "./VideoSlide";
+import Article from "./Article";
+import Presentation from "./Presentation";
 
 export default function LectureContentSelector({ lectureTitle, onClose }) {
   const [title, setTitle] = useState(lectureTitle || "");
@@ -78,18 +82,22 @@ export default function LectureContentSelector({ lectureTitle, onClose }) {
       {/* Content Types */}
       {activeSection === "content" && (
         <div className="grid grid-cols-2 gap-4 mt-2">
-          {types.map((t) => (
-            <button
-              key={t.key}
-              onClick={() => setSelectedType(t.key)}
-              className={`border rounded p-4 text-center hover:border-purple-600 transition ${
-                selectedType === t.key ? "border-purple-600 bg-purple-50" : ""
-              }`}
-            >
-              <div className="text-2xl mb-2">🎬</div>
-              <div className="font-medium whitespace-pre-line">{t.label}</div>
-            </button>
-          ))}
+          <Video
+            selected={selectedType === "video"}
+            onClick={() => setSelectedType("video")}
+          />
+          <VideoSlide
+            selected={selectedType === "video_slide"}
+            onClick={() => setSelectedType("video_slide")}
+          />
+          <Article
+            selected={selectedType === "article"}
+            onClick={() => setSelectedType("article")}
+          />
+          <Presentation
+            selected={selectedType === "presentation"}
+            onClick={() => setSelectedType("presentation")}
+          />
         </div>
       )}
 
