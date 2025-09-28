@@ -73,7 +73,6 @@ export default function ImageUpload({
     }
   };
 
-  /** ✅ Always compute preview from the latest uploadedFile */
   const apiDomain = process.env.NEXT_PUBLIC_API_DOMAIN || "";
 
   const previewPath = uploadedFile?.path
@@ -81,8 +80,6 @@ export default function ImageUpload({
     : value?.path
     ? apiDomain + value.path
     : "/placeholder-cover.webp";
-
-  console.log("previewPath", previewPath);
 
   const buttonText = uploadedFile ? "Change File" : "Upload File";
   const displayName =

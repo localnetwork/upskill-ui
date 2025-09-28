@@ -29,7 +29,7 @@ export default function CourseStripBar({ course }) {
             </Link>
           </span>
           <span className="font-bold">
-            {courseManagement?.title || course.title}
+            {courseManagement?.title || course?.title || "Course Title"}
           </span>
         </div>
         <div className="pr-[30px]">

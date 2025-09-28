@@ -12,17 +12,22 @@ import { extractErrors } from "@/lib/services/errorsExtractor";
 const TextEditor = dynamic(() => import("@/components/forms/TextEditor"), {
   ssr: false, // 👈 disables SSR for this component
 });
+
+import { setContext } from "@/lib/api/interceptor";
 export async function getServerSideProps(context) {
   const { slug } = context.params;
+
+  setContext(context);
 
   let course = null;
   try {
     const response = await BaseApi.get(
       `${process.env.NEXT_PUBLIC_API_URL}/courses/${slug}`
     );
-    course = response?.data?.data;
 
-    console.log("response", response?.data?.data);
+    console.log("eeeeeeeeeeeeeeeeeee", response.data);
+
+    course = response?.data?.data;
   } catch (error) {
     console.error("Error fetching course:", error);
     return { notFound: true };
@@ -47,6 +52,7 @@ export default function CourseBasics({ course }) {
       course?.instructional_level ||
       "",
   });
+
   const [errors, setErrors] = useState(null);
 
   const handleChange = (eOrPayload, maybe) => {

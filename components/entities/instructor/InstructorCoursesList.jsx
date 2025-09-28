@@ -37,7 +37,7 @@ export default function InstructorCoursesList({ courses, isLoading }) {
               <div className="relative group flex col-span-2 flex-col justify-between py-[15px] px-[20px]">
                 <div className="group-hover:flex text-[20px] absolute top-0 left-0 w-full h-full hidden">
                   <Link
-                    href={"/instructor/courses/" + course.uuid + "/curriculum"}
+                    href={"/instructor/courses/" + course.uuid + "/basics"}
                     className="text-[#0056D2] flex items-center justify-center w-full h-full font-semibold px-[20px] py-[10px] rounded-[5px] hover:opacity-90 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
                   >
                     <span className="bg-white opacity-70 absolute top-0 left-0 w-full h-full z-[-1]" />

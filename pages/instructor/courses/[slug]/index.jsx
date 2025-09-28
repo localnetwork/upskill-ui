@@ -7,7 +7,7 @@ export default function CourseRedirect() {
 
   useEffect(() => {
     if (slug) {
-      router.replace(`/instructor/courses/${slug}/curriculum`);
+      router.replace(`/instructor/courses/${slug}/basics`);
     }
   }, [slug, router]);
 

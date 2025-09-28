@@ -63,8 +63,6 @@ export default function Register() {
     }
   };
 
-  console.log("isFocused", isFocused);
-
   return (
     <div className="bg-[#F5F5F7] min-h-[calc(100vh-92px)]">
       <div className="container py-[50px]">
