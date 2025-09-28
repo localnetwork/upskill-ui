@@ -1,3 +1,4 @@
+import CourseBuilder from "@/components/entities/course/form/CourseBuilder";
 import CourseManagementLayout from "@/components/partials/CourseManagementLayout";
 import InstructorLayout from "@/components/partials/InstructorLayout";
 import BaseApi from "@/lib/api/_base.api";
@@ -35,6 +36,8 @@ export default function CurriculumPage({ course }) {
         Start putting together your course by creating sections, lectures and
         practice (quizzes, coding exercises and assignments).
       </p>
+
+      <CourseBuilder />
     </CourseManagementLayout>
   );
 }

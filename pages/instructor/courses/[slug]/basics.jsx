@@ -25,8 +25,6 @@ export async function getServerSideProps(context) {
       `${process.env.NEXT_PUBLIC_API_URL}/courses/${slug}`
     );
 
-    console.log("eeeeeeeeeeeeeeeeeee", response.data);
-
     course = response?.data?.data;
   } catch (error) {
     console.error("Error fetching course:", error);
