@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@diomenike/react-cookie-consent": "file:../d-cookie-consent",
     "@monaco-editor/react": "^4.7.0",
     "@tinymce/tinymce-react": "^6.3.0",
     "axios": "^1.12.2",
@@ -21,6 +22,7 @@
     "react-dom": "19.1.0",
     "react-hot-toast": "^2.6.0",
     "swr": "^2.3.6",
+    "uuid": "^13.0.0",
     "zustand": "^5.0.8"
   },
   "devDependencies": {

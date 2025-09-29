@@ -32,7 +32,7 @@ export default function CurriculumPage({ course }) {
       activeTab="curriculum"
       title="Curriculum"
     >
-      <p>
+      <p className="mb-6">
         Start putting together your course by creating sections, lectures and
         practice (quizzes, coding exercises and assignments).
       </p>

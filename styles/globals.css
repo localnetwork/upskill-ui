@@ -1,6 +1,6 @@
 @import "tailwindcss";
 body {
-  color: #2a2b3f;
+  color: #2a2b3f !important;
   font-family: "Source Sans 3";
   font-size: 16px;
 }
@@ -67,15 +67,19 @@ body {
 }
 
 .divider-top {
-  box-shadow: 0 -2px 4px color-mix(in oklch, oklch(27.54% 0.1638 265.98deg) 8%, transparent),
-    0 -4px 12px color-mix(in oklch, oklch(27.54% 0.1638 265.98deg) 8%, transparent);
+  box-shadow:
+    0 -2px 4px
+      color-mix(in oklch, oklch(27.54% 0.1638 265.98deg) 8%, transparent),
+    0 -4px 12px
+      color-mix(in oklch, oklch(27.54% 0.1638 265.98deg) 8%, transparent);
 }
 .border-bottom {
   border-bottom: 1px solid oklch(86.72% 0.0192 282.72deg);
 }
 
 .shadow-box {
-  box-shadow: 0 2px 4px
+  box-shadow:
+    0 2px 4px
       color-mix(in oklch, oklch(27.54% 0.1638 265.98deg) 8%, transparent),
     0 4px 12px
       color-mix(in oklch, oklch(27.54% 0.1638 265.98deg) 16%, transparent);
