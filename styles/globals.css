@@ -3,6 +3,7 @@ body {
   color: #2a2b3f !important;
   font-family: "Source Sans 3";
   font-size: 16px;
+  background-color: #fff !important;
 }
 .container {
   @apply mx-auto !px-[15px];
@@ -83,4 +84,96 @@ body {
       color-mix(in oklch, oklch(27.54% 0.1638 265.98deg) 8%, transparent),
     0 4px 12px
       color-mix(in oklch, oklch(27.54% 0.1638 265.98deg) 16%, transparent);
+}
+
+.tooltip {
+  min-width: 300px; /* 15px larger on both sides */
+  background-color: white;
+  border: 1px solid oklch(86.72% 0.0192 282.72deg);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px 0
+    color-mix(in oklch, oklch(27.54% 0.1638 265.98deg) 16%, transparent);
+  padding: 10px;
+  z-index: 20;
+  position: absolute;
+  transform: scale(0.96);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    transform 0.18s cubic-bezier(0.32, 1.56, 0.44, 1),
+    opacity 0.18s cubic-bezier(0.32, 1.56, 0.44, 1);
+}
+
+.tooltip[data-show="true"] {
+  opacity: 1;
+  pointer-events: auto;
+  transform: scale(1);
+}
+
+.tooltip-right {
+  left: calc(100% + 10px);
+  top: 0;
+}
+
+.tooltip-left {
+  right: calc(100% + 10px);
+  top: 0;
+}
+
+/* Arrow for right-positioned tooltip (points left) */
+.tooltip-right::before {
+  content: "";
+  position: absolute;
+  left: -21px; /* 20px arrow + 1px border + 10px gap */
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0;
+  height: 0;
+  border-top: 20px solid transparent;
+  border-bottom: 20px solid transparent;
+  border-right: 20px solid white;
+  filter: none;
+  z-index: 1;
+}
+.tooltip-right::after {
+  content: "";
+  position: absolute;
+  left: -22px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0;
+  height: 0;
+  border-top: 21px solid transparent;
+  border-bottom: 21px solid transparent;
+  border-right: 21px solid oklch(86.72% 0.0192 282.72deg);
+  z-index: 0;
+}
+
+/* Arrow for left-positioned tooltip (points right) */
+.tooltip-left::before {
+  content: "";
+  position: absolute;
+  right: -21px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0;
+  height: 0;
+  border-top: 20px solid transparent;
+  border-bottom: 20px solid transparent;
+  border-left: 20px solid white;
+  filter: none;
+  z-index: 1;
+}
+.tooltip-left::after {
+  content: "";
+  position: absolute;
+  right: -22px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0;
+  height: 0;
+  border-top: 21px solid transparent;
+  border-bottom: 21px solid transparent;
+  border-left: 21px solid oklch(86.72% 0.0192 282.72deg);
+  z-index: 0;
 }

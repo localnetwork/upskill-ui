@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { NotebookText, Trash, Trash2 } from "lucide-react"; // icons
+import { NotebookText, Save, Trash, Trash2 } from "lucide-react"; // icons
 import LectureContentSelector from "./LectureContentSelector";
 import QuizItem from "./QuizItem";
 import CodingExerciseItem from "./CodingExerciseItem";
@@ -132,7 +132,10 @@ export default function CurriculumItem({ item, onSave, onUpdate, onDelete }) {
       <div className="flex justify-between items-center w-full">
         <div className="w-full">
           {mode === "edit" ? (
-            <div className="relative w-1/2">
+            <div className="relative w-1/2 flex items-center gap-[5px]">
+              <label className="flex items-center font-semibold mb-1 nowrap">
+                Title <span className="text-red-500">*</span>
+              </label>
               <input
                 type="text"
                 value={title}
@@ -159,7 +162,13 @@ export default function CurriculumItem({ item, onSave, onUpdate, onDelete }) {
                     onClick={() => setMode(mode === "edit" ? null : "edit")}
                     className="ml-2 py-[3px] px-[5px] hover:bg-gray-200 rounded-sm flex items-center justify-center cursor-pointer"
                   >
-                    {mode === "edit" ? "Close" : <Pencil />}
+                    {mode === "edit" ? (
+                      <span className="text-[12px] px-4 py-2 cursor-pointer flex items-center justify-center font-bold border-[2px] border-[#0056D2] hover:bg-[#0056D2] hover:text-white text-[#0056D2] rounded">
+                        Close
+                      </span>
+                    ) : (
+                      <Pencil />
+                    )}
                   </button>
 
                   <button
@@ -188,11 +197,17 @@ export default function CurriculumItem({ item, onSave, onUpdate, onDelete }) {
               onClick={() => setMode(mode === "content" ? null : "content")}
             >
               {mode === "content" ? (
-                "Close"
-              ) : (
                 <span className="text-[12px] px-4 py-2 cursor-pointer flex items-center justify-center font-bold border-[2px] border-[#0056D2] hover:bg-[#0056D2] hover:text-white text-[#0056D2] rounded">
-                  <NotebookText size={16} className="mr-1" /> Content
+                  Close
                 </span>
+              ) : (
+                <>
+                  {item.title && (
+                    <span className="text-[12px] px-4 py-2 cursor-pointer flex items-center justify-center font-bold border-[2px] border-[#0056D2] hover:bg-[#0056D2] hover:text-white text-[#0056D2] rounded">
+                      <NotebookText size={16} className="mr-1" /> Content
+                    </span>
+                  )}
+                </>
               )}
             </button>
           )}
@@ -240,6 +255,7 @@ export default function CurriculumItem({ item, onSave, onUpdate, onDelete }) {
                 className="px-4 py-2 cursor-pointer flex items-center justify-center font-bold border-[2px] border-[#0056D2] hover:bg-[#0056D2] hover:text-white text-[#0056D2] rounded"
                 disabled={!title.trim() || !description.trim()}
               >
+                <Save size={16} className="mr-1" />
                 Update Curriculum
               </button>
             )}
@@ -250,13 +266,25 @@ export default function CurriculumItem({ item, onSave, onUpdate, onDelete }) {
       {/* Content Mode */}
       {mode === "content" && (
         <div className="mt-3">
-          {isLecture && (
+          {/* {isLecture && (
             <LectureContentSelector
               lecture={currentItem}
               onClose={() => setMode(null)}
               onUpdate={handleUpdate}
             />
+          )} */}
+
+          {isLecture && (
+            <LectureContentSelector
+              lecture={currentItem}
+              onClose={() => setMode(null)}
+              onUpdate={(updated) => {
+                setCurrentItem((prev) => ({ ...prev, ...updated }));
+                onUpdate?.({ ...currentItem, ...updated });
+              }}
+            />
           )}
+
           {isQuiz && (
             <QuizItem
               quiz={currentItem}

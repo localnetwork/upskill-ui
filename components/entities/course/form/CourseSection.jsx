@@ -12,6 +12,8 @@ import {
   ClipboardCheck,
   Users,
 } from "lucide-react";
+import toast from "react-hot-toast";
+
 export default function CourseSection({
   section,
   onAddItem,
@@ -42,6 +44,10 @@ export default function CourseSection({
   // NEW state for loading actions
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  const [isReordering, setIsReordering] = useState(false);
+
+  const [dragOverIndex, setDragOverIndex] = useState(null);
 
   const courseManagement = courseStore((state) => state.courseManagement);
 
@@ -200,6 +206,47 @@ export default function CourseSection({
     { label: "Role Play", value: "role_play", icon: Users },
   ];
 
+  const handleDragStart = (e, index) => {
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", index);
+  };
+
+  const handleDragOver = (e, index) => {
+    e.preventDefault();
+    setDragOverIndex(index); // highlight drop target
+  };
+
+  const handleDrop = async (e, dropIndex) => {
+    e.preventDefault();
+    const dragIndex = Number(e.dataTransfer.getData("text/plain"));
+    setDragOverIndex(null);
+
+    if (dragIndex === dropIndex) return;
+
+    const reordered = Array.from(items);
+    const [moved] = reordered.splice(dragIndex, 1);
+    reordered.splice(dropIndex, 0, moved);
+
+    setItems(reordered);
+
+    try {
+      setIsReordering(true);
+      await BaseApi.put(
+        `${process.env.NEXT_PUBLIC_API_URL}/course-sections/${section.id}/curriculums/sort`,
+        {
+          items: reordered.map((i) => i.id),
+          section_id: section.id,
+        }
+      );
+      toast.success("Curriculums sorted successfully!");
+    } catch (err) {
+      console.error("Error sorting:", err);
+      toast.error("Failed to reorder. Please try again.");
+    } finally {
+      setIsReordering(false);
+    }
+  };
+
   return (
     <div className="[border:1px_solid_oklch(67.22%_0.0355_279.77deg)] overflow-hidden">
       {/* Header */}
@@ -215,7 +262,7 @@ export default function CourseSection({
             <>
               <span>{`Section ${section.id || "New"}:`}</span>
               <input
-                className="border border-[#3588FC] rounded px-2 py-1 outline-none focus:border-[#0056D2] w-1/2 text-lg font-semibold"
+                className="w-1/2 border-[oklch(67.22%_0.0355_279.77deg)] border rounded-[5px] p-[10px] px-3 pr-[50px] py-2  "
                 maxLength={64}
                 autoFocus
                 value={editTitle}
@@ -280,7 +327,7 @@ export default function CourseSection({
                   Learning Objective
                 </label>
                 <input
-                  className="w-full border border-[#3588FC] rounded px-3 pr-[50px] py-2 focus:border-[#0056D2]"
+                  className="w-full border-[oklch(67.22%_0.0355_279.77deg)] border rounded-[5px] p-[10px] px-3 pr-[50px] py-2 "
                   maxLength={200}
                   placeholder="Enter a Learning Objective"
                   value={editObjective}
@@ -317,23 +364,37 @@ export default function CourseSection({
             <>
               {section.id && (
                 <div className="">
-                  {/* <h3 className="font-semibold">Curriculum</h3> */}
+                  {isReordering && (
+                    <div className="flex items-center text-sm text-gray-500 gap-2 mb-2">
+                      <Loader2 size={14} className="animate-spin" />
+                      Reordering...
+                    </div>
+                  )}
                   {loadingItems ? (
                     <p className="text-sm text-gray-500">Loading...</p>
                   ) : items.length > 0 ? (
                     <div className="space-y-2">
-                      {items.map((it) => (
-                        <CurriculumItem
+                      {items.map((it, index) => (
+                        <div
                           key={it.id || it.tempId}
-                          item={it}
-                          onSave={handleItemSave}
-                          onUpdate={handleItemUpdate}
-                          onDelete={handleItemDelete}
-                        />
+                          draggable
+                          onDragStart={(e) => handleDragStart(e, index)}
+                          onDragOver={handleDragOver}
+                          onDrop={(e) => handleDrop(e, index)}
+                          className="flex items-center gap-2 rounded bg-white cursor-move"
+                        >
+                          <CurriculumItem
+                            item={it}
+                            onSave={handleItemSave}
+                            onUpdate={handleItemUpdate}
+                            onDelete={handleItemDelete}
+                          />
+                          <span className="text-gray-400">☰</span>
+                        </div>
                       ))}
                     </div>
                   ) : (
-                    <p className="text-sm text-gray-500">No curriculum yet.</p>
+                    <></>
                   )}
 
                   <div className="pt-3">
