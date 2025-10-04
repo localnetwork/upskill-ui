@@ -1,3 +1,4 @@
+import CourseSections from "@/components/entities/course/show/CourseSections";
 import BaseApi from "@/lib/api/_base.api";
 import {
   BadgeCheck,
@@ -44,8 +45,6 @@ export default function Course() {
       fetchData();
     }
   }, [slug]);
-
-  console.log("course", course);
 
   return (
     <div>
@@ -180,6 +179,8 @@ export default function Course() {
                   {course?.resources_count?.section_count} sections •{" "}
                   {course?.resources_count?.curriculum_count} lectures
                 </div>
+
+                <CourseSections course={course} />
               </div>
             </div>
             <div className="flex col-span-1 justify-end">
