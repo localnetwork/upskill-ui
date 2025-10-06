@@ -1,5 +1,6 @@
 "use client";
 import BaseApi from "@/lib/api/_base.api";
+import { Save } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
 
@@ -14,8 +15,28 @@ export default function VideoForm({ onSave, onCancel, lecture }) {
     if (!selectedFile) return;
 
     setFile(selectedFile);
-    setPreview(URL.createObjectURL(selectedFile)); // show video preview
-    setUploadedVideo(null); // reset any previously uploaded video
+    setUploadedVideo(null);
+
+    const previewUrl = URL.createObjectURL(selectedFile);
+    setPreview(previewUrl);
+
+    // ✅ create a hidden video element to extract duration
+    const tempVideo = document.createElement("video");
+    tempVideo.preload = "metadata";
+    tempVideo.src = previewUrl;
+
+    tempVideo.onloadedmetadata = () => {
+      window.URL.revokeObjectURL(tempVideo.src); // cleanup
+      const duration = tempVideo.duration; // seconds (float)
+      console.log("Video duration (seconds):", duration);
+
+      // If you want to include this duration in formData
+      setFile((prevFile) => {
+        // attach duration manually
+        prevFile.duration = duration;
+        return prevFile;
+      });
+    };
   };
 
   const handleOnUploadClick = async () => {
@@ -24,6 +45,10 @@ export default function VideoForm({ onSave, onCancel, lecture }) {
     const formData = new FormData();
     formData.append("file", file);
     formData.append("curriculum_id", lecture.id);
+
+    if (file.duration) {
+      formData.append("duration", file.duration); // ✅ pass duration to backend
+    }
 
     try {
       setLoading(true);
@@ -39,15 +64,12 @@ export default function VideoForm({ onSave, onCancel, lecture }) {
 
       console.log("File uploaded successfully:", response.data.data);
 
-      // Normalize uploaded video data
       const videoUrl = response.data?.url || response.data?.path || null;
-
       if (videoUrl) {
         setUploadedVideo(videoUrl);
-        setPreview(null); // remove local preview once uploaded
+        setPreview(null);
       }
 
-      // ✅ Pass updated video info back to parent
       if (onSave) {
         onSave({
           ...response.data.data.curriculum,
@@ -55,7 +77,6 @@ export default function VideoForm({ onSave, onCancel, lecture }) {
         });
       }
 
-      // reset file input after success
       setFile(null);
     } catch (error) {
       console.error("Error uploading file:", error);
@@ -107,7 +128,7 @@ export default function VideoForm({ onSave, onCancel, lecture }) {
               onChange={handleFileChange}
               className="hidden"
             />
-            <span className="border rounded-[5px] p-[10px] w-full text-center">
+            <span className="border rounded-[5px] p-[10px] w-full text-center max-w-[calc(100%-48px)] line-clamp-1">
               {file ? file.name : "No file chosen"}
             </span>
 
@@ -128,8 +149,9 @@ export default function VideoForm({ onSave, onCancel, lecture }) {
         <button
           onClick={handleOnUploadClick}
           disabled={!file || loading}
-          className="px-4 py-2 bg-purple-600 text-white rounded disabled:opacity-50"
+          className="px-4 py-2 cursor-pointer flex items-center justify-center font-bold border-[2px] border-[#0056D2] hover:bg-[#0056D2] hover:text-white text-[#0056D2] rounded"
         >
+          <Save size={20} />
           {loading ? "Uploading..." : "Save Video"}
         </button>
       </div>

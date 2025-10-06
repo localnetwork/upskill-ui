@@ -14,6 +14,8 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 
+import { Editor } from "@tinymce/tinymce-react";
+
 export default function CourseSection({
   section,
   onAddItem,
@@ -259,22 +261,22 @@ export default function CourseSection({
           onClick={(e) => e.stopPropagation()}
         >
           {isEditing ? (
-            <>
-              <span>{`Section ${section.id || "New"}:`}</span>
+            <div className="relative inline-block">
               <input
-                className="w-1/2 border-[oklch(67.22%_0.0355_279.77deg)] border rounded-[5px] p-[10px] px-3 pr-[50px] py-2  "
+                className="w-full border-[oklch(67.22%_0.0355_279.77deg)] border rounded-[5px] p-[10px] px-3 pr-[50px] py-2  "
                 maxLength={64}
                 autoFocus
                 value={editTitle}
                 onChange={(e) => setEditTitle(e.target.value)}
               />
-              <span className="text-gray-500 text-xs">
+              <span
+                className={`${editTitle.length == 64 ? "text-red-500" : "text-gray-500"} text-xs float-right absolute bottom-[12px] right-2`}
+              >
                 {editTitle.length}/64
               </span>
-            </>
+            </div>
           ) : (
             <>
-              <span>{`Section ${section.id || "New"}:`}</span>
               <span className="ml-2">{title}</span>
               <button
                 type="button"
@@ -326,14 +328,29 @@ export default function CourseSection({
                 <label className="block font-semibold mb-1">
                   Learning Objective
                 </label>
-                <input
-                  className="w-full border-[oklch(67.22%_0.0355_279.77deg)] border rounded-[5px] p-[10px] px-3 pr-[50px] py-2 "
-                  maxLength={200}
-                  placeholder="Enter a Learning Objective"
-                  value={editObjective}
-                  onChange={(e) => setEditObjective(e.target.value)}
+                <Editor
+                  apiKey={process.env.NEXT_PUBLIC_TINYMCE_API_KEY}
+                  value={editObjective} // <-- controlled binding
+                  onEditorChange={(newValue) => setEditObjective(newValue)} // updates state
+                  init={{
+                    height: 300,
+                    menubar: false,
+                    plugins: [
+                      "advlist autolink lists link image charmap preview anchor",
+                      "searchreplace visualblocks code fullscreen",
+                      "insertdatetime media table code help wordcount",
+                    ],
+                    toolbar:
+                      "undo redo | formatselect | " +
+                      "bold italic underline | alignleft aligncenter " +
+                      "alignright alignjustify | bullist numlist outdent indent | " +
+                      "removeformat | help",
+                    content_style:
+                      "body { font-family:Helvetica,Arial,sans-serif; font-size:14px }",
+                  }}
                 />
-                <span className="text-gray-500 text-xs float-right absolute bottom-[12px] right-2">
+
+                <span className="text-gray-500 text-xs float-right">
                   {editObjective.length}/200
                 </span>
               </div>

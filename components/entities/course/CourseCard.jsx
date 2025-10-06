@@ -64,7 +64,10 @@ export default function CourseCard({ course }) {
 
       <h2 className="font-semibold text-lg mt-4">{course.title}</h2>
 
-      <p className="font-normal line-clamp-2 grow">{firstParagraphText}</p>
+      <div
+        className="font-normal line-clamp-2 grow"
+        dangerouslySetInnerHTML={{ __html: firstParagraphText }}
+      />
 
       <div className="mt-2 flex items-center gap-2">
         <div className="inline-flex items-center text-sm text-gray-600 border-[1px] border-solid border-[oklch(86.72%_0.0192_282.72deg)] rounded-sm px-3 py-[5px]">

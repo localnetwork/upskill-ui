@@ -1,11 +1,20 @@
 "use client";
 import { useState, useEffect } from "react";
-import { NotebookText, Save, Trash, Trash2 } from "lucide-react"; // icons
+import {
+  MonitorPlay,
+  Newspaper,
+  NotebookText,
+  OctagonAlert,
+  Save,
+  Trash,
+  Trash2,
+} from "lucide-react"; // icons
 import LectureContentSelector from "./LectureContentSelector";
 import QuizItem from "./QuizItem";
 import CodingExerciseItem from "./CodingExerciseItem";
 import BaseApi from "@/lib/api/_base.api";
 import Pencil from "@/components/icons/Pencil";
+import { Editor } from "@tinymce/tinymce-react";
 
 export default function CurriculumItem({ item, onSave, onUpdate, onDelete }) {
   const [mode, setMode] = useState(null); // "edit" | "content" | null
@@ -127,7 +136,9 @@ export default function CurriculumItem({ item, onSave, onUpdate, onDelete }) {
   };
 
   return (
-    <div className="[border:1px_solid_oklch(67.22%_0.0355_279.77deg)] px-[20px] py-[15px] mb-2 bg-gray-50 w-full">
+    <div
+      className={`${currentItem?.curriculum_resource_type ? "[border:1px_solid_oklch(67.22%_0.0355_279.77deg)]" : "border-2 border-dashed border-red-500"} px-[20px] py-[15px] mb-2 bg-gray-50 w-full`}
+    >
       {/* Header */}
       <div className="flex justify-between items-center w-full">
         <div className="w-full">
@@ -153,7 +164,16 @@ export default function CurriculumItem({ item, onSave, onUpdate, onDelete }) {
           ) : (
             <div className="flex items-center">
               <span>
-                {currentItem?.curriculum_type?.toUpperCase()} –{" "}
+                {currentItem?.curriculum_resource_type === "video" ? (
+                  <MonitorPlay size={18} className="inline mr-2" />
+                ) : currentItem?.curriculum_resource_type === "article" ? (
+                  <Newspaper size={18} className="inline mr-2" />
+                ) : (
+                  <OctagonAlert
+                    size={18}
+                    className="inline mr-2 text-red-600"
+                  />
+                )}
                 {title || "Untitled"}
               </span>
               {!currentItem.isNew && (
@@ -222,13 +242,26 @@ export default function CurriculumItem({ item, onSave, onUpdate, onDelete }) {
               Description <span className="text-red-500">*</span>
             </label>
 
-            {console.log("description", description)}
-
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={3}
-              className="border border-[#3588FC] w-full rounded px-2 pr-[50px] py-1 outline-none focus:border-[#0056D2]  text-lg font-semibold"
+            <Editor
+              apiKey={process.env.NEXT_PUBLIC_TINYMCE_API_KEY}
+              value={description} // <-- controlled binding
+              onEditorChange={(newValue) => setDescription(newValue)} // updates state
+              init={{
+                height: 300,
+                menubar: false,
+                plugins: [
+                  "advlist autolink lists link image charmap preview anchor",
+                  "searchreplace visualblocks code fullscreen",
+                  "insertdatetime media table code help wordcount",
+                ],
+                toolbar:
+                  "undo redo | formatselect | " +
+                  "bold italic underline | alignleft aligncenter " +
+                  "alignright alignjustify | bullist numlist outdent indent | " +
+                  "removeformat | help",
+                content_style:
+                  "body { font-family:Helvetica,Arial,sans-serif; font-size:14px }",
+              }}
             />
           </div>
 
@@ -236,7 +269,18 @@ export default function CurriculumItem({ item, onSave, onUpdate, onDelete }) {
 
           <div className="flex justify-end gap-2">
             <button
-              onClick={() => setMode(null)}
+              onClick={() => {
+                if (
+                  currentItem.isNew &&
+                  (!title.trim() || !description.trim())
+                ) {
+                  // stay in edit mode if nothing is filled
+                  setMode("edit");
+                } else {
+                  // otherwise behave normally
+                  setMode(null);
+                }
+              }}
               className="px-4 py-2 bg-gray-300 text-gray-800 rounded"
             >
               Cancel
@@ -244,7 +288,7 @@ export default function CurriculumItem({ item, onSave, onUpdate, onDelete }) {
             {currentItem.isNew ? (
               <button
                 onClick={handleSave}
-                className="px-4 py-2 bg-purple-600 text-white rounded disabled:opacity-50"
+                className="px-4 py-2 cursor-pointer flex items-center justify-center font-bold border-[2px] border-[#0056D2] hover:bg-[#0056D2] hover:text-white text-[#0056D2] rounded"
                 disabled={!title.trim() || !description.trim()}
               >
                 Save Curriculum
@@ -266,14 +310,6 @@ export default function CurriculumItem({ item, onSave, onUpdate, onDelete }) {
       {/* Content Mode */}
       {mode === "content" && (
         <div className="mt-3">
-          {/* {isLecture && (
-            <LectureContentSelector
-              lecture={currentItem}
-              onClose={() => setMode(null)}
-              onUpdate={handleUpdate}
-            />
-          )} */}
-
           {isLecture && (
             <LectureContentSelector
               lecture={currentItem}

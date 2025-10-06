@@ -6,8 +6,15 @@ import { useEffect, useState } from "react";
 import UserNav from "../entities/user/UserNav";
 import persistentStore from "@/lib/store/persistentStore";
 import UserResendNotif from "../entities/user/UserResendNotif";
+import CARTAPI from "@/lib/api/cart/request";
+import cartStore from "@/lib/store/cartStore";
+import dynamic from "next/dynamic";
+const UserCartCount = dynamic(() => import("../entities/user/UserCartCount"), {
+  ssr: false,
+});
 export default function Header() {
   const profile = persistentStore((state) => state.profile);
+
   return (
     <>
       {profile && profile?.verified === 0 && <UserResendNotif />}
@@ -30,8 +37,17 @@ export default function Header() {
               </form>
 
               <div className="flex items-center space-x-4">
-                <span className="max-w-[30px] inline-flex h-auto">
-                  <Cart />
+                <span className="max-w-[30px] inline-flex h-auto relative">
+                  {!profile ? (
+                    <>
+                      <Cart />
+                      <span className="absolute -mt-2 ml-3 text-[12px] font-bold bg-red-600 text-white rounded-full px-1">
+                        0
+                      </span>
+                    </>
+                  ) : (
+                    <UserCartCount />
+                  )}
                 </span>
 
                 {!profile ? (

@@ -5,6 +5,10 @@ body {
   font-size: 16px;
   background-color: #fff !important;
 }
+p:not(:last-of-type) {
+  @apply mb-[15px];
+}
+
 .container {
   @apply mx-auto !px-[15px];
 }

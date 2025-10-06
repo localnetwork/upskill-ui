@@ -26,7 +26,7 @@ export default function VideoSlideForm({ onSave, onCancel }) {
         <button
           onClick={() => onSave({ file })}
           disabled={!file}
-          className="px-4 py-2 bg-purple-600 text-white rounded disabled:opacity-50"
+          className="px-4 py-2 cursor-pointer flex items-center justify-center font-bold border-[2px] border-[#0056D2] hover:bg-[#0056D2] hover:text-white text-[#0056D2] rounded"
         >
           Save Video & Slide
         </button>

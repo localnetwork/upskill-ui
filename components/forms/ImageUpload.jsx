@@ -78,8 +78,8 @@ export default function ImageUpload({
   const previewPath = uploadedFile?.path
     ? apiDomain + uploadedFile.path
     : value?.path
-    ? apiDomain + value.path
-    : "/placeholder-cover.webp";
+      ? apiDomain + value.path
+      : "/placeholder-cover.webp";
 
   const buttonText = uploadedFile ? "Change File" : "Upload File";
   const displayName =
@@ -127,7 +127,7 @@ export default function ImageUpload({
             />
 
             <label htmlFor={idRef.current} className="flex gap-[15px]">
-              <span className="border rounded-[5px] p-[10px] w-full text-center">
+              <span className="border rounded-[5px] p-[10px] w-full text-center line-clamp-1">
                 {isUploading ? `Uploading... ${progress}%` : displayName}
               </span>
 

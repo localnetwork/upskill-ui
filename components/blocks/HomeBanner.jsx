@@ -1,7 +1,21 @@
 import Image from "next/image";
 import Link from "next/link";
-
+import persistentStore from "@/lib/store/persistentStore";
+import { useMemo } from "react";
 export default function HomeBanner() {
+  const profile = persistentStore((state) => state.profile);
+
+  const isInstructor = useMemo(
+    () => profile?.roles?.some((role) => role.name === "Instructor"),
+    [profile]
+  );
+
+  const isLearner = useMemo(
+    () => profile?.roles?.some((role) => role.name === "Learner"),
+    [profile]
+  );
+
+  console.log("isInstructor:", isInstructor, "isLearner:", isLearner);
   return (
     <div className="banner bg-[#F0F6FF] pt-[150px]">
       <div className="container">
@@ -21,7 +35,13 @@ export default function HomeBanner() {
 
             <div>
               <Link
-                href="/browse"
+                href={
+                  isInstructor
+                    ? "/instructor/courses"
+                    : isLearner
+                      ? "/courses"
+                      : "/register"
+                }
                 className="bg-[#0056D2] hover:bg-[#0f3c7c] leading-[45px] text-white font-semibold px-[30px] py-[10px] rounded-[50px] mt-6 inline-block min-w-[203px] text-[30px] text-center"
               >
                 Get Started

@@ -134,7 +134,7 @@ export default function LectureContentSelector({
               </>
             ) : (
               <div
-                className="space-y-4 cursor-pointer text-sm text-gray-500 underline"
+                className="space-y-4 cursor-pointer text-[18px] text-gray-500"
                 onClick={() => setSelectedType(null)}
               >
                 ← Back
