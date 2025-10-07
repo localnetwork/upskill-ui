@@ -1,23 +1,49 @@
 import Link from "next/link";
 import Logo from "../icons/Logo";
 import Cart from "../icons/Cart";
-import { isLoggedIn } from "@/lib/services/auth";
-import { useEffect, useState } from "react";
-import UserNav from "../entities/user/UserNav";
-import persistentStore from "@/lib/store/persistentStore";
-import UserResendNotif from "../entities/user/UserResendNotif";
-import CARTAPI from "@/lib/api/cart/request";
-import cartStore from "@/lib/store/cartStore";
+import { useRef, useEffect } from "react";
 import dynamic from "next/dynamic";
+import persistentStore from "@/lib/store/persistentStore";
+import globalStore from "@/lib/store/globalStore";
+import UserNav from "../entities/user/UserNav";
+import UserResendNotif from "../entities/user/UserResendNotif";
+
 const UserCartCount = dynamic(() => import("../entities/user/UserCartCount"), {
   ssr: false,
 });
+
+const CartDrawer = dynamic(() => import("../entities/cart/CartDrawer"), {
+  ssr: false,
+});
+
 export default function Header() {
   const profile = persistentStore((state) => state.profile);
+  const cartDrawerOpen = globalStore((state) => state.cartDrawerOpen);
+  const setCartDrawerOpen = (val) =>
+    globalStore.setState({ cartDrawerOpen: val });
+
+  const drawerRef = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (
+        !e.composedPath().some((el) => el.classList?.contains("cart-drawer"))
+      ) {
+        setCartDrawerOpen(false);
+      }
+    }
+
+    if (cartDrawerOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [cartDrawerOpen]);
 
   return (
     <>
-      {profile && profile?.verified === 0 && <UserResendNotif />}
+      {profile && profile.verified === 0 && <UserResendNotif />}
       <header className="bg-white shadow-lg sticky top-0 z-50">
         <div className="container">
           <div className="flex justify-between items-center py-4">
@@ -26,17 +52,18 @@ export default function Header() {
                 <Logo />
               </Link>
             </div>
+
             <div className="flex items-center space-x-6 w-full justify-end">
               <form className="min-w-[50%]">
                 <input
                   name="search"
                   type="text"
                   placeholder="Browse courses..."
-                  className="border border-gray-300 rounded-[50px] py-2 px-4 w-full "
+                  className="border border-gray-300 rounded-[50px] py-2 px-4 w-full"
                 />
               </form>
 
-              <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-4 relative">
                 <span className="max-w-[30px] inline-flex h-auto relative">
                   {!profile ? (
                     <>
@@ -49,6 +76,9 @@ export default function Header() {
                     <UserCartCount />
                   )}
                 </span>
+
+                {/* Drawer */}
+                {cartDrawerOpen && <CartDrawer />}
 
                 {!profile ? (
                   <nav>

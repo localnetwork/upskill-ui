@@ -32,6 +32,8 @@ import cartStore from "@/lib/store/cartStore";
 import CARTAPI from "@/lib/api/cart/request";
 
 import { mutate } from "swr";
+import globalStore from "@/lib/store/globalStore";
+import modalState from "@/lib/store/modalState";
 export default function Course() {
   const router = useRouter();
   const { slug } = router.query;
@@ -49,9 +51,18 @@ export default function Course() {
       await BaseApi.post(`${process.env.NEXT_PUBLIC_API_URL}/cart`, {
         course_id: course.id,
       });
-      toast.success("Course added successfully.");
       setCourse((prev) => ({ ...prev, is_in_cart: true }));
       mutate(`${process.env.NEXT_PUBLIC_API_URL}/cart/count`);
+      mutate(`${process.env.NEXT_PUBLIC_API_URL}/cart`);
+      modalState.setState({
+        cartDrawerOpen: true,
+        modalInfo: {
+          type: "ADD_TO_CART",
+          title: "Added to cart",
+          message: `"${course.title}" has been added to your cart.`,
+          data: course,
+        },
+      });
     } catch (error) {
       console.error("Error adding to cart:", error);
 
@@ -226,7 +237,7 @@ export default function Course() {
                   <div className="text-[25px] mb-[15px] font-bold">₱639</div>
                   <div className="flex flex-wrap gap-[5px]">
                     {course?.is_in_cart ? (
-                      <div className="bg-[#0056D2] opacity-50 flex items-center justify-center gap-[5px] text-center max-w-[calc(100%-66px)] font-semibold text-white px-[20px] py-[10px] rounded-[5px] w-full hover:bg-[#1d6de0]">
+                      <div className="bg-[#0056D2] select-none opacity-50 flex items-center justify-center gap-[5px] text-center max-w-[calc(100%-66px)] font-semibold text-white px-[20px] py-[10px] rounded-[5px] w-full hover:bg-[#1d6de0]">
                         <Check size={20} /> Already in Cart
                       </div>
                     ) : (

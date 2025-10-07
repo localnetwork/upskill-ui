@@ -1,28 +1,46 @@
 import Cart from "@/components/icons/Cart";
 import CARTAPI from "@/lib/api/cart/request";
 import cartStore from "@/lib/store/cartStore";
+import globalStore from "@/lib/store/globalStore";
 import persistentStore from "@/lib/store/persistentStore";
-
+import { mutate } from "swr";
 export default function UserCartCount() {
-  const count = cartStore((state) => state.cartCount);
-  const profile = persistentStore((state) => state.profile);
+  const count = cartStore((s) => s.cartCount);
+  const cart = cartStore((s) => s.cart);
+  const profile = persistentStore((s) => s.profile);
+  const cartDrawerOpen = globalStore((s) => s.cartDrawerOpen);
 
-  // ✅ use your static method (hook inside works fine)
-  const { data: cartCount, mutate } = CARTAPI.getCartCount({
-    render: !!profile, // only run if logged in
-    revalidateOnFocus: true,
-    refreshInterval: 10000, // optional auto-refresh every 10s
+  // ✅ Call the hook returned by the static method
+  const { data: cartCount } = CARTAPI.getCartCount({
+    render: !!profile,
     onSuccess: (data) => {
       cartStore.setState({ cartCount: data?.count });
     },
-  });
+  })();
+
+  const { data: cartItems, mutate: mutateCartItems } = CARTAPI.getCartItems({
+    render: !!profile,
+    onSuccess: (data) => {
+      cartStore.setState({ cart: data?.data || [] });
+    },
+  })();
+
+  const handleCartDrawer = () => {
+    globalStore.setState({ cartDrawerOpen: !cartDrawerOpen });
+    mutate("/cart");
+};
 
   return (
-    <>
-      <Cart />
-      <span className="absolute -mt-2 right-0 text-[12px] font-bold bg-red-600 text-white rounded-full px-1">
+    <div
+      className="relative inline-flex h-auto select-none cursor-pointer"
+      onClick={(e) => handleCartDrawer()}
+    >
+      <span className="inline-flex max-w-[30px]">
+        <Cart />
+      </span>
+      <span className="absolute rounded-full w-[23px] h-[23px] flex items-center justify-center -mt-3 right-[-5px] top-0 text-[14px] font-bold bg-[#3588FC] text-white px-1">
         {count}
       </span>
-    </>
+    </div>
   );
 }
