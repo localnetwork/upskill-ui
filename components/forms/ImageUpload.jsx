@@ -12,6 +12,7 @@ export default function ImageUpload({
   name,
   description,
   title,
+  preview,
 }) {
   const [isUploading, setIsUploading] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -75,6 +76,14 @@ export default function ImageUpload({
   };
 
   const apiDomain = process.env.NEXT_PUBLIC_API_DOMAIN || "";
+
+  // const previewPath = uploadedFile?.path
+  //   ? apiDomain + uploadedFile.path
+  //   : value?.path
+  //     ? apiDomain + value.path
+  //     : preview
+  //       ? apiDomain + preview
+  //       : "/placeholder-cover.webp";
 
   const previewPath = uploadedFile?.path
     ? apiDomain + uploadedFile.path

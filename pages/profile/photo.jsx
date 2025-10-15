@@ -3,15 +3,16 @@ import ProfileManagementLayout from "@/components/partials/ProfileManagementLayo
 import BaseApi from "@/lib/api/_base.api";
 import persistentStore from "@/lib/store/persistentStore";
 import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
 export default function BasicInformation() {
   const [payload, setPayload] = useState({});
   const profile = persistentStore((state) => state.profile);
 
   useEffect(() => {
     setPayload({
-      user_picture: profile?.user_picture || "",
+      user_picture: profile?.user_picture.id || "",
     });
-  }, []);
+  }, [profile]);
 
   const handleChange = (eOrPayload, maybe) => {
     let target = null;
@@ -54,25 +55,24 @@ export default function BasicInformation() {
       persistentStore.setState((state) => ({
         profile: {
           ...state.profile,
-          user_picture: response.data.data.user_picture,
+          user_picture: response.data.data,
         },
       }));
-
-      // Submit the form data
+      toast.success("Profile photo updated successfully.");
     } catch (error) {
       console.error("Error submitting form:", error);
+      toast.error("Error updating profile photo.");
     }
   };
-
-  console.log("payload", payload);
 
   return (
     <ProfileManagementLayout>
       <form onSubmit={handleSubmit} className="space-y-6">
         <ImageUpload
           onChange={handleChange}
-          value={payload?.user_picture || ""}
+          value={profile?.user_picture || ""}
           title={payload?.title || ""}
+          preview={payload?.user_picture?.path || null}
           name="user_picture"
           label="User Picture"
           description="Upload your course image here. It must meet our course image quality

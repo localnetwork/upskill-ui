@@ -1,4 +1,5 @@
 import persistentStore from "@/lib/store/persistentStore";
+import Image from "next/image";
 
 export default function UserAvatar({ className, profile, size = "md" }) {
   const currentProfile = persistentStore((state) => state.profile);
@@ -25,19 +26,38 @@ export default function UserAvatar({ className, profile, size = "md" }) {
       ? sizeClasses[size] || sizeClasses["md"]
       : `w-[${size}px] h-[${size}px] text-[${Math.floor(size / 3)}px]`;
 
+  const profilePic =
+    profile?.user_picture || currentProfile?.user_picture || null;
+
   return (
     <div>
-      <span
-        className={`
+      {profilePic ? (
+        <div
+          className={`${appliedSize} ${className ?? ""} rounded-full text-white border-[#e5e7eb] border-[5px] 
+          select-none overflow-hidden bg-[#3588FC] 
+          flex items-center justify-center font-semibold`}
+        >
+          <Image
+            src={process.env.NEXT_PUBLIC_API_DOMAIN + profilePic.path}
+            alt="User Avatar"
+            width={100}
+            height={100}
+            className="w-full h-full object-cover"
+          />
+        </div>
+      ) : (
+        <span
+          className={` 
           ${appliedSize}
           ${className ?? ""}
           rounded-full text-white border-[#e5e7eb] border-[5px] 
           select-none overflow-hidden bg-[#3588FC] 
           flex items-center justify-center font-semibold
         `}
-      >
-        {initials || "?"}
-      </span>
+        >
+          {initials || "?"}
+        </span>
+      )}
     </div>
   );
 }
