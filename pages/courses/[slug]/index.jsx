@@ -234,7 +234,12 @@ export default function Course() {
                   )}
                 </div>
                 <div className="p-[30px]">
-                  <div className="text-[25px] mb-[15px] font-bold">₱639</div>
+                  <div className="text-[25px] mb-[15px] font-bold">
+                    ₱
+                    {course?.price_tier?.price
+                      ? course?.price_tier?.price
+                      : "null"}
+                  </div>
                   <div className="flex flex-wrap gap-[5px]">
                     {course?.is_in_cart ? (
                       <div className="bg-[#0056D2] select-none opacity-50 flex items-center justify-center gap-[5px] text-center max-w-[calc(100%-66px)] font-semibold text-white px-[20px] py-[10px] rounded-[5px] w-full hover:bg-[#1d6de0]">

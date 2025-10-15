@@ -12,6 +12,7 @@ export default function Cart() {
   const profile = persistentStore((state) => state.profile);
 
   const cart = cartStore((state) => state.cart);
+  const cartTotal = cartStore((state) => state.cartTotal);
 
   const cookies = parseCookies();
 
@@ -48,7 +49,7 @@ export default function Cart() {
               <span className="text-[18px] font-semibold text-gray-500">
                 Total:
               </span>
-              <p className="font-semibold text-[35px]">₱2,067</p>
+              <p className="font-semibold text-[35px]">₱{cartTotal}</p>
 
               <div className="mt-4">
                 <Link

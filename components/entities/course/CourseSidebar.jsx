@@ -15,6 +15,10 @@ export default function CourseSidebar({ course }) {
       name: "Basics",
       link: `/instructor/courses/${course?.uuid}/basics`,
     },
+    {
+      name: "Pricing",
+      link: `/instructor/courses/${course?.uuid}/pricing`,
+    },
   ];
 
   const managementLinks = [

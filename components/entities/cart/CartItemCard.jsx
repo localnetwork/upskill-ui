@@ -1,12 +1,20 @@
 import Image from "next/image";
 import CARTAPI from "@/lib/api/cart/request";
+import { mutate } from "swr";
 export default function CartItemCard({ item, isLast }) {
   const handleDelete = async (id) => {
     console.log("e", id);
+    const confirmed = window.confirm(
+      "Are you sure you want to remove this item from the cart?"
+    );
+    if (!confirmed) return;
+
     try {
       const response = await CARTAPI.removeItem(id);
 
       console.log("response", response);
+      mutate(`${process.env.NEXT_PUBLIC_API_URL}/cart/count`);
+      mutate(`${process.env.NEXT_PUBLIC_API_URL}/cart`);
     } catch (error) {
       console.error("Error removing item from cart:", error);
     }

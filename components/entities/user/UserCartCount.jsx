@@ -16,19 +16,28 @@ export default function UserCartCount() {
     onSuccess: (data) => {
       cartStore.setState({ cartCount: data?.count });
     },
+    onError: (error) => {
+      cartStore.setState({ cartCount: 0, cart: null });
+    },
   })();
 
-  const { data: cartItems, mutate: mutateCartItems } = CARTAPI.getCartItems({
+  const { data: cartItems, mutate: mutateCartItems } = CARTAPI.getCartInfo({
     render: !!profile,
     onSuccess: (data) => {
-      cartStore.setState({ cart: data?.data || [] });
+      cartStore.setState({
+        cart: data?.data.cartItems || [],
+        cartTotal: data?.data.cartTotal || null,
+      });
+    },
+    onError: (error) => {
+      cartStore.setState({ cartCount: 0, cart: null, cartTotal: null });
     },
   })();
 
   const handleCartDrawer = () => {
     globalStore.setState({ cartDrawerOpen: !cartDrawerOpen });
     mutate("/cart");
-};
+  };
 
   return (
     <div

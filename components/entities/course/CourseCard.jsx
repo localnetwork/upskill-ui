@@ -1,10 +1,15 @@
 import { useRef, useState } from "react";
-import { Check, Star } from "lucide-react";
+import { Check, ShoppingCart, Star } from "lucide-react";
 import Image from "next/image";
 // import { getTooltipPlacement } from "@/lib/services/tooltipPlacement";
 import { getOppositeTooltipPlacement } from "@/lib/services/tooltipPlacement";
 import elementPosition from "@/lib/services/elementPosition";
 import { useRouter } from "next/router";
+import BaseApi from "@/lib/api/_base.api";
+import { mutate } from "swr";
+import modalState from "@/lib/store/modalState";
+import Link from "next/link";
+import toast from "react-hot-toast";
 export default function CourseCard({ course }) {
   const cardRef = useRef(null);
   const [placement, setPlacement] = useState("top");
@@ -31,36 +36,70 @@ export default function CourseCard({ course }) {
 
   const router = useRouter();
 
+  const handleCart = async (e) => {
+    e.preventDefault();
+    if (!course) return;
+    toast.dismiss();
+
+    try {
+      await BaseApi.post(`${process.env.NEXT_PUBLIC_API_URL}/cart`, {
+        course_id: course.id,
+      });
+      course.is_in_cart = true;
+      mutate(`${process.env.NEXT_PUBLIC_API_URL}/cart/count`);
+      mutate(`${process.env.NEXT_PUBLIC_API_URL}/cart`);
+      modalState.setState({
+        cartDrawerOpen: true,
+        modalInfo: {
+          type: "ADD_TO_CART",
+          title: "Added to cart",
+          message: `"${course.title}" has been added to your cart.`,
+          data: course,
+        },
+      });
+    } catch (error) {
+      console.error("Error adding to cart:", error);
+
+      if (error.status == 409) {
+        toast.error("Course is already in cart.");
+      } else {
+        toast.error("Failed to add course to cart. Please try again later.");
+      }
+    }
+  };
+
   return (
     <div
       ref={cardRef}
       id={`course-${course.uuid}`}
-      className="group relative cursor-pointer flex border-[1px] border-solid border-[oklch(86.72%_0.0192_282.72deg)] rounded-[10px] p-[15px] flex-col"
+      className="group relative flex border-[1px] border-solid border-[oklch(86.72%_0.0192_282.72deg)] rounded-[10px] p-[15px] flex-col"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      onClick={() => {
-        router.push(`/courses/${course.slug}`);
-      }}
+      // onClick={() => {
+      //   router.push(`/courses/${course.slug}`);
+      // }}
     >
-      {course?.cover_image?.path ? (
-        <Image
-          src={process.env.NEXT_PUBLIC_API_DOMAIN + course?.cover_image?.path}
-          alt={course.title}
-          width={400}
-          height={200}
-          className="rounded-[10px] object-cover h-[250px] w-full"
-        />
-      ) : (
-        <div className="rounded-[10px] overflow-hidden object-cover h-[250px] w-full flex items-center justify-center bg-[#ddd]">
+      <Link href={`/courses/${course.slug}`}>
+        {course?.cover_image?.path ? (
           <Image
-            src="/placeholder-cover.webp"
-            alt="Placeholder"
-            width={100}
-            height={100}
-            className="w-full h-full object-cover"
+            src={process.env.NEXT_PUBLIC_API_DOMAIN + course?.cover_image?.path}
+            alt={course.title}
+            width={400}
+            height={200}
+            className="rounded-[10px] object-cover h-[250px] w-full"
           />
-        </div>
-      )}
+        ) : (
+          <div className="rounded-[10px] overflow-hidden object-cover h-[250px] w-full flex items-center justify-center bg-[#ddd]">
+            <Image
+              src="/placeholder-cover.webp"
+              alt="Placeholder"
+              width={100}
+              height={100}
+              className="w-full h-full object-cover"
+            />
+          </div>
+        )}
+      </Link>
 
       <h2 className="font-semibold text-lg mt-4">{course.title}</h2>
 
@@ -89,6 +128,28 @@ export default function CourseCard({ course }) {
             {course.resources_count.curriculum_count} lectures
           </div>
         )}
+      </div>
+
+      <div className="flex justify-between items-center gap-[15px] mt-5">
+        <span className="font-semibold text-lg ">
+          ₱ {course?.price_tier?.price ? course.price_tier.price : "Null"}
+        </span>
+
+        <div className="w-full text-[14px] flex justify-end items-center max-w-[350px]">
+          {course?.is_in_cart ? (
+            <div className="border-[2px] hover:text-white text-[#0056D2] border-[#0056D2] select-none opacity-50 flex items-center justify-center gap-[5px] text-center max-w-[calc(100%-66px)] font-semibold px-[20px] py-[5px] rounded-[5px] hover:bg-[#1d6de0]">
+              <Check size={15} /> Already in Cart
+            </div>
+          ) : (
+            <button
+              onClick={(e) => handleCart(e)}
+              className="border-[2px] hover:text-white text-[#0056D2] border-[#0056D2] flex items-center justify-center gap-[5px] text-center max-w-[calc(100%-66px)] font-semibold px-[20px] py-[5px] rounded-[5px] hover:bg-[#1d6de0]"
+            >
+              <ShoppingCart size={15} />
+              Add to Cart
+            </button>
+          )}
+        </div>
       </div>
       {course?.goals?.what_you_will_learn_data && (
         <div

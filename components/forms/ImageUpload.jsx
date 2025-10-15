@@ -1,3 +1,4 @@
+"use client";
 import BaseApi from "@/lib/api/_base.api";
 import Image from "next/image";
 import { useState, useRef, useEffect } from "react";
@@ -88,7 +89,6 @@ export default function ImageUpload({
     value.title ||
     (uploadedFile?.path && "Existing File") ||
     "No File Selected";
-
   return (
     <div>
       <label className="mb-2 block font-normal" htmlFor={idRef.current}>
@@ -96,7 +96,6 @@ export default function ImageUpload({
       </label>
 
       <div className="grid grid-cols-2">
-        {/* Preview */}
         <div className="relative">
           {isUploading && (
             <div className="absolute inset-0 flex items-center justify-center bg-white/70">
@@ -107,12 +106,11 @@ export default function ImageUpload({
             src={previewPath}
             width={300}
             height={200}
-            className="w-full object-cover"
+            className="w-full object-cover aspect-[16/9] border border-[oklch(86.72%_0.0192_282.72deg)] bg-black"
             alt={`${label}-preview`}
           />
         </div>
 
-        {/* File chooser */}
         <div className="pl-[20px]">
           <p>{description}</p>
           <div className="mt-[10px]">

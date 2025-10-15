@@ -5,11 +5,15 @@ import { useEffect, useState } from "react";
 import courseStore from "@/lib/store/courseStore";
 import dynamic from "next/dynamic";
 import Image from "next/image";
-import ImageUpload from "@/components/forms/ImageUpload";
+// import ImageUpload from "@/components/forms/ImageUpload";
 import Spinner from "@/components/icons/Spinner";
 import toast from "react-hot-toast";
 import { extractErrors } from "@/lib/services/errorsExtractor";
 const TextEditor = dynamic(() => import("@/components/forms/TextEditor"), {
+  ssr: false, // 👈 disables SSR for this component
+});
+
+const ImageUpload = dynamic(() => import("@/components/forms/ImageUpload"), {
   ssr: false, // 👈 disables SSR for this component
 });
 
@@ -274,8 +278,8 @@ export default function CourseBasics({ course }) {
 
         <ImageUpload
           onChange={handleChange}
-          value={courseManagement?.cover_image || payload.cover_image}
-          title={payload.title}
+          value={courseManagement?.cover_image || payload?.cover_image || ""}
+          title={payload?.title || ""}
           name="cover_image"
           label="Course Image"
           description="Upload your course image here. It must meet our course image quality

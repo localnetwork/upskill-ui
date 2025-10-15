@@ -6,7 +6,7 @@
   },
   {
     "name": "Edit Profile",
-    "link": "/profile/edit",
+    "link": "/profile/basic-information",
     "access": ["*"]
   },
   {

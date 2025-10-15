@@ -8,6 +8,7 @@ import globalStore from "@/lib/store/globalStore";
 
 const CartDrawer = forwardRef((props, ref) => {
   const cart = cartStore((state) => state.cart);
+  const cartTotal = cartStore((state) => state.cartTotal);
 
   return (
     <div
@@ -47,7 +48,7 @@ const CartDrawer = forwardRef((props, ref) => {
             ))}
         </div>
         <div className="text-[20px] flex justify-between mt-[-15px]">
-          <span>Total:</span> <span>PHP 1,000</span>
+          <span>Total:</span> <span>PHP {cartTotal}</span>
         </div>
         <div>
           <Link
