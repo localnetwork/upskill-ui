@@ -1,7 +1,42 @@
 import Link from "next/link";
 import UserAvatar from "../../user/UserAvatar";
-import { Medal, MonitorPlay, Star, StarOff, UsersRound } from "lucide-react";
+import {
+  ChevronDown,
+  Medal,
+  MonitorPlay,
+  Star,
+  StarOff,
+  UsersRound,
+} from "lucide-react";
+import { useRouter } from "next/router";
+import { useEffect, useState } from "react";
 export default function CourseAuthor({ author }) {
+  const [expanded, setExpanded] = useState(false);
+  const [visibleBio, setVisibleBio] = useState("");
+
+  useEffect(() => {
+    if (author?.biography) {
+      // Split by <p> tags and keep first 3 paragraphs
+      const paragraphs = author.biography
+        .split(/<\/p>/i)
+        .filter((p) => p.trim().length > 0)
+        .map((p) => (p.endsWith("</p>") ? p : `${p}</p>`));
+
+      const firstThree = paragraphs.slice(0, 2).join("");
+      const full = paragraphs.join("");
+
+      setVisibleBio(firstThree);
+    }
+  }, [author]);
+
+  const handleToggle = () => {
+    setExpanded((prev) => !prev);
+  };
+
+  const biographyContent = author?.biography || "";
+  const paragraphsCount = biographyContent
+    .split(/<\/p>/i)
+    .filter(Boolean).length;
   return (
     <div>
       <div className="mb-2">
@@ -12,9 +47,9 @@ export default function CourseAuthor({ author }) {
           {author?.firstname} {author?.lastname}
         </Link>
       </div>
-      <p className="font-light text-[18px]">
-        Web Developer, Designer, and Teacher
-      </p>
+      {author?.headline && (
+        <p className="font-light text-[18px]">{author?.headline}</p>
+      )}
 
       <div className="flex mt-4">
         <div>
@@ -41,29 +76,32 @@ export default function CourseAuthor({ author }) {
         </div>
       </div>
 
-      <div className="mt-4 description-content font-light">
-        <p>
-          Hi, I'm Diome Nike! I'm one of Upskill's Top Instructors and all my
-          premium courses have earned the best-selling status for outstanding
-          performance and student satisfaction.
-        </p>
-        <p>
-          I'm a full-stack web developer and designer with a passion for
-          building beautiful web interfaces from scratch. I've been building
-          websites and apps since 2010 and also have a Master's degree in I.T.
-        </p>
-        <p>
-          I discovered my passion for teaching and helping others by sharing
-          everything I knew during college. This passion led me to Upskill in
-          2015, where I now have the privilege of training{" "}
-          <strong>2,000,000+</strong> learners in the field of web development.
-        </p>
-        <p>
-          What learners love the most about all my courses is the fact that I
-          take the time to explain every single concept in a way that everyone
-          can easily understand.
-        </p>
-      </div>
+      {biographyContent ? (
+        <>
+          <div
+            className="mt-4 description-content font-light"
+            dangerouslySetInnerHTML={{
+              __html: expanded ? biographyContent : visibleBio,
+            }}
+          />
+
+          {paragraphsCount > 3 && (
+            <button
+              type="button"
+              onClick={handleToggle}
+              className="mt-3 flex text-[18px] items-center gap-[5px] text-[#0056D2] cursor-pointer font-medium hover:bg-[#F0F6FF] px-[5px] outline-none py-[5px] rounded-md"
+            >
+              {expanded ? "Show less" : "Show more"}{" "}
+              <ChevronDown
+                className={`${expanded ? "rotate-180" : ""}`}
+                size={16}
+              />
+            </button>
+          )}
+        </>
+      ) : (
+        <p className="text-gray-500 italic">No biography available.</p>
+      )}
     </div>
   );
 }

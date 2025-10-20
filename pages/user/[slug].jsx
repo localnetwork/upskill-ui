@@ -106,8 +106,6 @@ export default function PublicProfile({ profile }) {
           ) : (
             <p className="text-gray-500 italic">No biography available.</p>
           )}
-
-          
         </div>
       </div>
     </div>

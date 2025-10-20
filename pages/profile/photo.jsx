@@ -10,7 +10,7 @@ export default function BasicInformation() {
 
   useEffect(() => {
     setPayload({
-      user_picture: profile?.user_picture.id || "",
+      user_picture: profile?.user_picture?.id || "",
     });
   }, [profile]);
 

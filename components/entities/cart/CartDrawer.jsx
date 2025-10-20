@@ -56,7 +56,7 @@ const CartDrawer = forwardRef((props, ref) => {
             onClick={() => globalStore.setState({ cartDrawerOpen: false })}
             className="flex justify-center text-center shadow-md bg-[#0056D2] text-white font-semibold px-[30px] py-[10px] rounded-[10px] items-center gap-[10px] hover:opacity-90"
           >
-            View Cart
+            Go to cart
           </Link>
         </div>
       </div>

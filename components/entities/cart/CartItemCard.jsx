@@ -12,7 +12,6 @@ export default function CartItemCard({ item, isLast }) {
     try {
       const response = await CARTAPI.removeItem(id);
 
-      console.log("response", response);
       mutate(`${process.env.NEXT_PUBLIC_API_URL}/cart/count`);
       mutate(`${process.env.NEXT_PUBLIC_API_URL}/cart`);
     } catch (error) {
@@ -56,7 +55,11 @@ export default function CartItemCard({ item, isLast }) {
             </button>
           </div>
         </div>
-        <div className="col-span-1 flex items-center justify-end"></div>
+        <div className="col-span-1 flex flex-col items-end">
+          <div className="text-[18px] font-semibold">
+            ₱{item?.course?.price_tier?.price}
+          </div>
+        </div>
       </div>
     </div>
   );

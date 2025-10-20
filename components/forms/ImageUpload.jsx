@@ -67,7 +67,9 @@ export default function ImageUpload({
     } catch (err) {
       console.error(err);
       toast.error(
-        err?.response?.data?.message || "An error occurred uploading the image."
+        err?.data?.message ||
+          err?.response?.data?.message ||
+          "An error occurred uploading the image."
       );
     } finally {
       setIsUploading(false);
