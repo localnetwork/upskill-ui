@@ -1,8 +1,9 @@
 import UserProfileBanner from "@/components/entities/user/profiles/UserProfileBanner";
+import UserProfileInstructorCourses from "@/components/entities/user/profiles/UserProfileInstructorCourses";
 import BaseApi from "@/lib/api/_base.api";
 import { ChevronDown } from "lucide-react";
 import { useRouter } from "next/router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 export const getServerSideProps = async (context) => {
   const safeSlug = context.params.slug
@@ -59,12 +60,22 @@ export default function PublicProfile({ profile }) {
     .split(/<\/p>/i)
     .filter(Boolean).length;
 
+  const isInstructor = useMemo(
+    () => profile?.roles?.some((role) => role.role_name === "Instructor"),
+    [profile]
+  );
+
+  const isLearner = useMemo(
+    () => profile?.roles?.some((role) => role.role_name === "Learner"),
+    [profile]
+  );
+
   return (
     <div>
       <UserProfileBanner profile={profile} />
 
       <div className="container">
-        <div className="px-[50px] pt-[30px] pb-[50px] pr-[370px]">
+        <div className="px-[50px] pt-[30px] pb-[50px]">
           <div className="mb-10 flex items-center gap-5">
             <div className="flex w-[200px] font-light text-[14px] flex-col justify-center">
               <span className="font-semibold text-[18px]">
@@ -106,6 +117,8 @@ export default function PublicProfile({ profile }) {
           ) : (
             <p className="text-gray-500 italic">No biography available.</p>
           )}
+
+          {isInstructor && <UserProfileInstructorCourses profile={profile} />}
         </div>
       </div>
     </div>

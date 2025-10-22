@@ -34,8 +34,6 @@ export default function CourseCard({ course }) {
     setShowTooltip(false);
   }
 
-  const router = useRouter();
-
   const handleCart = async (e) => {
     e.preventDefault();
     if (!course) return;
@@ -131,23 +129,36 @@ export default function CourseCard({ course }) {
       </div>
 
       <div className="flex justify-between items-center gap-[15px] mt-5">
-        <span className="font-semibold text-lg ">
+        <span className="font-semibold text-lg flex items-center whitespace-nowrap">
           ₱ {course?.price_tier?.price ? course.price_tier.price : "Null"}
         </span>
 
         <div className="w-full text-[14px] flex justify-end items-center max-w-[350px]">
-          {course?.is_in_cart ? (
-            <div className="border-[2px] hover:text-white text-[#0056D2] border-[#0056D2] select-none opacity-50 flex items-center justify-center gap-[5px] text-center max-w-[calc(100%-66px)] font-semibold px-[20px] py-[5px] rounded-[5px] hover:bg-[#1d6de0]">
-              <Check size={15} /> Already in Cart
+          {course?.is_enrolled ? (
+            <div>
+              <Link
+                href=""
+                className="border-[2px] hover:text-white text-[#0056D2] border-[#0056D2] flex items-center justify-center gap-[5px] text-center font-semibold px-[20px] py-[5px] rounded-[5px] hover:bg-[#1d6de0]"
+              >
+                Go to course
+              </Link>
             </div>
           ) : (
-            <button
-              onClick={(e) => handleCart(e)}
-              className="border-[2px] hover:text-white text-[#0056D2] border-[#0056D2] flex items-center justify-center gap-[5px] text-center max-w-[calc(100%-66px)] font-semibold px-[20px] py-[5px] rounded-[5px] hover:bg-[#1d6de0]"
-            >
-              <ShoppingCart size={15} />
-              Add to Cart
-            </button>
+            <>
+              {course?.is_in_cart ? (
+                <div className="border-[2px] hover:text-white text-[#0056D2] border-[#0056D2] select-none opacity-50 flex items-center justify-center gap-[5px] text-center max-w-[calc(100%-66px)] font-semibold px-[20px] py-[5px] rounded-[5px] hover:bg-[#1d6de0]">
+                  <Check size={15} /> Already in Cart
+                </div>
+              ) : (
+                <button
+                  onClick={(e) => handleCart(e)}
+                  className="border-[2px] hover:text-white text-[#0056D2] border-[#0056D2] flex items-center justify-center gap-[5px] text-center max-w-[calc(100%-66px)] font-semibold px-[20px] py-[5px] rounded-[5px] hover:bg-[#1d6de0]"
+                >
+                  <ShoppingCart size={15} />
+                  Add to Cart
+                </button>
+              )}
+            </>
           )}
         </div>
       </div>

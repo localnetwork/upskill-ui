@@ -181,3 +181,15 @@ p:not(:last-of-type) {
   border-left: 21px solid oklch(86.72% 0.0192 282.72deg);
   z-index: 0;
 }
+
+.course-show-description ul {
+  list-style-type: disc;
+  padding-left: 1.5rem;
+  list-style: inside;
+}
+.course-show-description ul li {
+  margin-bottom: 0.5rem;
+}
+.course-show-description ul li p {
+  display: inline-block;
+}

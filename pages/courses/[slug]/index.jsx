@@ -241,19 +241,31 @@ export default function Course() {
                       : "null"}
                   </div>
                   <div className="flex flex-wrap gap-[5px]">
-                    {course?.is_in_cart ? (
-                      <div className="bg-[#0056D2] select-none opacity-50 flex items-center justify-center gap-[5px] text-center max-w-[calc(100%-66px)] font-semibold text-white px-[20px] py-[10px] rounded-[5px] w-full hover:bg-[#1d6de0]">
-                        <Check size={20} /> Already in Cart
-                      </div>
-                    ) : (
-                      <button
-                        onClick={(e) => handleCart(e)}
+                    {course?.is_enrolled ? (
+                      <Link
+                        href=""
                         className="bg-[#0056D2] flex items-center justify-center gap-[5px] text-center max-w-[calc(100%-66px)] font-semibold text-white px-[20px] py-[10px] rounded-[5px] w-full hover:bg-[#1d6de0]"
                       >
-                        <ShoppingCart size={20} />
-                        Add to Cart
-                      </button>
+                        Go to course
+                      </Link>
+                    ) : (
+                      <>
+                        {course?.is_in_cart ? (
+                          <div className="bg-[#0056D2] select-none opacity-50 flex items-center justify-center gap-[5px] text-center max-w-[calc(100%-66px)] font-semibold text-white px-[20px] py-[10px] rounded-[5px] w-full hover:bg-[#1d6de0]">
+                            <Check size={20} /> Already in Cart
+                          </div>
+                        ) : (
+                          <button
+                            onClick={(e) => handleCart(e)}
+                            className="bg-[#0056D2] flex items-center justify-center gap-[5px] text-center max-w-[calc(100%-66px)] font-semibold text-white px-[20px] py-[10px] rounded-[5px] w-full hover:bg-[#1d6de0]"
+                          >
+                            <ShoppingCart size={20} />
+                            Add to Cart
+                          </button>
+                        )}
+                      </>
                     )}
+
                     <button className="px-4 py-2 cursor-pointer flex items-center justify-center font-bold border-[2px] border-[#0056D2] hover:bg-[#0056D2] hover:text-white text-[#0056D2] rounded">
                       <Heart size={20} />
                     </button>

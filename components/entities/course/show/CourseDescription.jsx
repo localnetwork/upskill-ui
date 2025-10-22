@@ -12,7 +12,7 @@ export default function CourseDescription({ description }) {
   const previewHtml = paragraphs?.slice(0, 4).join("</p>") + "</p>";
 
   return (
-    <div className="prose max-w-full text-gray-700">
+    <div className="prose max-w-full text-gray-700 course-show-description">
       <div
         dangerouslySetInnerHTML={{
           __html: expanded || !shouldTruncate ? description : previewHtml,

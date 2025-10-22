@@ -54,11 +54,18 @@ export default function Checkout() {
           payload
         );
 
-        if (response.redirect_url) {
-          router.push(response.redirect_url);
+        if (response.data.redirect_url) {
+          router.push(response.data.redirect_url);
         }
       } catch (error) {
         setIsLoading(false);
+
+        if (error.status === 400) {
+          toast.error(error.data.message || "Unable to process checkout.");
+          router.replace("/cart");
+          return;
+        }
+
         console.error("Error during checkout:", error);
       }
     }

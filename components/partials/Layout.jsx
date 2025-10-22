@@ -5,9 +5,9 @@ import modalState from "@/lib/store/modalState";
 export default function Layout({ children }) {
   const modalInfo = modalState((state) => state.modalInfo);
   return (
-    <div>
+    <div className="flex flex-col min-h-screen">
       <Header />
-      <main>{children}</main>
+      <main className="grow">{children}</main>
 
       <Toaster position="top-right" reverseOrder={false} />
       {modalInfo && <Modal />}

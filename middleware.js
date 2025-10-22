@@ -73,20 +73,18 @@ const isLoggedInBlock = async (req) => {
   const decoded = await decodeToken(token);
   const restrictedPaths = ["/login", "/register", "/forgot"];
 
-  if (decoded && restrictedPaths.includes(req.nextUrl.pathname)) {
+  if (token && restrictedPaths.includes(req.nextUrl.pathname)) {
     const url = req.nextUrl.clone();
-    // send them to a sensible landing page
-    url.pathname = "/dashboard";
+    url.pathname = "/";
     return NextResponse.redirect(url);
   }
   return null;
 };
 
-// 🔹 Anonymous
 const isAnonymous = async (req) => {
   const token = req.cookies.get(process.env.NEXT_PUBLIC_TOKEN)?.value;
   const decoded = await decodeToken(token);
-  const restrictedPaths = ["/profile"];
+  const restrictedPaths = ["/profile", "/checkout", "/cart"];
 
   if (!decoded && restrictedPaths.includes(req.nextUrl.pathname)) {
     const url = req.nextUrl.clone();
@@ -116,5 +114,14 @@ export async function middleware(req) {
 }
 
 export const config = {
-  matcher: ["/", "/login", "/register", "/forgot", "/profile"],
+  matcher: [
+    "/",
+    "/login",
+    "/register",
+    "/forgot",
+    "/profile",
+    "/checkout",
+    "/checkout/:path*",
+    "/cart",
+  ],
 };
