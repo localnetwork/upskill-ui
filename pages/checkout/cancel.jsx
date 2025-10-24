@@ -7,42 +7,38 @@ import { useEffect } from "react";
 import { setContext } from "@/lib/api/interceptor";
 export async function getServerSideProps(context) {
   const { query } = context;
-  const { order_id, token } = query; // ✅ capture both
+  const { order_id, token } = query;
   setContext(context);
 
   try {
-    const res = await BaseApi.get(
-      `${process.env.NEXT_PUBLIC_API_URL}/orders/${order_id}`,
-      { params: { token } }
+    // ✅ include token as query param so backend can capture PayPal payment
+    // const res = await BaseApi.get(
+    //   `${process.env.NEXT_PUBLIC_API_URL}/orders/${order_id}`,
+    //   { params: { token } }
+    // );
+
+    // Cancel Order
+    await BaseApi.post(
+      `${process.env.NEXT_PUBLIC_API_URL}/orders/${order_id}/cancel`,
+      { reason: "Payment was cancelled by the user." }
     );
 
-    console.log("res", res);
-
-    if (
-      res.data.order.status === "cancelled" ||
-      res.data.order.status === "pending"
-    ) {
-      return {
-        props: {
-          data: res.data,
-        },
-      };
-    } else {
-      return {
-        notFound: true,
-      };
-    }
+    return {
+      props: {
+        data: null,
+      },
+    };
   } catch (error) {
-    console.error("Error fetching order:", error);
+    console.log("has error", error);
     return {
       notFound: true,
     };
   }
 }
 
-export default function Page({ data }) {
+export default function Page({}) {
   const router = useRouter();
-  const { order, orderLines } = data;
+  // const { order, orderLines } = data;
 
   return (
     <div className="py-[50px] flex flex-col justify-center items-center bg-[#F6F6F6] min-h-[calc(100vh-100px)]">
@@ -50,11 +46,11 @@ export default function Page({ data }) {
         <CircleX className="w-20 h-20 text-red-400" />
       </div>
       <h1 className="font-semibold text-[40px]">Your payment was cancelled.</h1>
-      <p className="text-[20px] mt-2">
+      {/* <p className="text-[20px] mt-2">
         Your order ID is: #{router?.query?.order_id}
-      </p>
+      </p> */}
 
-      <div className="bg-white shadow-md mt-5 rounded-lg p-[30px] w-full max-w-[600px]">
+      {/* <div className="bg-white shadow-md mt-5 rounded-lg p-[30px] w-full max-w-[600px]">
         <h2 className="font-semibold text-[24px] mb-4">Order Summary</h2>
         <div className="flex flex-col gap-[15px]">
           {orderLines?.map((item) => (
@@ -83,7 +79,7 @@ export default function Page({ data }) {
           <span>Total:</span>
           <span>₱{order.total_amount}</span>
         </div>
-      </div>
+      </div> */}
 
       <div className="flex justify-center mt-8">
         <Link

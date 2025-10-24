@@ -10,6 +10,8 @@ export async function getServerSideProps(context) {
   const { order_id, token } = query; // ✅ capture both
   setContext(context);
 
+  console.log("order_id", order_id);
+
   try {
     // ✅ include token as query param so backend can capture PayPal payment
     const res = await BaseApi.get(
@@ -17,18 +19,15 @@ export async function getServerSideProps(context) {
       { params: { token } }
     );
 
-    if (res.data.order.status === "completed") {
-      return {
-        props: {
-          data: res.data,
-        },
-      };
-    } else {
-      return {
-        notFound: true,
-      };
-    }
+    console.log("res", res);
+
+    return {
+      props: {
+        data: res.data,
+      },
+    };
   } catch (error) {
+    console.log("has error", error);
     return {
       notFound: true,
     };
@@ -84,10 +83,10 @@ export default function Page({ data }) {
 
       <div className="flex justify-center mt-8">
         <Link
-          href="/"
+          href="/my-learnings"
           className="border-[#0056D2] border-2 px-[30px] rounded-md py-[10px] text-[#0056D2] font-semibold hover:bg-[#0056D2] hover:text-white transition"
         >
-          Back to Home
+          Go to your learning
         </Link>
       </div>
     </div>

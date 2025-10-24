@@ -70,6 +70,7 @@ const isTeacher = async (req) => {
 // 🔹 Block login/register/forgot for logged-in users
 const isLoggedInBlock = async (req) => {
   const token = req.cookies.get(process.env.NEXT_PUBLIC_TOKEN)?.value;
+  // console.log("token", token);
   const decoded = await decodeToken(token);
   const restrictedPaths = ["/login", "/register", "/forgot"];
 
@@ -86,7 +87,7 @@ const isAnonymous = async (req) => {
   const decoded = await decodeToken(token);
   const restrictedPaths = ["/profile", "/checkout", "/cart"];
 
-  if (!decoded && restrictedPaths.includes(req.nextUrl.pathname)) {
+  if (!token && restrictedPaths.includes(req.nextUrl.pathname)) {
     const url = req.nextUrl.clone();
     url.pathname = "/";
     return NextResponse.redirect(url);
