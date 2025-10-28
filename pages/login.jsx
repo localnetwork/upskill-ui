@@ -8,22 +8,38 @@ import Spinner from "@/components/icons/Spinner";
 import { extractErrors } from "@/lib/services/errorsExtractor";
 import toast from "react-hot-toast";
 import { EyeIcon, EyeOffIcon } from "lucide-react"; // 👁️ Eye icons
+import Link from "next/link";
+import Input from "@/components/forms/Input";
+import Password from "@/components/forms/Password";
 
 export default function Login() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState(null);
   const [showPassword, setShowPassword] = useState(false); // 👁️ Toggle state
+  const [payload, setPayload] = useState({});
+
+  const [isFocused, setIsFocused] = useState(false);
+
+  const onChange = (e) => {
+    setPayload({ ...payload, [e.target.name]: e.target.value });
+  };
+
+  const onFocus = (e) => {
+    setIsFocused({
+      [e.target.name]: true,
+    });
+  };
 
   const onLogin = async (e) => {
     toast.dismiss();
     e.preventDefault();
     setIsLoading(true);
 
-    const payload = {
-      username: e.target.username.value,
-      password: e.target.password.value,
-    };
+    // const payload = {
+    //   username: e.target.username.value,
+    //   password: e.target.password.value,
+    // };
 
     try {
       const response = await AUTHAPI.login(payload);
@@ -39,21 +55,28 @@ export default function Login() {
   };
 
   return (
-    <div className="bg-[#F5F5F7] min-h-[calc(100vh-92px)]">
+    <div className="min-h-[calc(100vh-92px)]">
       <div className="container py-[50px]">
-        <div className="grid grid-cols-2 bg-white min-h-[500px] rounded-lg shadow border-[#ddd] border p-[30px] max-w-[1140px] mx-auto">
+        <div className="grid grid-cols-2 max-w-[1140px] mx-auto">
           {/* LEFT IMAGE */}
-          <div className="pr-[50px] flex items-end">
-            <Image src="/login.svg" alt="Login" width={1200} height={800} />
+          <div className="pr-[50px] flex flex-col pt-[100px]">
+            <Image
+              src="/desktop-illustration.webp"
+              alt="Login"
+              width={1200}
+              height={800}
+            />
           </div>
 
           {/* RIGHT FORM */}
           <div className="py-[50px]">
-            <h2 className="text-3xl font-bold mb-6">Login Your Account</h2>
+            <h2 className="text-3xl font-bold mb-6">
+              Log in to continue your learning journey
+            </h2>
 
             <form className="flex flex-col gap-y-[20px]" onSubmit={onLogin}>
               {/* USERNAME / EMAIL */}
-              <div className="relative">
+              {/* <div className="relative">
                 <label className="absolute top-[8px] left-[10px] text-[12px] text-[#9a9999]">
                   Username or Email
                 </label>
@@ -72,10 +95,29 @@ export default function Login() {
                     {extractErrors(errors, "username")}
                   </p>
                 )}
-              </div>
+              </div> */}
+              <Input
+                id="username"
+                name="username"
+                label="Username or Email"
+                value={payload.username || ""}
+                onChange={onChange}
+                onFocus={onFocus}
+                error={extractErrors(errors, "username")}
+              />
 
               {/* PASSWORD with Eye Icon */}
-              <div className="relative">
+
+              <Password
+                id="password"
+                name="password"
+                label="Password"
+                value={payload.password || ""}
+                onChange={onChange}
+                onFocus={onFocus}
+                error={extractErrors(errors, "password")}
+              />
+              {/* <div className="relative">
                 <label className="absolute top-[8px] left-[10px] text-[12px] text-[#9a9999]">
                   Password
                 </label>
@@ -89,7 +131,6 @@ export default function Login() {
                       : ""
                   }`}
                 />
-                {/* 👁️ Toggle button */}
                 <button
                   type="button"
                   onClick={() => setShowPassword((prev) => !prev)}
@@ -106,13 +147,13 @@ export default function Login() {
                     {extractErrors(errors, "password")}
                   </p>
                 )}
-              </div>
+              </div> */}
 
               {/* SUBMIT BUTTON */}
               <div>
                 <button
                   type="submit"
-                  className={`bg-[#0056D2] text-white font-semibold px-[30px] py-[10px] rounded-[50px] inline-flex justify-center items-center gap-[10px] text-[18px] text-center min-w-[150px] ${
+                  className={`shadow-md bg-[#0056D2] w-full text-white font-semibold px-[30px] py-[10px] rounded-[8px] inline-flex justify-center items-center gap-[10px] text-[18px] text-center min-w-[150px] hover:opacity-90 cursor-pointer ${
                     isLoading ? "opacity-70" : "hover:opacity-90 cursor-pointer"
                   }`}
                   disabled={isLoading}
@@ -124,6 +165,26 @@ export default function Login() {
                 </button>
               </div>
             </form>
+
+            <div className="divider border-b border-[2px] border-[#f5f5f5] my-[40px]" />
+
+            <div className="bg-[#F6F7F9] font-light text-[18px] px-[30px] py-[20px] mt-[20px] text-center border-b border-[#ddd]">
+              Don't have an account?{" "}
+              <Link
+                href="/register"
+                className="text-[#0056D2] underline font-bold"
+              >
+                Sign up
+              </Link>
+            </div>
+            <div className="bg-[#F6F7F9] px-[30px] py-[20px] text-center">
+              <Link
+                href="/forgot-password"
+                className="text-[#0056D2] underline font-bold"
+              >
+                Forgot your password?
+              </Link>
+            </div>
           </div>
         </div>
       </div>

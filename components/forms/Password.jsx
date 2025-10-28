@@ -33,7 +33,7 @@ export default function Password({
         value={value || ""}
         onFocus={onFocus}
         onBlur={onBlur} // ✅ reset focus when clicking outside
-        className={`border border-gray-300 rounded-lg py-3 px-[10px] w-full focus:outline-[#3588FC] bg-[#F5F5F7] ${
+        className={`border-[#4b4c54] border-[1px] rounded-lg min-h-[60px] py-3 px-[20px] w-full focus:outline-[#3588FC] ${
           error ? "border-red-500 shadow-md shadow-red-200" : ""
         }`}
       />
@@ -46,10 +46,10 @@ export default function Password({
       </button>
       <label
         htmlFor={name} // ✅ match the input id dynamically
-        className={`absolute left-[10px] transition-all text-[#9a9999] ${
+        className={`absolute left-[20px] font-medium transition-all text-[#2a2b3f] ${
           isFocused?.[name] || value || error
             ? "top-[5px] text-[8px]"
-            : "top-[12px] cursor-pointer text-[16px]"
+            : "top-[18px] cursor-pointer text-[16px]"
         }`}
       >
         {label}

@@ -77,9 +77,15 @@ export default function CourseSidebar({ course }) {
         </div>
 
         <div>
-          <button className="bg-[#0056D2] font-semibold text-white px-[20px] py-[10px] rounded-[5px] w-full hover:bg-[#1d6de0]">
-            Publish Course
-          </button>
+          {course.published ? (
+            <button className="bg-[#0056D2] font-semibold text-white px-[20px] py-[10px] rounded-[5px] w-full hover:bg-[#1d6de0]">
+              Unpublish Course
+            </button>
+          ) : (
+            <button className="bg-[#0056D2] font-semibold text-white px-[20px] py-[10px] rounded-[5px] w-full hover:bg-[#1d6de0]">
+              Request for Review
+            </button>
+          )}
         </div>
       </div>
     </div>

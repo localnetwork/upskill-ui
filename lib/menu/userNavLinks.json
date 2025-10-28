@@ -1,7 +1,7 @@
 [
   {
     "name": "My Learning",
-    "link": "/my-learning",
+    "link": "/my-courses/learning",
     "access": "view-own-learnings"
   },
   {

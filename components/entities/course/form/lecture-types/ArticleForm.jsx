@@ -53,17 +53,32 @@ export default function ArticleForm({ onSave, onCancel, lecture }) {
           height: 300,
           menubar: false,
           plugins: [
-            "advlist autolink lists link image charmap preview anchor",
-            "searchreplace visualblocks code fullscreen",
-            "insertdatetime media table code help wordcount",
+            "advlist",
+            "autolink",
+            "lists",
+            "link",
+            "image",
+            "charmap",
+            "preview",
+            "anchor",
+            "searchreplace",
+            "visualblocks",
+            "code",
+            "fullscreen",
+            "insertdatetime",
+            "media",
+            "table",
+            "help",
+            "wordcount",
           ],
           toolbar:
             "undo redo | formatselect | " +
-            "bold italic underline | alignleft aligncenter " +
-            "alignright alignjustify | bullist numlist outdent indent | " +
-            "removeformat | help",
+            "bold italic underline | alignleft aligncenter alignright alignjustify | " +
+            "bullist numlist outdent indent | link unlink | removeformat | help",
           content_style:
             "body { font-family:Helvetica,Arial,sans-serif; font-size:14px }",
+          link_default_target: "_blank",
+          link_title: true,
         }}
       />
 

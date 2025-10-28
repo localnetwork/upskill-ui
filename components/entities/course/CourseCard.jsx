@@ -137,7 +137,7 @@ export default function CourseCard({ course }) {
           {course?.is_enrolled ? (
             <div>
               <Link
-                href=""
+                href={`/courses/${course.slug}/learn`}
                 className="border-[2px] hover:text-white text-[#0056D2] border-[#0056D2] flex items-center justify-center gap-[5px] text-center font-semibold px-[20px] py-[5px] rounded-[5px] hover:bg-[#1d6de0]"
               >
                 Go to course

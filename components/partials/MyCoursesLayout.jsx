@@ -5,6 +5,7 @@ export default function MyCoursesLayout({ children, title }) {
   const menuLinks = [
     { name: "All Courses", href: "/my-courses/learning" },
     { name: "Wishlist", href: "/my-courses/wishlist" },
+    { name: "Certificates", href: "/my-courses/certificates" },
   ];
   return (
     <div>

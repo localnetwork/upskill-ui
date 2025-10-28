@@ -243,7 +243,7 @@ export default function Course() {
                   <div className="flex flex-wrap gap-[5px]">
                     {course?.is_enrolled ? (
                       <Link
-                        href=""
+                        href={`/courses/${course.slug}/learn`}
                         className="bg-[#0056D2] flex items-center justify-center gap-[5px] text-center max-w-[calc(100%-66px)] font-semibold text-white px-[20px] py-[10px] rounded-[5px] w-full hover:bg-[#1d6de0]"
                       >
                         Go to course

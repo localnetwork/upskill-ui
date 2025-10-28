@@ -193,3 +193,8 @@ p:not(:last-of-type) {
 .course-show-description ul li p {
   display: inline-block;
 }
+
+.article-preview-description a {
+  color: #0056d2;
+  text-decoration: underline;
+}

@@ -53,7 +53,7 @@ export default function Header() {
               </Link>
             </div>
 
-            <div className="flex items-center space-x-6 w-full justify-end">
+            <div className="flex font-light items-center space-x-6 w-full justify-end">
               <form className="min-w-[50%]">
                 <input
                   name="search"
@@ -62,6 +62,16 @@ export default function Header() {
                   className="border border-gray-300 rounded-[50px] py-2 px-4 w-full"
                 />
               </form>
+              {!profile && (
+                <div>
+                  <Link
+                    href="/register?mode=instructor"
+                    className="hover:bg-[#F0F6FF] py-[10px] rounded-[5px] px-[10px] hover:text-[#0056D2]"
+                  >
+                    Teach on Upskill
+                  </Link>
+                </div>
+              )}
 
               <div className="flex items-center space-x-4 relative">
                 <span className="max-w-[30px] inline-flex h-auto relative">
@@ -86,15 +96,15 @@ export default function Header() {
                       <li>
                         <Link
                           href="/login"
-                          className="hover:underline text-[#0056D2]"
+                          className="border border-[#0056D2] text-[#0056D2] font-semibold px-[30px] py-[10px] rounded-[10px] inline-flex items-center justify-center leading-[100%] text-[18px] text-center"
                         >
                           Login
                         </Link>
                       </li>
                       <li>
                         <Link
-                          href="/register"
-                          className="hover:underline bg-[#0056D2] text-white font-semibold px-[30px] py-[10px] rounded-[50px] inline-block text-[18px] text-center"
+                          href="/register?mode=student"
+                          className="hover:underline bg-[#0056D2] text-white font-semibold px-[30px] py-[10px] rounded-[10px] inline-flex items-center justify-center leading-[100%] text-[18px] text-center"
                         >
                           Register
                         </Link>

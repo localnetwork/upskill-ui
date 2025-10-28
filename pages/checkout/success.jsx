@@ -83,7 +83,7 @@ export default function Page({ data }) {
 
       <div className="flex justify-center mt-8">
         <Link
-          href="/my-learnings"
+          href="/my-courses/learning"
           className="border-[#0056D2] border-2 px-[30px] rounded-md py-[10px] text-[#0056D2] font-semibold hover:bg-[#0056D2] hover:text-white transition"
         >
           Go to your learning
