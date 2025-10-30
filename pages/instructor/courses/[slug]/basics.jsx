@@ -196,7 +196,7 @@ export default function CourseBasics({ course }) {
               onChange={handleChange}
               placeholder="Insert your course subtitle"
               type="text"
-              maxLength={60}
+              maxLength={120}
               className={`${
                 errors?.subtitle
                   ? "border-red-500"

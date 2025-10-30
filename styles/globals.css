@@ -198,3 +198,7 @@ p:not(:last-of-type) {
   color: #0056d2;
   text-decoration: underline;
 }
+
+.react-tooltip {
+  @apply z-[2000];
+}

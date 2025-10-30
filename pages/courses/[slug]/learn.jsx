@@ -6,6 +6,7 @@ import { useRouter } from "next/router";
 import CourseAssetPreview from "@/components/entities/course/learn/CourseAssetPreview";
 import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
+import CourseOverview from "@/components/entities/course/learn/CourseOverview";
 export async function getServerSideProps(context) {
   const { params, req, res } = context;
   const { slug } = params;
@@ -17,8 +18,6 @@ export async function getServerSideProps(context) {
     const response = await BaseApi.get(
       `${process.env.NEXT_PUBLIC_API_URL}/courses/${slug}/learn`
     );
-
-    console.log("response", response);
 
     return {
       props: {
@@ -32,6 +31,10 @@ export async function getServerSideProps(context) {
 }
 
 export default function Page({ data }) {
+  const router = useRouter();
+  const [currentLecture, setCurrentLecture] = useState(null);
+  const [panelStatus, setPanelStatus] = useState("open");
+
   const findLectureByUuid = (uuid) => {
     for (const section of data.course.sections) {
       for (const curriculum of section.curriculums) {
@@ -42,9 +45,6 @@ export default function Page({ data }) {
     }
     return null;
   };
-
-  const router = useRouter();
-  const [currentLecture, setCurrentLecture] = useState(null);
 
   useEffect(() => {
     if (!router.isReady) return;
@@ -82,12 +82,23 @@ export default function Page({ data }) {
         </div>
       </div>
       <div className="flex flex-wrap">
-        <div className="w-full max-w-[calc(100%-400px)] min-h-[500vh]">
-          <CourseAssetPreview lecture={currentLecture} />
+        <div
+          className={`w-full  min-h-[500vh] ${panelStatus === "expanded" ? "max-w-[calc(100%-900px)]" : ""} ${panelStatus === "open" ? "max-w-[calc(100%-400px)]" : ""} ${panelStatus === "closed" ? "max-w-full" : ""}`}
+        >
+          <CourseAssetPreview
+            lecture={currentLecture}
+            course={data.course}
+            setCurrentLecture={setCurrentLecture}
+          />
+          <CourseOverview course={data.course} />
         </div>
 
-        <div className="w-full max-w-[400px] sticky top-[95px] right-0 h-full">
+        <div
+          className={`w-full ${panelStatus === "expanded" && "max-w-[900px]"} ${panelStatus === "open" && "max-w-[400px]"} ${panelStatus === "closed" && "!hidden"}  sticky top-[95px] right-0 h-full`}
+        >
           <CourseLearnSidebar
+            panelStatus={panelStatus}
+            setPanelStatus={setPanelStatus}
             setCurrentLecture={setCurrentLecture}
             sections={data?.course?.sections || []}
           />

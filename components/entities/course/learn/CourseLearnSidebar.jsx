@@ -1,7 +1,20 @@
-import { ChevronDown, MonitorPlay, Newspaper } from "lucide-react";
+import {
+  ChevronDown,
+  MonitorPlay,
+  Newspaper,
+  PanelLeftOpen,
+  PanelRightClose,
+  PanelRightOpen,
+  X,
+} from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/router";
-export default function CourseLearnSidebar({ sections, setCurrentLecture }) {
+export default function CourseLearnSidebar({
+  sections,
+  setCurrentLecture,
+  setPanelStatus,
+  panelStatus,
+}) {
   const [openSection, setOpenSection] = useState(null);
   const router = useRouter();
 
@@ -12,9 +25,33 @@ export default function CourseLearnSidebar({ sections, setCurrentLecture }) {
   return (
     <div className="sidebar h-screen flex flex-col relative border-l border-[#d1d2e0] bg-white">
       <div className="nav-tabs flex sticky w-full top-0 left-0 border-b border-[#d1d2e0] px-[15px] shadow-[inset_0_-1px_0_0_#d1d2e0] bg-white z-10">
-        <div className="nav-item py-[20px] font-bold text-[20px] relative">
+        <div className="nav-item py-[15px] font-bold text-[20px] relative">
           Course content
           <span className="bg-[#2a2b3f] absolute bottom-0 left-0 h-[2px] inline-block w-full" />
+        </div>
+
+        <div className="absolute flex gap-[15px] right-[15px] top-[15px]">
+          {panelStatus !== "expanded" ? (
+            <div
+              onClick={() => setPanelStatus("expanded")}
+              className="inline-block"
+            >
+              <PanelRightOpen className="cursor-pointer" size={20} />
+            </div>
+          ) : (
+            <div
+              onClick={() => setPanelStatus("open")}
+              className="inline-block"
+            >
+              <PanelLeftOpen className="cursor-pointer" size={20} />
+            </div>
+          )}
+
+          <X
+            className="cursor-pointer"
+            size={20}
+            onClick={() => setPanelStatus("closed")}
+          />
         </div>
       </div>
 

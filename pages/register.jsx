@@ -67,7 +67,10 @@ export default function Register() {
   useEffect(() => {
     if (!router.isReady) return;
 
-    if (!router.query.mode) {
+    if (
+      !router.query.mode ||
+      (router.query.mode !== "instructor" && router.query.mode !== "student")
+    ) {
       router.replace("/register?mode=student");
     }
   }, [router.isReady, router.query.mode]);
