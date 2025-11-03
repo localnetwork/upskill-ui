@@ -17,7 +17,7 @@ export default function AddToCart() {
             width={300}
             height={200}
             alt={modalInfo?.data?.title}
-            className="w-full h-full block object-cover"
+            className="w-full block object-cover h-[80px]"
           />
         </div>
       </div>

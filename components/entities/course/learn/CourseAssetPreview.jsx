@@ -48,7 +48,7 @@ export default function CourseAssetPreview({
   let component = null;
   switch (lecture?.curriculum_resource_type) {
     case "video":
-      component = <VideoPreview lecture={lecture} />;
+      component = <VideoPreview lecture={lecture} course={course} />;
       break;
     case "article":
       component = <ArticlePreview lecture={lecture} />;

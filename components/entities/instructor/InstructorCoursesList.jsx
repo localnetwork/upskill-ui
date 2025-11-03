@@ -28,7 +28,7 @@ export default function InstructorCoursesList({ courses, isLoading }) {
                     : "/placeholder-cover.webp"
                 }
                 alt={course.title}
-                className="w-full h-full object-cover"
+                className="w-full object-cover h-[100px]"
               />
             </div>
 

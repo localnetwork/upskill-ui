@@ -7,6 +7,7 @@ import CourseAssetPreview from "@/components/entities/course/learn/CourseAssetPr
 import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import CourseOverview from "@/components/entities/course/learn/CourseOverview";
+import axios from "axios";
 export async function getServerSideProps(context) {
   const { params, req, res } = context;
   const { slug } = params;
