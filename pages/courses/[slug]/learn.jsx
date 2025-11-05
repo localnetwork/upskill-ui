@@ -35,6 +35,7 @@ export default function Page({ data }) {
   const router = useRouter();
   const [currentLecture, setCurrentLecture] = useState(null);
   const [panelStatus, setPanelStatus] = useState("open");
+  const [course, setCourse] = useState(data.course);
 
   const findLectureByUuid = (uuid) => {
     for (const section of data.course.sections) {
@@ -88,10 +89,11 @@ export default function Page({ data }) {
         >
           <CourseAssetPreview
             lecture={currentLecture}
-            course={data.course}
+            course={course}
             setCurrentLecture={setCurrentLecture}
+            setCourse={setCourse}
           />
-          <CourseOverview course={data.course} />
+          <CourseOverview course={course} />
         </div>
 
         <div
@@ -101,7 +103,7 @@ export default function Page({ data }) {
             panelStatus={panelStatus}
             setPanelStatus={setPanelStatus}
             setCurrentLecture={setCurrentLecture}
-            sections={data?.course?.sections || []}
+            sections={course?.sections || []}
           />
         </div>
       </div>

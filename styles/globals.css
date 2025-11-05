@@ -202,3 +202,102 @@ p:not(:last-of-type) {
 .react-tooltip {
   @apply z-[2000];
 }
+
+/* Custom Plyr theme with #0056D2 accent color */
+
+:root {
+  --plyr-color-main: #0056d2;
+}
+
+/* Progress bar and volume slider */
+.plyr--full-ui input[type="range"] {
+  color: #0056d2;
+}
+
+/* Progress bar background when buffering */
+.plyr__progress__buffer {
+  background: rgba(0, 86, 210, 0.25);
+}
+
+/* Hover states for controls */
+.plyr--video .plyr__control:hover,
+.plyr--video .plyr__control[aria-expanded="true"] {
+  background: #0056d2;
+}
+
+/* Active/playing state */
+.plyr__control--overlaid {
+  background: rgba(0, 86, 210, 0.9);
+}
+
+.plyr__control--overlaid:hover,
+.plyr__control--overlaid:focus {
+  background: #0056d2;
+}
+
+/* Time tooltip */
+.plyr__tooltip {
+  background: #0056d2;
+}
+
+/* Menu items when selected */
+.plyr__menu__container
+  .plyr__control[role="menuitemradio"][aria-checked="true"]::before {
+  background: #0056d2;
+}
+
+/* Loading spinner */
+.plyr--loading .plyr__progress__buffer {
+  background-image: linear-gradient(
+    -45deg,
+    rgba(0, 86, 210, 0.6) 25%,
+    transparent 25%,
+    transparent 50%,
+    rgba(0, 86, 210, 0.6) 50%,
+    rgba(0, 86, 210, 0.6) 75%,
+    transparent 75%,
+    transparent
+  );
+}
+
+/* Volume slider and progress bar fill */
+.plyr--video input[type="range"]::-webkit-slider-thumb {
+  background: #0056d2;
+  box-shadow:
+    0 1px 1px rgba(0, 86, 210, 0.15),
+    0 0 0 1px rgba(0, 86, 210, 0.2);
+}
+
+.plyr--video input[type="range"]::-moz-range-thumb {
+  background: #0056d2;
+  box-shadow:
+    0 1px 1px rgba(0, 86, 210, 0.15),
+    0 0 0 1px rgba(0, 86, 210, 0.2);
+}
+
+.plyr--video input[type="range"]::-ms-thumb {
+  background: #0056d2;
+  box-shadow:
+    0 1px 1px rgba(0, 86, 210, 0.15),
+    0 0 0 1px rgba(0, 86, 210, 0.2);
+}
+
+/* Captions background */
+.plyr__captions {
+  color: #ffffff;
+}
+
+/* Focus outline */
+.plyr__control:focus-visible {
+  outline-color: #0056d2;
+}
+
+/* Settings menu active items */
+.plyr__menu__container .plyr__control--forward {
+  color: #0056d2;
+}
+
+/* Large play button in center */
+.plyr__control--overlaid svg {
+  filter: drop-shadow(0 2px 8px rgba(0, 86, 210, 0.3));
+}

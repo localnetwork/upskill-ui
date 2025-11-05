@@ -11,6 +11,7 @@ export default function CourseAssetPreview({
   lecture,
   course,
   setCurrentLecture,
+  setCourse,
 }) {
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
@@ -43,22 +44,34 @@ export default function CourseAssetPreview({
 
     return null;
   };
-
+  const prevLecture = findPreviousLecture();
+  const nextLecture = findNextLecture();
   // Determine which component to render
   let component = null;
   switch (lecture?.curriculum_resource_type) {
     case "video":
-      component = <VideoPreview lecture={lecture} course={course} />;
+      component = (
+        <VideoPreview
+          lecture={lecture}
+          course={course}
+          prevLecture={prevLecture}
+          nextLecture={nextLecture}
+          setCourse={setCourse}
+        />
+      );
       break;
     case "article":
-      component = <ArticlePreview lecture={lecture} />;
+      component = (
+        <ArticlePreview
+          course={course}
+          lecture={lecture}
+          setCourse={setCourse}
+        />
+      );
       break;
     default:
       component = null;
   }
-
-  const prevLecture = findPreviousLecture();
-  const nextLecture = findNextLecture();
 
   useEffect(() => {
     // Set loading true until router is ready

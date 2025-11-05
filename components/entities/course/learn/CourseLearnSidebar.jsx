@@ -1,14 +1,15 @@
 import {
+  Check,
   ChevronDown,
   MonitorPlay,
   Newspaper,
   PanelLeftOpen,
-  PanelRightClose,
   PanelRightOpen,
   X,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
+
 export default function CourseLearnSidebar({
   sections,
   setCurrentLecture,
@@ -17,13 +18,32 @@ export default function CourseLearnSidebar({
 }) {
   const [openSection, setOpenSection] = useState(null);
   const router = useRouter();
+  const { lecture: activeLectureUuid } = router.query;
+
+  // 🧠 Auto-open section containing active lecture (only once per change)
+  useEffect(() => {
+    if (!activeLectureUuid || !sections?.length) return;
+
+    const sectionWithLecture = sections.find((section) =>
+      section.curriculums.some((c) => c.uuid === activeLectureUuid)
+    );
+
+    if (sectionWithLecture) {
+      const foundLecture = sectionWithLecture.curriculums.find(
+        (c) => c.uuid === activeLectureUuid
+      );
+      setOpenSection(sectionWithLecture.id);
+      setCurrentLecture(foundLecture);
+    }
+  }, [activeLectureUuid]); // 🔹 only depends on active lecture change
 
   const toggleSection = (id) => {
-    setOpenSection(openSection === id ? null : id);
+    setOpenSection((prev) => (prev === id ? null : id));
   };
 
   return (
     <div className="sidebar h-screen flex flex-col relative border-l border-[#d1d2e0] bg-white">
+      {/* Header */}
       <div className="nav-tabs flex sticky w-full top-0 left-0 border-b border-[#d1d2e0] px-[15px] shadow-[inset_0_-1px_0_0_#d1d2e0] bg-white z-10">
         <div className="nav-item py-[15px] font-bold text-[20px] relative">
           Course content
@@ -34,19 +54,18 @@ export default function CourseLearnSidebar({
           {panelStatus !== "expanded" ? (
             <div
               onClick={() => setPanelStatus("expanded")}
-              className="inline-block"
+              className="inline-block cursor-pointer"
             >
-              <PanelRightOpen className="cursor-pointer" size={20} />
+              <PanelRightOpen size={20} />
             </div>
           ) : (
             <div
               onClick={() => setPanelStatus("open")}
-              className="inline-block"
+              className="inline-block cursor-pointer"
             >
-              <PanelLeftOpen className="cursor-pointer" size={20} />
+              <PanelLeftOpen size={20} />
             </div>
           )}
-
           <X
             className="cursor-pointer"
             size={20}
@@ -55,6 +74,7 @@ export default function CourseLearnSidebar({
         </div>
       </div>
 
+      {/* Content */}
       <div className="overflow-y-auto">
         {sections.map((section) => {
           const isOpen = openSection === section.id;
@@ -96,7 +116,9 @@ export default function CourseLearnSidebar({
                 }`}
               >
                 <div className="items flex flex-col">
-                  {section?.curriculums.map((curriculum) => {
+                  {section.curriculums.map((curriculum) => {
+                    const isActive = curriculum.uuid === activeLectureUuid;
+
                     let icon;
                     switch (curriculum.curriculum_resource_type) {
                       case "video":
@@ -125,8 +147,26 @@ export default function CourseLearnSidebar({
                             },
                           });
                         }}
-                        className="flex cursor-pointer items-center py-[15px] hover:bg-[#ced9e9] font-light px-[30px] text-[15px] text-[#2a2b3f] hover:text-[#1d1e2e] transition"
+                        className={`flex relative pl-[50px] group cursor-pointer items-center py-[15px] font-light px-[30px] text-[15px] transition
+                          ${
+                            isActive
+                              ? "bg-[#0056D2]/10 text-[#0056D2] font-medium"
+                              : "hover:bg-[#ced9e9] text-[#2a2b3f] hover:text-[#1d1e2e]"
+                          }`}
                       >
+                        <div
+                          className={`${
+                            curriculum.is_taken
+                              ? "bg-[#0056D2] border-[#0056D2]"
+                              : "border-[#000]"
+                          } absolute left-[15px] top-[15px] p-[2px] border-[2px] w-[18px] h-[18px] flex items-center justify-center rounded-[5px]`}
+                        >
+                          <Check
+                            className={`group-hover:block hidden text-white ${
+                              curriculum.is_taken ? "!block" : ""
+                            }`}
+                          />
+                        </div>
                         <span className="mr-1">{icon}</span>
                         {curriculum.title}
                       </div>
