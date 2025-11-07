@@ -76,7 +76,7 @@ export default function VideoPreview({
       if (videoElement) {
         videoElement.muted = false;
       }
-    }, 1000);
+    }, 100);
 
     return () => clearTimeout(timer);
   }, [mediaSrc]);
@@ -195,7 +195,6 @@ export default function VideoPreview({
             title={lecture?.title || "Video Preview"}
             src={mediaSrc}
             playsinline
-            controls
             crossOrigin=""
             className="h-full w-full"
             onContextMenu={(e) => e.preventDefault()}
@@ -203,17 +202,47 @@ export default function VideoPreview({
             muted
             onEnded={handleEnded} // ✅ Trigger countdown on video end
           >
-            <MediaProvider
-              controlsList="nodownload noremoteplayback"
-              controls={false}
-            />
+            <MediaProvider controlsList="nodownload noremoteplayback" />
             <PlyrLayout icons={plyrLayoutIcons} />
           </MediaPlayer>
 
           {/* ✅ Countdown Overlay */}
+          {/* ✅ Countdown Overlay with Animation */}
           {countdown !== null && (
             <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 text-white z-[2000] backdrop-blur-sm">
-              <p className="text-lg mb-2">
+              {/* Circular Progress Ring */}
+              <div className="relative mb-6">
+                <svg className="w-32 h-32 transform -rotate-90">
+                  {/* Background circle */}
+                  <circle
+                    cx="64"
+                    cy="64"
+                    r="56"
+                    stroke="rgba(255, 255, 255, 0.1)"
+                    strokeWidth="8"
+                    fill="none"
+                  />
+                  {/* Animated progress circle */}
+                  <circle
+                    cx="64"
+                    cy="64"
+                    r="56"
+                    stroke="#3b82f6"
+                    strokeWidth="8"
+                    fill="none"
+                    strokeLinecap="round"
+                    strokeDasharray={`${2 * Math.PI * 56}`}
+                    strokeDashoffset={`${2 * Math.PI * 56 * (1 - countdown / 5)}`}
+                    style={{ transition: "stroke-dashoffset 1s linear" }}
+                  />
+                </svg>
+                {/* Countdown number in center */}
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-5xl font-bold">{countdown}</span>
+                </div>
+              </div>
+
+              <p className="text-lg mb-4">
                 Next lecture starting in{" "}
                 <span className="font-semibold">{countdown}</span> seconds...
               </p>

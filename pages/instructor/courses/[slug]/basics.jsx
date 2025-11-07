@@ -18,6 +18,7 @@ const ImageUpload = dynamic(() => import("@/components/forms/ImageUpload"), {
 });
 
 import { setContext } from "@/lib/api/interceptor";
+import PromoVideoUpload from "@/components/forms/PromoVideoUpload";
 export async function getServerSideProps(context) {
   const { slug } = context.params;
 
@@ -49,6 +50,7 @@ export default function CourseBasics({ course }) {
     description: courseManagement?.description || course?.description || "",
     subtitle: courseManagement?.subtitle || course?.subtitle || "",
     cover_image: courseManagement?.cover_image || course?.cover_image || "",
+    promo_video: courseManagement?.promo_video || course?.promo_video || "",
     instructional_level:
       courseManagement?.instructional_level ||
       course?.instructional_level ||
@@ -285,6 +287,16 @@ export default function CourseBasics({ course }) {
           description="Upload your course image here. It must meet our course image quality
             standards to be accepted. Important guidelines: 750x422 pixels;
             .jpg, .jpeg,. gif, or .png. no text on the image."
+        />
+
+        <PromoVideoUpload
+          onChange={handleChange}
+          value={courseManagement?.promo_video || payload?.promo_video || ""}
+          title={payload?.title || ""}
+          courseManagement={courseManagement}
+          name="promo_video"
+          label="Promotional Video"
+          description="Your promo video is a quick and compelling way for students to preview what they’ll learn in your course. Students considering your course are more likely to enroll if your promo video is well-made."
         />
 
         <div className="mt-[20px]">

@@ -1,7 +1,13 @@
+import CourseAPI from "@/lib/api/course/request";
 import Link from "next/link";
 import { useRouter } from "next/router";
+import toast from "react-hot-toast";
+import courseStore from "@/lib/store/courseStore";
 export default function CourseSidebar({ course }) {
   const router = useRouter();
+
+  const courseManagement = courseStore((state) => state.courseManagement);
+
   const editingLinks = [
     {
       name: "Intended Learners",
@@ -27,6 +33,27 @@ export default function CourseSidebar({ course }) {
       link: `/instructor/courses/${course?.uuid}/students`,
     },
   ];
+
+  const handleUnpublish = async () => {
+    const confirm = window.confirm(
+      "Drafting this course will remove it from public view but learners who enrolled will still have access to it. Are you sure you want to proceed?"
+    );
+    if (!confirm) return;
+
+    try {
+      const response = await CourseAPI.unpublish(course.uuid);
+      toast.success("Course drafted successfully");
+      courseStore.setState({
+        courseManagement: {
+          ...course,
+          published: 0,
+        },
+      });
+    } catch (error) {
+      console.error("Error unpublishing course:", error);
+      toast.error(error?.data?.message || "Error unpublishing course");
+    }
+  };
 
   return (
     <div className="px-[30px] pl-[50px] py-[50px] w-[300px] min-h-[calc(100vh-60px)]">
@@ -77,9 +104,15 @@ export default function CourseSidebar({ course }) {
         </div>
 
         <div>
-          {course.published ? (
-            <button className="bg-[#0056D2] font-semibold text-white px-[20px] py-[10px] rounded-[5px] w-full hover:bg-[#1d6de0]">
-              Unpublish Course
+          {console.log("hhhhh", courseManagement)}
+          {parseInt(courseManagement?.published) ? (
+            <button
+              onClick={(e) => {
+                handleUnpublish();
+              }}
+              className="bg-[#0056D2] font-semibold text-white px-[20px] py-[10px] rounded-[5px] w-full hover:bg-[#1d6de0]"
+            >
+              Draft this Course
             </button>
           ) : (
             <button className="bg-[#0056D2] font-semibold text-white px-[20px] py-[10px] rounded-[5px] w-full hover:bg-[#1d6de0]">

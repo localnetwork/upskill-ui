@@ -10,7 +10,7 @@ p:not(:last-of-type) {
 }
 
 .container {
-  @apply mx-auto !px-[15px];
+  @apply mx-auto !px-[30px];
 }
 
 /* source-sans-3-300 - latin */

@@ -137,7 +137,7 @@ export default function CurriculumItem({ item, onSave, onUpdate, onDelete }) {
 
   return (
     <div
-      className={`${currentItem?.curriculum_resource_type ? "[border:1px_solid_oklch(67.22%_0.0355_279.77deg)]" : "border-2 border-dashed border-red-500"} px-[20px] py-[15px] mb-2 bg-gray-50 w-full`}
+      className={`${currentItem?.curriculum_resource_type === "null" ? "hahaha !border-2 border-dashed border-red-500" : "hello [border:1px_solid_oklch(67.22%_0.0355_279.77deg)]"} px-[20px] py-[15px] mb-2 bg-gray-50 w-full`}
     >
       {/* Header */}
       <div className="flex justify-between items-center w-full">

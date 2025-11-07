@@ -6,12 +6,12 @@ export default function HomeBanner() {
   const profile = persistentStore((state) => state.profile);
 
   const isInstructor = useMemo(
-    () => profile?.roles?.some((role) => role.name === "Instructor"),
+    () => profile?.roles?.some((role) => role.role_name === "Instructor"),
     [profile]
   );
 
   const isLearner = useMemo(
-    () => profile?.roles?.some((role) => role.name === "Learner"),
+    () => profile?.roles?.some((role) => role.role_name === "Learner"),
     [profile]
   );
 

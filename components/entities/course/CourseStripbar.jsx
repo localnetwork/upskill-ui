@@ -34,7 +34,11 @@ export default function CourseStripBar({ course }) {
           </span>
 
           <span className="bg-[#F0F6FF] text-[#16161D] px-[10px] py-[5px] rounded-md text-[14px]">
-            {courseManagement?.published ? <>Published</> : <>Unpublished</>}
+            {parseInt(courseManagement?.published) ? (
+              <>Published</>
+            ) : (
+              <>Unpublished</>
+            )}
           </span>
         </div>
         <div className="pr-[30px]">
