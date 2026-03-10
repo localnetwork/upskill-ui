@@ -3,7 +3,7 @@ import InstructorSidebar from "../entities/instructor/InstructorSidebar";
 export default function InstructorLayout({ children }) {
   return (
     <div>
-      <div className="container !px-0">
+      <div className="!px-0">
         <div className="flex flex-wrap min-h-screen">
           <div className="cols-span-1 w-[325px]">
             <InstructorSidebar />

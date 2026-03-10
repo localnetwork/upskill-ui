@@ -1,3 +1,4 @@
+import CallToActions from "@/components/blocks/CallToActions";
 import FeaturedCourses from "@/components/blocks/FeaturedCourses";
 import HomeBanner from "@/components/blocks/HomeBanner";
 import Meta from "@/components/partials/Meta";
@@ -12,6 +13,9 @@ export default function Home() {
       />
 
       <HomeBanner />
+
+      <CallToActions />
+
       <FeaturedCourses />
     </>
   );

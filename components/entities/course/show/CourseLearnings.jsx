@@ -9,26 +9,19 @@ export default function CourseLearnings({ course }) {
   const col2 = learnings.slice(middle);
 
   return (
-    <div className="grid grid-cols-2 gap-6 text-[14px]">
-      {/* first column */}
-      <div className="flex flex-col gap-3">
-        {col1.map((goal, index) => (
-          <div key={index} className="flex items-start gap-2">
-            <Check className="" size={20} />
-            <p className="font-light">{goal}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* second column */}
-      <div className="flex flex-col gap-3">
-        {col2.map((goal, index) => (
-          <div key={index} className="flex items-start gap-2">
-            <Check className="" size={20} />
-            <p className="font-light">{goal}</p>
-          </div>
-        ))}
-      </div>
+    <div class="grid md:grid-cols-2 gap-4 bg-slate-50 p-6 rounded-2xl border border-gray-100">
+      {col1.map((goal, index) => (
+        <div key={index} className="flex items-start gap-2">
+          <Check class="text-[#2563eb]" />
+          <span class="text-sm font-medium">{goal}</span>
+        </div>
+      ))}
+      {col2.map((goal, index) => (
+        <div key={index} className="flex items-start gap-2">
+          <Check class="text-[#2563eb]" />
+          <span class="text-sm font-medium">{goal}</span>
+        </div>
+      ))}
     </div>
   );
 }

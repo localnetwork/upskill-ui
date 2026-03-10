@@ -289,6 +289,8 @@ export default function CourseBasics({ course }) {
             .jpg, .jpeg,. gif, or .png. no text on the image."
         />
 
+        {console.log("courseManagement?.cover_image", courseManagement)}
+
         <PromoVideoUpload
           onChange={handleChange}
           value={courseManagement?.promo_video || payload?.promo_video || ""}

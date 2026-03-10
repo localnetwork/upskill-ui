@@ -104,7 +104,6 @@ export default function CourseSidebar({ course }) {
         </div>
 
         <div>
-          {console.log("hhhhh", courseManagement)}
           {parseInt(courseManagement?.published) ? (
             <button
               onClick={(e) => {

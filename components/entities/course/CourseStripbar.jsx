@@ -4,8 +4,8 @@ export default function CourseStripBar({ course }) {
   const courseManagement = courseStore((state) => state.courseManagement);
 
   return (
-    <div className="bg-[#16161D] z-10 sticky top-[95px] py-[20px] text-white text-[18px] divider-top">
-      <div className="container flex items-center gap-[20px] justify-between">
+    <div className="bg-[#16161D] z-10 sticky top-[85px] py-[20px] text-white text-[18px] divider-top">
+      <div className="px-[50px] flex items-center gap-[20px] justify-between">
         <div className="flex items-center gap-[10px]">
           <span>
             <Link

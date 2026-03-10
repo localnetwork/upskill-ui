@@ -75,27 +75,6 @@ export default function Login() {
             </h2>
 
             <form className="flex flex-col gap-y-[20px]" onSubmit={onLogin}>
-              {/* USERNAME / EMAIL */}
-              {/* <div className="relative">
-                <label className="absolute top-[8px] left-[10px] text-[12px] text-[#9a9999]">
-                  Username or Email
-                </label>
-                <input
-                  type="text"
-                  id="username"
-                  name="username"
-                  className={`border min-h-[50px] pt-[30px] border-gray-300 rounded-lg py-3 px-[10px] w-full bg-[#F5F5F7] ${
-                    extractErrors(errors, "username")
-                      ? "border-red-500 shadow-md shadow-red-200"
-                      : ""
-                  }`}
-                />
-                {extractErrors(errors, "username") && (
-                  <p className="text-red-500 text-[12px] mt-1">
-                    {extractErrors(errors, "username")}
-                  </p>
-                )}
-              </div> */}
               <Input
                 id="username"
                 name="username"
@@ -117,37 +96,6 @@ export default function Login() {
                 onFocus={onFocus}
                 error={extractErrors(errors, "password")}
               />
-              {/* <div className="relative">
-                <label className="absolute top-[8px] left-[10px] text-[12px] text-[#9a9999]">
-                  Password
-                </label>
-                <input
-                  type={showPassword ? "text" : "password"}
-                  id="password"
-                  name="password"
-                  className={`border min-h-[50px] pt-[30px] border-gray-300 rounded-lg py-3 px-[10px] w-full bg-[#F5F5F7] ${
-                    extractErrors(errors, "password")
-                      ? "border-red-500 shadow-md shadow-red-200"
-                      : ""
-                  }`}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((prev) => !prev)}
-                  className="absolute top-[18px] right-3 text-gray-500 hover:text-gray-700"
-                >
-                  {showPassword ? (
-                    <EyeOffIcon size={20} />
-                  ) : (
-                    <EyeIcon size={20} />
-                  )}
-                </button>
-                {extractErrors(errors, "password") && (
-                  <p className="text-red-500 text-[12px] mt-1">
-                    {extractErrors(errors, "password")}
-                  </p>
-                )}
-              </div> */}
 
               {/* SUBMIT BUTTON */}
               <div>

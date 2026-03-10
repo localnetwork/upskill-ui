@@ -3,7 +3,6 @@ import CARTAPI from "@/lib/api/cart/request";
 import { mutate } from "swr";
 export default function CartItemCard({ item, isLast }) {
   const handleDelete = async (id) => {
-    console.log("e", id);
     const confirmed = window.confirm(
       "Are you sure you want to remove this item from the cart?"
     );

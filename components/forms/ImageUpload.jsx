@@ -54,8 +54,11 @@ export default function ImageUpload({
       );
 
       const data = res.data;
+
       setUploadedFileName(file.name);
       setUploadedFile(data);
+
+      console.log("data", data);
       if (inputRef.current) inputRef.current.value = "";
 
       onChange?.({

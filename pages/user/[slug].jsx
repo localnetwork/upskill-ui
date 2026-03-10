@@ -14,7 +14,7 @@ export const getServerSideProps = async (context) => {
 
   try {
     const response = await BaseApi.get(
-      `${process.env.NEXT_PUBLIC_API_URL}/user/${safeSlug}`
+      `${process.env.NEXT_PUBLIC_API_URL}/user/${safeSlug}`,
     );
     if (response?.data) {
       profile = response.data;
@@ -62,12 +62,12 @@ export default function PublicProfile({ profile }) {
 
   const isInstructor = useMemo(
     () => profile?.roles?.some((role) => role.role_name === "Instructor"),
-    [profile]
+    [profile],
   );
 
   const isLearner = useMemo(
     () => profile?.roles?.some((role) => role.role_name === "Learner"),
-    [profile]
+    [profile],
   );
 
   return (
@@ -75,7 +75,7 @@ export default function PublicProfile({ profile }) {
       <UserProfileBanner profile={profile} />
 
       <div className="container">
-        <div className="px-[50px] pt-[30px] pb-[50px]">
+        <div className="pt-[30px] pb-[50px]">
           <div className="mb-10 flex items-center gap-5">
             <div className="flex w-[200px] font-light text-[14px] flex-col justify-center">
               <span className="font-semibold text-[18px]">

@@ -7,6 +7,7 @@ import persistentStore from "@/lib/store/persistentStore";
 import globalStore from "@/lib/store/globalStore";
 import UserNav from "../entities/user/UserNav";
 import UserResendNotif from "../entities/user/UserResendNotif";
+import Image from "next/image";
 
 const UserCartCount = dynamic(() => import("../entities/user/UserCartCount"), {
   ssr: false,
@@ -49,7 +50,14 @@ export default function Header() {
           <div className="flex justify-between items-center py-4">
             <div className="text-2xl font-bold">
               <Link className="max-w-[180px] inline-flex h-auto" href="/">
-                <Logo />
+                {/* <Logo /> */}
+                <Image
+                  src="/logo.png"
+                  alt="Upskill Logo"
+                  width={150}
+                  height={50}
+                  className="w-auto"
+                />
               </Link>
             </div>
 
