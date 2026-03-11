@@ -1,10 +1,16 @@
 "use client";
 import { useState, useEffect } from "react";
-import { ChevronDown, MonitorPlay, Newspaper } from "lucide-react";
+import {
+  ChevronDown,
+  MonitorPlay,
+  Newspaper,
+  Play,
+  PlayCircle,
+} from "lucide-react";
 
 const CURRICULUM_ICONS = {
   article: Newspaper,
-  video: MonitorPlay,
+  video: PlayCircle,
 };
 
 export default function CourseSections({ course }) {
@@ -63,9 +69,9 @@ export default function CourseSections({ course }) {
   const curriculumCount = course?.resources_count?.curriculum_count || 0;
 
   return (
-    <div className="">
+    <div className="border border-gray-200 rounded-xl overflow-hidden">
       {/* Header */}
-      <div className="flex justify-between items-center mb-3">
+      {/* <div className="flex justify-between items-center mb-3">
         <div className="text-[#a1a4b8]">
           {sectionCount} sections • {curriculumCount} lectures
         </div>
@@ -77,7 +83,7 @@ export default function CourseSections({ course }) {
             {expandAll ? "Collapse All Sections" : "Expand All Sections"}
           </button>
         )}
-      </div>
+      </div> */}
 
       {/* Sections */}
       {visibleSections.map((section) => {
@@ -86,11 +92,11 @@ export default function CourseSections({ course }) {
           : openSection === section.id;
 
         return (
-          <div key={section.id} className="mb-5 border border-gray-200 rounded">
+          <div key={section.id} className="border-b border-gray-200">
             {/* Section Header */}
             <button
               onClick={() => toggleSection(section.id)}
-              className="w-full flex justify-between items-center font-semibold text-[18px] bg-[#F6F7F9] p-[15px] hover:bg-gray-100 transition"
+              className={`${isOpen ? "bg-gray-50" : "bg-white"} w-full flex items-center justify-between p-5 hover:bg-gray-100 transition-colors`}
             >
               <div className="flex items-center">
                 <ChevronDown
@@ -99,16 +105,16 @@ export default function CourseSections({ course }) {
                   }`}
                   size={16}
                 />
-                {section.title}
+                <span className="font-bold">{section.title}</span>
               </div>
-              <span className="text-[14px] font-light">
+              <span className="text-sm text-slate-500">
                 {section.curriculums?.length || 0} lectures
               </span>
             </button>
 
             {/* Section Content */}
             {isOpen && (
-              <div className="accordion-content px-4 pb-3">
+              <div className="bg-white border-t border-gray-100 p-4 space-y-4">
                 {section.curriculums?.map((curriculum, index) => {
                   const IconComponent =
                     CURRICULUM_ICONS[curriculum.curriculum_resource_type];
@@ -116,15 +122,36 @@ export default function CourseSections({ course }) {
                     openCurriculum[section.id] === curriculum.id;
 
                   return (
-                    <div
-                      key={curriculum.id}
-                      className={`border-[#eee] py-3 ${
-                        index !== section.curriculums.length - 1
-                          ? "border-b"
-                          : ""
-                      }`}
-                    >
-                      <button
+                    <div key={curriculum.id}>
+                      <div className="flex items-start gap-3 group cursor-pointer">
+                        {IconComponent ? (
+                          <IconComponent
+                            size={20}
+                            className="text-gray-500 mt-1"
+                          />
+                        ) : (
+                          <div className="w-5" /> // Placeholder for alignment
+                        )}
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-slate-800">
+                            {curriculum.title}
+                          </p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-xs text-slate-500">
+                              {curriculum.curriculum_resource_type === "video"
+                                ? "Video"
+                                : curriculum.curriculum_resource_type ===
+                                    "article"
+                                  ? "Article"
+                                  : "Other"}
+                            </span>
+                            <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
+                            <span className="text-xs text-slate-500">5min</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* <button
                         onClick={() =>
                           toggleCurriculum(section.id, curriculum.id)
                         }
@@ -154,7 +181,7 @@ export default function CourseSections({ course }) {
                               __html: curriculum.curriculum_description,
                             }}
                           />
-                        )}
+                        )} */}
                     </div>
                   );
                 })}
@@ -169,9 +196,9 @@ export default function CourseSections({ course }) {
         <div className="text-center mt-4">
           <button
             onClick={() => setVisibleCount((prev) => prev + 10)}
-            className="px-4 w-full py-2 cursor-pointer flex items-center justify-center font-bold border-[2px] border-[#0056D2] hover:bg-[#0056D2] hover:text-white text-[#0056D2] rounded"
+            className="mt-4 w-full py-3 border border-slate-900 text-slate-900 font-bold rounded-lg hover:bg-slate-50 transition-colors"
           >
-            Load More Sections
+            Show more {course.sections.length - visibleCount} sections
           </button>
         </div>
       )}

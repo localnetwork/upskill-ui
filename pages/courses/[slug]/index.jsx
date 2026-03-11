@@ -12,9 +12,11 @@ import {
   CheckCircle2,
   CheckCircle2Icon,
   ChevronRight,
+  Code,
   Globe,
   Heart,
   History,
+  Infinity,
   MonitorPlay,
   Newspaper,
   Play,
@@ -24,7 +26,9 @@ import {
   SquarePlay,
   Star,
   Trophy,
+  TrophyIcon,
   UsersRound,
+  Video,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -38,6 +42,8 @@ import { mutate } from "swr";
 import globalStore from "@/lib/store/globalStore";
 import modalState from "@/lib/store/modalState";
 import { isLoggedIn } from "@/lib/services/auth";
+import CourseFeedback from "@/components/entities/course/show/CourseFeedback";
+import CourseReviews from "@/components/entities/course/show/CourseReviews";
 export default function Course() {
   const router = useRouter();
   const { slug } = router.query;
@@ -110,55 +116,55 @@ export default function Course() {
   }, [slug]);
 
   return (
-    <div>
-      <header class="bg-[#0f172a] text-white py-12 lg:py-20 px-4 lg:px-8">
-        <div class="container mx-auto grid lg:grid-cols-[1fr_400px] gap-12">
-          <div class="space-y-6">
-            <nav class="flex items-center gap-2 text-sm font-bold text-[#9dc4ff]">
-              <a class="hover:underline" href="#">
+    <div className="pb-[50px]">
+      <header className="bg-[#0f172a] text-white py-12 lg:py-20 px-4 lg:px-8">
+        <div className="container mx-auto grid lg:grid-cols-[1fr_400px] gap-12">
+          <div className="space-y-6">
+            <nav className="flex items-center gap-2 text-sm font-bold text-[#9dc4ff]">
+              <a className="hover:underline" href="#">
                 Development
               </a>
-              <ChevronRight class="inline-block text-accent" size={16} />
-              <a class="hover:underline" href="#">
+              <ChevronRight className="inline-block text-accent" size={16} />
+              <a className="hover:underline" href="#">
                 Web Development
               </a>
             </nav>
-            <h1 class="text-4xl font-secondary lg:text-6xl font-black serif-heading leading-tight">
+            <h1 className="text-4xl font-secondary lg:text-6xl font-black serif-heading leading-tight">
               {course?.title}
             </h1>
             <div
-              class="text-xl text-slate-300 max-w-2xl"
+              className="text-xl text-slate-300 max-w-2xl"
               dangerouslySetInnerHTML={{ __html: course?.subtitle }}
             />
 
-            <div class="flex flex-wrap items-center gap-6">
-              <div class="flex items-center gap-2">
-                <span class="bg-orange-500 text-white text-[10px] font-black uppercase px-2 py-1 rounded">
+            <div className="flex flex-wrap items-center gap-6">
+              <div className="flex items-center gap-2">
+                <span className="bg-orange-500 text-white text-[10px] font-black uppercase px-2 py-1 rounded">
                   Bestseller
                 </span>
-                <div class="flex items-center gap-1 text-yellow-400">
-                  <span class="font-bold text-white">4.9</span>
-                  <Star class="inline-block w-4 h-4 text-yellow-500" />
-                  <Star class="inline-block w-4 h-4 text-yellow-500" />
-                  <Star class="inline-block w-4 h-4 text-yellow-500" />
-                  <Star class="inline-block w-4 h-4 text-yellow-500" />
-                  <Star class="inline-block w-4 h-4 text-yellow-500" />
+                <div className="flex items-center gap-1 text-yellow-400">
+                  <span className="font-bold text-white">4.9</span>
+                  <Star className="inline-block w-4 h-4 text-yellow-500" />
+                  <Star className="inline-block w-4 h-4 text-yellow-500" />
+                  <Star className="inline-block w-4 h-4 text-yellow-500" />
+                  <Star className="inline-block w-4 h-4 text-yellow-500" />
+                  <Star className="inline-block w-4 h-4 text-yellow-500" />
                 </div>
-                <span class="text-slate-400 text-sm">(12,415 ratings)</span>
+                <span className="text-slate-400 text-sm">(12,415 ratings)</span>
               </div>
-              <div class="text-sm text-slate-300">
-                <span class="font-bold text-white">45,892</span> students
+              <div className="text-sm text-slate-300">
+                <span className="font-bold text-white">45,892</span> students
                 enrolled
               </div>
             </div>
-            <div class="flex flex-wrap gap-6 text-sm">
-              <div class="flex items-center gap-2">
-                {/* <span class="material-symbols-outlined text-slate-400"></span> */}
-                <History class="inline text-slate-400" size={18} />
+            <div className="flex flex-wrap gap-6 text-sm">
+              <div className="flex items-center gap-2">
+                {/* <span className="material-symbols-outlined text-slate-400"></span> */}
+                <History className="inline text-slate-400" size={18} />
                 <span>Last updated 10/2023</span>
               </div>
-              <div class="flex items-center gap-2">
-                <Globe class="inline text-slate-400" size={18} />
+              <div className="flex items-center gap-2">
+                <Globe className="inline text-slate-400" size={18} />
                 <span>English</span>
               </div>
             </div>
@@ -170,217 +176,184 @@ export default function Course() {
         <div className="grid lg:grid-cols-[1fr_400px] gap-12">
           <main className="py-12 space-y-16">
             <section id="about">
-              <h2 class="text-3xl font-black serif-heading mb-6 font-secondary">
+              <h2 className="text-3xl font-black serif-heading mb-6 font-secondary">
                 About this course
               </h2>
 
-              <div class="prose prose-slate max-w-none">
+              <div className="prose prose-slate max-w-none">
                 <CourseDescription description={course?.description} />
                 <CourseLearnings course={course} />
               </div>
             </section>
 
             <section className="content">
-              <div class="flex items-center justify-between mb-6">
-                <h2 class="text-3xl font-black font-secondary">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-3xl font-black font-secondary">
                   Course content
                 </h2>
-                <span class="text-sm font-bold text-slate-500">
+                <span className="text-sm font-bold text-slate-500">
                   12 sections • 145 lectures • 20h 42m total length
                 </span>
               </div>
+
+              <CourseSections course={course} />
             </section>
-          </main>
-        </div>
-      </div>
 
-      <div className="relative py-[50px] px-[30px]">
-        <span className="absolute inset-0 bg-[#16161D] h-[350px] z-0" />
-        <div className="container relative">
-          <div className="grid max-w-[1180px] mx-auto grid-cols-3">
-            <div className="col-span-2 pr-[50px]">
-              <h1 className="text-[35px] text-white mb-3 font-semibold ">
-                {course?.title}
-              </h1>
-
-              {course?.subtitle && (
-                <div
-                  className="text-[20px] text-white mb-[20px] font-light"
-                  dangerouslySetInnerHTML={{ __html: course.subtitle }}
-                />
-              )}
-              {course?.author && (
-                <div className="text-white">
-                  Created by{" "}
-                  <Link
-                    className="text-[18px] text-[#7fb4ff]"
-                    href={`/user/${course?.author?.data?.username}`}
-                  >
-                    {course?.author?.data?.firstname}{" "}
-                    {course?.author?.data?.lastname}
-                  </Link>
-                </div>
-              )}
-              <div className="mt-[30px] text-[#a1a4b8]">
-                Last updated {new Date(course?.updated_at).toDateString()}
-              </div>
-
-              <div className="bg-white border border-[#d1d2e0] mt-[10px] rounded-[15px] overflow-hidden grid grid-cols-4 text-[#292c42]">
-                <div className="col-span-2 grid grid-cols-3">
-                  <div className="col-span-1 bg-[#0056D2] p-[15px] text-white font-semibold flex flex-col gap-[5px] items-center justify-center">
-                    <BadgeCheck className="" size={30} />
-                    Premium
-                  </div>
-                  <div className="col-span-2 flex flex-col p-[15px] ">
-                    <p className="font-light">
-                      Access this top-rated course, plus 26,000+ more top-rated
-                      courses, with Upskill.
-                    </p>
-
-                    <div className="mt-1">
-                      <Link
-                        href="/pricing"
-                        className="underline text-[#0056D2] font-bold"
-                      >
-                        See Pricing
-                      </Link>
-                    </div>
-                  </div>
-                </div>
-                <div className="p-[15px]">
-                  <div className="border-l-1 border-[#ddd] h-full flex justify-center items-center flex-col">
-                    <p className="font-bold text-[30px]">4.6</p>
-                    <div>
-                      <Star className="inline text-[#f4c150]" size={15} />
-                      <Star className="inline text-[#f4c150]" size={15} />
-                      <Star className="inline text-[#f4c150]" size={15} />
-                      <Star className="inline text-[#f4c150]" size={15} />
-                      <Star className="inline text-[#f4c150]" size={15} />
-                    </div>
-                    <p className="underline text-center font-light mt-2">
-                      15,974 ratings
-                    </p>
-                  </div>
-                </div>
-                <div className="p-[15px] ">
-                  <div className="flex flex-col h-full items-center justify-center border-l-1 border-[#ddd]">
-                    <UsersRound className="inline" size={30} />
-                    <p className="font-bold grow">56,926</p>
-                    <p>Learners</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-[30px] prose prose-invert max-w-none">
-                <h2 className="font-semibold text-[25px] mb-3">
-                  This course includes
-                </h2>
-
-                <CourseInclusions course={course} />
-              </div>
-
+            <section id="requirements">
               <div className="mt-[30px]">
-                <h2 className="font-semibold text-[25px] mb-3">
-                  Course Content
+                <h2 className="text-3xl font-black font-secondary mb-6">
+                  Requirements
                 </h2>
-                <CourseSections course={course} />
-              </div>
-
-              <div className="mt-[30px]">
-                <h2 className="font-semibold text-[25px] mb-3">Requirements</h2>
                 <CourseRequirements course={course} />
               </div>
+            </section>
 
-              <div className="mt-[30px] mb-[50px] prose prose-invert max-w-none">
-                <h2 className="font-semibold text-[25px] mb-3">Description</h2>
-                <CourseDescription description={course?.description} />
-              </div>
+            <section id="instructor">
+              <h2 className="text-3xl font-black font-secondary mb-6">
+                Instructor
+              </h2>
+              <CourseAuthor author={course?.author?.data} />
+            </section>
 
-              <div className="mb-[50px]">
-                <h2 className="font-semibold text-[25px] mb-3">Instructor</h2>
+            <section id="ratings">
+              <h2 className="text-3xl font-black mb-6 font-secondary">
+                Student Feedback
+              </h2>
+              <CourseFeedback courseId={course?.id} />
+            </section>
 
-                <CourseAuthor author={course?.author?.data} />
-              </div>
-            </div>
-
-            <div className="col-span-1 justify-end">
+            <CourseReviews />
+          </main>
+          <aside className="relative lg:-mt-90 z-10">
+            <div className="lg:sticky lg:top-24 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden">
               <div
-                className="sticky top-[120px] [border-block-end:1px_solid_oklch(86.72%_0.0192_282.72deg)] box-border [box-shadow:0_2px_4px_color-mix(in_oklch,oklch(27.54%_0.1638_265.98deg)_8%,transparent),0_4px_12px_color-mix(in_oklch,oklch(27.54%_0.1638_265.98deg)_8%,transparent)]
-  [background-color:oklch(100%_0_0deg)] w-full max-w-[400px] p-[15px]"
-              >
-                <div
-                  className="m-[-15px_-15px_0] h-[250px] relative cursor-pointer"
-                  onClick={() => {
-                    modalState.setState({
-                      modalInfo: {
-                        type: "COURSE_PROMO_VIDEO",
-                        title: course?.title,
-                        size: "xl",
-                        data: {
-                          video_path: course?.promo_video?.path,
-                        },
+                className="relative group cursor-pointer"
+                onClick={() => {
+                  modalState.setState({
+                    modalInfo: {
+                      type: "COURSE_PROMO_VIDEO",
+                      title: course?.title,
+                      size: "xl",
+                      data: {
+                        video_path: course?.promo_video?.path,
                       },
-                    });
-                  }}
-                >
-                  <span className="absolute top-0 left-0 w-full h-full inset-0 bg-black opacity-10 z-0" />
-                  <PlayCircle
-                    size={50}
-                    className="absolute text-white top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
-                  />
-                  {course?.cover_image && (
-                    <Image
-                      src={
-                        process.env.NEXT_PUBLIC_API_DOMAIN +
-                        course?.cover_image?.path
-                      }
-                      width={500}
-                      height={250}
-                      className="w-full h-full object-cover"
-                    />
-                  )}
-                </div>
-                <div className="p-[30px]">
-                  <div className="text-[25px] mb-[15px] font-bold">
-                    ₱
-                    {course?.price_tier?.price
-                      ? course?.price_tier?.price
-                      : "null"}
+                    },
+                  });
+                }}
+              >
+                <Image
+                  alt="Course Preview"
+                  className="w-full aspect-video object-cover"
+                  width={500}
+                  height={250}
+                  src={
+                    course?.cover_image
+                      ? process.env.NEXT_PUBLIC_API_DOMAIN +
+                        course.cover_image.path
+                      : "/placeholder-cover.webp"
+                  }
+                />
+                <div className="absolute inset-0 bg-black/40 flex items-center justify-center group-hover:bg-black/20 transition-all">
+                  <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-xl">
+                    <Play className="text-primary" size={24} />
                   </div>
-                  <div className="flex flex-wrap gap-[5px]">
-                    {course?.is_enrolled ? (
-                      <Link
-                        href={`/courses/${course.slug}/learn`}
-                        className="bg-[#0056D2] flex items-center justify-center gap-[5px] text-center max-w-[calc(100%-66px)] font-semibold text-white px-[20px] py-[10px] rounded-[5px] w-full hover:bg-[#1d6de0]"
-                      >
-                        Go to course
-                      </Link>
-                    ) : (
-                      <>
-                        {course?.is_in_cart ? (
-                          <div className="bg-[#0056D2] select-none opacity-50 flex items-center justify-center gap-[5px] text-center max-w-[calc(100%-66px)] font-semibold text-white px-[20px] py-[10px] rounded-[5px] w-full hover:bg-[#1d6de0]">
-                            <Check size={20} /> Already in Cart
-                          </div>
-                        ) : (
-                          <button
-                            onClick={(e) => handleCart(e)}
-                            className="bg-[#0056D2] flex items-center justify-center gap-[5px] text-center max-w-[calc(100%-66px)] font-semibold text-white px-[20px] py-[10px] rounded-[5px] w-full hover:bg-[#1d6de0]"
-                          >
-                            <ShoppingCart size={20} />
-                            Add to Cart
-                          </button>
-                        )}
-                      </>
-                    )}
-
-                    <button className="px-4 py-2 cursor-pointer flex items-center justify-center font-bold border-[2px] border-[#0056D2] hover:bg-[#0056D2] hover:text-white text-[#0056D2] rounded">
+                </div>
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white font-bold text-sm drop-shadow-md">
+                  Preview this course
+                </div>
+              </div>
+              <div className="p-8">
+                <div className="flex items-baseline gap-3 mb-6">
+                  <span className="text-4xl font-black">
+                    {course?.price_tier?.title.toLowerCase() === "free"
+                      ? "Free"
+                      : course?.price_tier?.price}
+                  </span>
+                  {/* <span className="text-lg text-slate-400 line-through">
+                    $129.99
+                  </span>
+                  <span className="text-accent font-bold text-sm">31% off</span> */}
+                </div>
+                <div className="space-y-3 mb-8">
+                  {course?.is_enrolled ? (
+                    <Link
+                      href={`/courses/${course.slug}/learn`}
+                      className="block px-4 text-center w-full py-4 bg-primary text-white font-black text-lg rounded-xl hover:brightness-110 active:scale-95 transition-all"
+                    >
+                      Continue Learning
+                    </Link>
+                  ) : (
+                    <>
+                      {course?.is_in_cart ? (
+                        <div className="block px-4 text-center w-full py-4 bg-primary text-white font-black text-lg rounded-xl hover:brightness-110 active:scale-95 transition-all">
+                          Already in Cart
+                        </div>
+                      ) : (
+                        <button
+                          onClick={(e) => handleCart(e)}
+                          className="block px-4 text-center w-full py-4 bg-primary text-white font-black text-lg rounded-xl hover:brightness-110 active:scale-95 transition-all"
+                        >
+                          Add to Cart
+                        </button>
+                      )}
+                    </>
+                  )}
+                  <div className="flex gap-2">
+                    <button className="flex-1 py-3 border border-slate-900 text-slate-900 font-bold rounded-xl hover:bg-slate-50 transition-colors">
+                      Buy Now
+                    </button>
+                    <button className="w-12 h-12 flex items-center justify-center border border-slate-200 rounded-xl hover:bg-red-50 hover:border-red-200 hover:text-red-500 transition-all">
                       <Heart size={20} />
                     </button>
                   </div>
                 </div>
+                <div>
+                  <h4 className="font-bold mb-4">This course includes:</h4>
+                  <ul className="space-y-3 text-sm text-slate-700">
+                    <li className="flex items-center gap-3">
+                      <Video className="text-slate-400 text-lg" size={20} />
+                      <span>20.5 hours on-demand video</span>
+                    </li>
+                    <li className="flex items-center gap-3">
+                      <Newspaper className="text-slate-400 text-lg" size={20} />
+                      <span>
+                        {course?.resources_count?.article_count && (
+                          <>
+                            {course?.resources_count?.article_count || 0}{" "}
+                            articles{" "}
+                          </>
+                        )}
+                        &amp; 12 downloadable resources
+                      </span>
+                    </li>
+                    <li className="flex items-center gap-3">
+                      <Code className="text-slate-400 text-lg" size={20} />
+                      <span>15 coding exercises</span>
+                    </li>
+                    <li className="flex items-center gap-3">
+                      <Infinity className="text-slate-400 text-lg" size={20} />
+                      <span>Full lifetime access</span>
+                    </li>
+                    <li className="flex items-center gap-3">
+                      <TrophyIcon
+                        className="text-slate-400 text-lg"
+                        size={20}
+                      />
+                      <span>Certificate of completion</span>
+                    </li>
+                  </ul>
+                </div>
+                <div className="mt-8 flex justify-center gap-6">
+                  <button className="text-sm font-bold border-b-2 border-slate-900">
+                    Share
+                  </button>
+                  {/* <button className="text-sm font-bold border-b-2 border-slate-900">
+                    Gift this course
+                  </button> */}
+                </div>
               </div>
             </div>
-          </div>
+          </aside>
         </div>
       </div>
     </div>

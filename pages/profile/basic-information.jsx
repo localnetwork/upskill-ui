@@ -41,7 +41,7 @@ export default function BasicInformation() {
     try {
       const response = await BaseApi.put(
         `${process.env.NEXT_PUBLIC_API_URL}/profile`,
-        payload
+        payload,
       );
       console.log("Profile updated successfully:", response.data);
       setErrors(null);
@@ -311,7 +311,7 @@ export default function BasicInformation() {
 
         <button
           type="submit"
-          class="bg-[#0056D2] flex items-center justify-center min-w-[150px] font-semibold text-white px-[30px] py-[10px] rounded-[5px] hover:bg-[#1d6de0] "
+          className="bg-[#0056D2] flex items-center justify-center min-w-[150px] font-semibold text-white px-[30px] py-[10px] rounded-[5px] hover:bg-[#1d6de0] "
         >
           Save
         </button>

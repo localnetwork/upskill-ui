@@ -17,7 +17,7 @@ export async function getServerSideProps(context) {
 
   try {
     const response = await BaseApi.get(
-      `${process.env.NEXT_PUBLIC_API_URL}/courses/${slug}/learn`
+      `${process.env.NEXT_PUBLIC_API_URL}/courses/${slug}/learn`,
     );
 
     return {
@@ -85,7 +85,7 @@ export default function Page({ data }) {
       </div>
       <div className="flex flex-wrap">
         <div
-          className={`w-full  min-h-[500vh] ${panelStatus === "expanded" ? "max-w-[calc(100%-900px)]" : ""} ${panelStatus === "open" ? "max-w-[calc(100%-400px)]" : ""} ${panelStatus === "closed" ? "max-w-full" : ""}`}
+          className={`w-full ${panelStatus === "expanded" ? "max-w-[calc(100%-900px)]" : ""} ${panelStatus === "open" ? "max-w-[calc(100%-400px)]" : ""} ${panelStatus === "closed" ? "max-w-full" : ""}`}
         >
           <CourseAssetPreview
             lecture={currentLecture}

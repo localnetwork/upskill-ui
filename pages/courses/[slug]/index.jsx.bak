@@ -207,7 +207,9 @@ export default function Course() {
               </div>
 
               <div className="mt-[30px]">
-                <h2 className="font-semibold text-[25px] mb-3">Requirements</h2>
+                <h2 className="text-3xl font-black font-secondary mb-6">
+                  Requirements
+                </h2>
                 <CourseRequirements course={course} />
               </div>
 

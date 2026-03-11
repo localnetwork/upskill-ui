@@ -9,17 +9,17 @@ export default function CourseLearnings({ course }) {
   const col2 = learnings.slice(middle);
 
   return (
-    <div class="grid md:grid-cols-2 gap-4 bg-slate-50 p-6 rounded-2xl border border-gray-100">
+    <div className="grid md:grid-cols-2 gap-4 bg-slate-50 p-6 rounded-2xl border border-gray-100">
       {col1.map((goal, index) => (
         <div key={index} className="flex items-start gap-2">
-          <Check class="text-[#2563eb]" />
-          <span class="text-sm font-medium">{goal}</span>
+          <Check className="text-[#2563eb]" />
+          <span className="text-sm font-medium">{goal}</span>
         </div>
       ))}
       {col2.map((goal, index) => (
         <div key={index} className="flex items-start gap-2">
-          <Check class="text-[#2563eb]" />
-          <span class="text-sm font-medium">{goal}</span>
+          <Check className="text-[#2563eb]" />
+          <span className="text-sm font-medium">{goal}</span>
         </div>
       ))}
     </div>
