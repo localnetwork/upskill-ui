@@ -22,7 +22,7 @@ p:not(:last-of-type) {
 }
 
 .container {
-  @apply mx-auto !px-[30px] xl:max-w-[80rem];
+  @apply mx-auto !px-[30px] xl:max-w-[80rem] 2xl:max-w-[90rem];
 }
 
 .font-secondary {

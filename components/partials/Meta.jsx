@@ -16,7 +16,7 @@ export default function Meta({ title, description, keywords }) {
       <title>{findTitle}</title>
       <meta name="description" content={findDescription} />
       <meta name="keywords" content={keywords} />
-      <link rel="icon" href="/favicon.ico" />
+      <link rel="icon" href="/favicon.png" />
     </Head>
   );
 }

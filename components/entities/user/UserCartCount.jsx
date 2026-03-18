@@ -3,6 +3,7 @@ import CARTAPI from "@/lib/api/cart/request";
 import cartStore from "@/lib/store/cartStore";
 import globalStore from "@/lib/store/globalStore";
 import persistentStore from "@/lib/store/persistentStore";
+import { ShoppingCart } from "lucide-react";
 import { mutate } from "swr";
 export default function UserCartCount() {
   const count = cartStore((s) => s.cartCount);
@@ -45,9 +46,10 @@ export default function UserCartCount() {
       onClick={(e) => handleCartDrawer()}
     >
       <span className="inline-flex max-w-[30px]">
-        <Cart />
+        {/* <Cart /> */}
+        <ShoppingCart className="w-6 h-6 text-slate-600" />
       </span>
-      <span className="absolute rounded-full w-[23px] h-[23px] flex items-center justify-center -mt-3 right-[-5px] top-0 text-[14px] font-bold bg-[#3588FC] text-white px-1">
+      <span className="absolute rounded-full w-[20px] h-[20px] flex items-center justify-center -mt-3 right-[-5px] top-[2px] text-[12px] font-bold bg-[#3588FC] text-white px-1">
         {count}
       </span>
     </div>

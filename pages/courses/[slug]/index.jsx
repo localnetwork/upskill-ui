@@ -347,6 +347,9 @@ export default function Course() {
                   <button className="text-sm font-bold border-b-2 border-slate-900">
                     Share
                   </button>
+                  <button className="text-sm text-red-600 font-bold border-b-2 border-red-600">
+                    Report Abuse
+                  </button>
                   {/* <button className="text-sm font-bold border-b-2 border-slate-900">
                     Gift this course
                   </button> */}

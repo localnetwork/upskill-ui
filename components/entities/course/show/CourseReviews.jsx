@@ -1,3 +1,4 @@
+import { Star } from "lucide-react";
 import Image from "next/image";
 
 export default function CourseReviews() {
@@ -31,21 +32,14 @@ export default function CourseReviews() {
               <h4 className="font-bold text-slate-900">Alex Montgomery</h4>
               <div className="flex items-center gap-2">
                 <div className="flex text-yellow-400">
-                  <span className="material-symbols-outlined text-xs fill-1">
-                    star
-                  </span>
-                  <span className="material-symbols-outlined text-xs fill-1">
-                    star
-                  </span>
-                  <span className="material-symbols-outlined text-xs fill-1">
-                    star
-                  </span>
-                  <span className="material-symbols-outlined text-xs fill-1">
-                    star
-                  </span>
-                  <span className="material-symbols-outlined text-xs fill-1">
-                    star
-                  </span>
+                  {Array(5)
+                    .fill()
+                    .map((_, i) => (
+                      <Star
+                        key={i}
+                        className="text-yellow-400 fill-1 text-xs"
+                      />
+                    ))}
                 </div>
                 <span className="text-xs font-bold text-slate-400">
                   2 weeks ago
@@ -72,21 +66,14 @@ export default function CourseReviews() {
               <h4 className="font-bold text-slate-900">Sarah Jenkins</h4>
               <div className="flex items-center gap-2">
                 <div className="flex text-yellow-400">
-                  <span className="material-symbols-outlined text-xs fill-1">
-                    star
-                  </span>
-                  <span className="material-symbols-outlined text-xs fill-1">
-                    star
-                  </span>
-                  <span className="material-symbols-outlined text-xs fill-1">
-                    star
-                  </span>
-                  <span className="material-symbols-outlined text-xs fill-1">
-                    star
-                  </span>
-                  <span className="material-symbols-outlined text-xs fill-1">
-                    star
-                  </span>
+                  {Array(5)
+                    .fill()
+                    .map((_, i) => (
+                      <Star
+                        key={i}
+                        className="text-yellow-400 fill-1 text-xs"
+                      />
+                    ))}
                 </div>
                 <span className="text-xs font-bold text-slate-400">
                   1 month ago
@@ -113,21 +100,14 @@ export default function CourseReviews() {
               <h4 className="font-bold text-slate-900">David Kwon</h4>
               <div className="flex items-center gap-2">
                 <div className="flex text-yellow-400">
-                  <span className="material-symbols-outlined text-xs fill-1">
-                    star
-                  </span>
-                  <span className="material-symbols-outlined text-xs fill-1">
-                    star
-                  </span>
-                  <span className="material-symbols-outlined text-xs fill-1">
-                    star
-                  </span>
-                  <span className="material-symbols-outlined text-xs fill-1">
-                    star
-                  </span>
-                  <span className="material-symbols-outlined text-xs">
-                    star
-                  </span>
+                  {Array(5)
+                    .fill()
+                    .map((_, i) => (
+                      <Star
+                        key={i}
+                        className="text-yellow-400 fill-1 text-xs"
+                      />
+                    ))}
                 </div>
                 <span className="text-xs font-bold text-slate-400">
                   1 month ago

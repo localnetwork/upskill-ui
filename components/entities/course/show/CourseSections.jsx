@@ -7,6 +7,7 @@ import {
   Play,
   PlayCircle,
 } from "lucide-react";
+import { formatReadTime } from "@/lib/services/readTimeFormatter";
 
 const CURRICULUM_ICONS = {
   article: Newspaper,
@@ -146,7 +147,11 @@ export default function CourseSections({ course }) {
                                   : "Other"}
                             </span>
                             <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
-                            <span className="text-xs text-slate-500">5min</span>
+                            <span className="text-xs text-slate-500">
+                              {formatReadTime(
+                                curriculum.estimated_duration,
+                              )}{" "}
+                            </span>
                           </div>
                         </div>
                       </div>

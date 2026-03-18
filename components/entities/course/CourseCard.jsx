@@ -158,16 +158,21 @@ export default function CourseCard({ course }) {
           <p className="text-xs text-slate-500 font-medium mb-4" />
 
           <div className="flex items-center gap-2 mb-4">
-            <Image
-              alt="Instructor"
-              className="w-6 h-6 rounded-full object-cover"
-              src={
-                process.env.NEXT_PUBLIC_API_DOMAIN +
-                course?.author?.data?.user_picture?.path
-              }
-              width={24}
-              height={24}
-            />
+            <Link
+              href={`/user/${course?.author?.data?.username}`}
+              className="w-6 h-6 rounded-full block "
+            >
+              <Image
+                alt="Instructor"
+                className="object-cover min-w-6 min-h-6 rounded-full"
+                src={
+                  process.env.NEXT_PUBLIC_API_DOMAIN +
+                  course?.author?.data?.user_picture?.path
+                }
+                width={24}
+                height={24}
+              />
+            </Link>
             <span className="text-xs text-slate-500 font-medium">
               {course?.author?.data?.firstname} {course?.author?.data?.lastname}
               {", "}
@@ -187,10 +192,19 @@ export default function CourseCard({ course }) {
           </div>
         </div>
 
-        <div className="flex items-center justify-between grow pt-4 border-t border-gray-50">
+        <div className="flex gap-[15px] items-center justify-between grow pt-4 border-t border-gray-50">
           <div className="flex flex-col">
-            <span className="flex  items-center text-xl font-black text-slate-900">
-              ₱ {course?.price_tier?.price ? course.price_tier.price : "Null"}
+            <span className="flex  items-center text-xl font-black text-slate-900 whitespace-nowrap">
+              {course?.price_tier?.price === "0.00" ? (
+                <span className="px-[15px] py-[5px] text-white bg-[#178617] text-[15px] rounded-sm">
+                  Free
+                </span>
+              ) : (
+                <>
+                  ₱{" "}
+                  {course?.price_tier?.price ? course.price_tier.price : "Null"}
+                </>
+              )}
             </span>
           </div>
 
@@ -201,7 +215,7 @@ export default function CourseCard({ course }) {
                   href={`/courses/${course.slug}/learn`}
                   className="border-[2px] hover:text-white text-[#0056D2] border-[#0056D2] flex items-center justify-center gap-[5px] text-center font-semibold px-[20px] py-[5px] rounded-[5px] hover:bg-[#1d6de0]"
                 >
-                  Go to course
+                  Continue Learning
                 </Link>
               </div>
             ) : (
@@ -225,7 +239,7 @@ export default function CourseCard({ course }) {
           </div>
         </div>
       </div>
-      {course?.goals?.what_you_will_learn_data && (
+      {/* {course?.goals?.what_you_will_learn_data && (
         <div
           className={`z-[20] bg-white shadow-md border-[1px] border-solid border-[oklch(86.72%_0.0192_282.72deg)] rounded-[10px] !p-[30px] tooltip tooltip-${placement}`}
           data-show={showTooltip ? "true" : "false"}
@@ -243,7 +257,7 @@ export default function CourseCard({ course }) {
             </div>
           ))}
         </div>
-      )}
+      )} */}
     </div>
   );
 }

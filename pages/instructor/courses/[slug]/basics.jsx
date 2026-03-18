@@ -19,6 +19,7 @@ const ImageUpload = dynamic(() => import("@/components/forms/ImageUpload"), {
 
 import { setContext } from "@/lib/api/interceptor";
 import PromoVideoUpload from "@/components/forms/PromoVideoUpload";
+import CategoryPicker from "@/components/forms/CategoryPicker";
 export async function getServerSideProps(context) {
   const { slug } = context.params;
 
@@ -27,7 +28,7 @@ export async function getServerSideProps(context) {
   let course = null;
   try {
     const response = await BaseApi.get(
-      `${process.env.NEXT_PUBLIC_API_URL}/courses/${slug}`
+      `${process.env.NEXT_PUBLIC_API_URL}/courses/${slug}`,
     );
 
     course = response?.data?.data;
@@ -55,6 +56,7 @@ export default function CourseBasics({ course }) {
       courseManagement?.instructional_level ||
       course?.instructional_level ||
       "",
+    category_ids: courseManagement?.category_ids || course?.category_ids || [],
   });
 
   const [errors, setErrors] = useState(null);
@@ -99,14 +101,14 @@ export default function CourseBasics({ course }) {
     try {
       const response = await BaseApi.put(
         `${process.env.NEXT_PUBLIC_API_URL}/courses/${course?.uuid}`,
-        payload
+        payload,
       );
       setIsLoading(false);
       toast.success("Course updated successfully");
       setErrors(null);
     } catch (error) {
       toast.error(
-        error?.data?.message || "An error occured. Please try again later."
+        error?.data?.message || "An error occured. Please try again later.",
       );
       setErrors(error?.data.errors || null);
     } finally {
@@ -278,6 +280,16 @@ export default function CourseBasics({ course }) {
           </div>
         </div>
 
+        <CategoryPicker
+          label="Course Category"
+          name="category"
+          value={payload.category_ids}
+          onChange={(selected) =>
+            setPayload((prev) => ({ ...prev, category_ids: selected }))
+          }
+          error={extractErrors(errors, "category")}
+        />
+
         <ImageUpload
           onChange={handleChange}
           value={courseManagement?.cover_image || payload?.cover_image || ""}
@@ -288,8 +300,6 @@ export default function CourseBasics({ course }) {
             standards to be accepted. Important guidelines: 750x422 pixels;
             .jpg, .jpeg,. gif, or .png. no text on the image."
         />
-
-        {console.log("courseManagement?.cover_image", courseManagement)}
 
         <PromoVideoUpload
           onChange={handleChange}
