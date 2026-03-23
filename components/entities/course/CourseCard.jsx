@@ -114,7 +114,7 @@ export default function CourseCard({ course }) {
           )}
         </div>
         <Link href={`/courses/${course.slug}`}>
-          {course?.cover_image?.path ? (
+          {course?.cover_image ? (
             <Image
               src={
                 process.env.NEXT_PUBLIC_API_DOMAIN + course?.cover_image?.path
@@ -158,21 +158,24 @@ export default function CourseCard({ course }) {
           <p className="text-xs text-slate-500 font-medium mb-4" />
 
           <div className="flex items-center gap-2 mb-4">
-            <Link
-              href={`/user/${course?.author?.data?.username}`}
-              className="w-6 h-6 rounded-full block "
-            >
-              <Image
-                alt="Instructor"
-                className="object-cover min-w-6 min-h-6 rounded-full"
-                src={
-                  process.env.NEXT_PUBLIC_API_DOMAIN +
-                  course?.author?.data?.user_picture?.path
-                }
-                width={24}
-                height={24}
-              />
-            </Link>
+            {course?.author?.data?.user_picture && (
+              <Link
+                href={`/user/${course?.author?.data?.username}`}
+                className="w-6 h-6 rounded-full block "
+              >
+                <Image
+                  alt="Instructor"
+                  className="object-cover min-w-6 min-h-6 rounded-full"
+                  src={
+                    process.env.NEXT_PUBLIC_API_DOMAIN +
+                    course?.author?.data?.user_picture?.path
+                  }
+                  width={24}
+                  height={24}
+                />
+              </Link>
+            )}
+
             <span className="text-xs text-slate-500 font-medium">
               {course?.author?.data?.firstname} {course?.author?.data?.lastname}
               {", "}

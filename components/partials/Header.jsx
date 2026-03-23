@@ -9,6 +9,7 @@ import UserNav from "../entities/user/UserNav";
 import UserResendNotif from "../entities/user/UserResendNotif";
 import Image from "next/image";
 import { Search, ShoppingCart } from "lucide-react";
+import ExploreDropdown from "../dropdowns/ExploreDropdown";
 
 const UserCartCount = dynamic(() => import("../entities/user/UserCartCount"), {
   ssr: false,
@@ -63,9 +64,13 @@ export default function Header() {
 
               <div className="mt-1">
                 <div class="hidden md:flex items-center gap-6 text-sm font-semibold text-slate-600">
-                  <Link class="hover:text-primary transition-colors" href="#">
-                    Explore
-                  </Link>
+                  <div className="relative group">
+                    <div class="hover:text-primary transition-colors">
+                      Explore
+                    </div>
+
+                    <ExploreDropdown />
+                  </div>
                   <Link class="hover:text-primary transition-colors" href="#">
                     Courses
                   </Link>
@@ -74,16 +79,6 @@ export default function Header() {
             </div>
 
             <div className="flex font-light items-center space-x-6 w-full justify-end">
-              {/* {!profile && (
-                <div>
-                  <Link
-                    href="/register?mode=instructor"
-                    className="hover:bg-[#F0F6FF] py-[10px] rounded-[5px] px-[10px] hover:text-[#0056D2]"
-                  >
-                    Teach on Upskill
-                  </Link>
-                </div>
-              )} */}
               <div class="hidden md:flex relative w-48 lg:w-64">
                 <Search
                   className="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 text-lg"
@@ -95,6 +90,7 @@ export default function Header() {
                   type="text"
                 />
               </div>
+
               <div className="flex items-center space-x-4 relative">
                 <span className="max-w-[30px] inline-flex h-auto relative">
                   {!profile ? (
@@ -112,6 +108,16 @@ export default function Header() {
 
                 {/* Drawer */}
                 {cartDrawerOpen && <CartDrawer />}
+                {!profile && (
+                  <div>
+                    <Link
+                      href="/register?mode=instructor"
+                      className="text-sm font-bold text-slate-700 px-4 py-2 hover:bg-gray-100 rounded-lg"
+                    >
+                      Become an Instructor
+                    </Link>
+                  </div>
+                )}
                 <div class="h-6 w-px bg-slate-200 hidden sm:block"></div>
                 {!profile ? (
                   <nav>

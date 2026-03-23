@@ -1,5 +1,38 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import categories from "@/lib/preBuildScripts/static/categories.json";
+
+const normalizeEntry = ({ parent, sub }) => ({
+  parent: Number(parent),
+  sub: Number(sub),
+});
+
+export const getMergedCategoryIds = (selectedCategories = []) => {
+  const ids = new Set();
+  selectedCategories.forEach(({ parent, sub: subId }) => {
+    if (parent !== undefined) ids.add(String(parent));
+    if (subId !== undefined) ids.add(String(subId));
+  });
+  return [...ids];
+};
+
+// Reconstruct [{ parent, sub }] from flat string IDs using categories.json
+const resolveInitialValue = (flatIds = []) => {
+  if (!flatIds.length) return [];
+
+  const ids = flatIds.map(Number);
+  const result = [];
+
+  for (const parent of categories) {
+    if (!ids.includes(Number(parent.id))) continue;
+    for (const sub of parent.children ?? []) {
+      if (ids.includes(Number(sub.id))) {
+        result.push({ parent: Number(parent.id), sub: Number(sub.id) });
+      }
+    }
+  }
+
+  return result;
+};
 
 export default function CategoryPicker({
   label,
@@ -7,35 +40,64 @@ export default function CategoryPicker({
   value,
   onChange,
   error,
-  payload,
 }) {
-  const [activeParent, setActiveParent] = useState(null);
-  const selectedCategories = Array.isArray(value) ? value : [];
+  const initialSelected = useMemo(() => {
+    if (!Array.isArray(value) || value.length === 0) return [];
+
+    // Already in [{ parent, sub }] format
+    if (typeof value[0] === "object" && "parent" in value[0]) {
+      return value.map(normalizeEntry);
+    }
+
+    // Flat string ID array — reconstruct shape from categories.json
+    return resolveInitialValue(value);
+  }, []);
+
+  const [activeParent, setActiveParent] = useState(() => {
+    if (!initialSelected.length) return null;
+    return (
+      categories.find((c) => Number(c.id) === initialSelected[0].parent) ?? null
+    );
+  });
+
+  const [selectedCategories, setSelectedCategories] = useState(initialSelected);
+
+  const handleChange = (updated) => {
+    setSelectedCategories(updated);
+    onChange(updated);
+  };
 
   const handleParentSelect = (cat) => {
     if (activeParent?.id === cat.id) return;
-    onChange([]); // clear all on parent switch
+    handleChange([]);
     setActiveParent(cat);
   };
 
   const toggleSub = (parent, sub) => {
+    const p = Number(parent);
+    const s = Number(sub);
+
     const exists = selectedCategories.some(
-      (s) => s.parent === parent && s.sub === sub,
+      (item) => item.parent === p && item.sub === s,
     );
+
     if (exists) {
-      onChange(
-        selectedCategories.filter(
-          (s) => !(s.parent === parent && s.sub === sub),
-        ),
-      );
+      handleChange(selectedCategories.filter((item) => item.parent !== p));
     } else {
-      onChange([...selectedCategories, { parent, sub }]);
+      handleChange([
+        ...selectedCategories.filter((item) => item.parent !== p),
+        { parent: p, sub: s },
+      ]);
     }
   };
 
   const removeTag = (parent, sub) => {
-    onChange(
-      selectedCategories.filter((s) => !(s.parent === parent && s.sub === sub)),
+    const p = Number(parent);
+    const s = Number(sub);
+    handleChange(
+      selectedCategories.filter(
+        (item) => !(item.parent === p && item.sub === s),
+      ),
     );
   };
 
@@ -83,7 +145,9 @@ export default function CategoryPicker({
               </div>
               {activeParent.children.map((sub) => {
                 const isSelected = selectedCategories.some(
-                  (s) => s.parent === activeParent.id && s.sub === sub.id,
+                  (item) =>
+                    item.parent === Number(activeParent.id) &&
+                    item.sub === Number(sub.id),
                 );
                 return (
                   <button
@@ -112,14 +176,16 @@ export default function CategoryPicker({
       {selectedCategories.length > 0 && (
         <div className="flex flex-wrap gap-2 mt-1">
           {selectedCategories.map(({ parent, sub }) => {
-            const parentCat = categories.find((c) => c.id === parent);
-            const subCat = parentCat?.children?.find((s) => s.id === sub);
+            const parentCat = categories.find((c) => Number(c.id) === parent);
+            const subCat = parentCat?.children?.find(
+              (s) => Number(s.id) === sub,
+            );
             return (
               <span
                 key={`${parent}-${sub}`}
                 className="flex items-center gap-1 bg-violet-50 text-violet-700 text-xs rounded-full px-3 py-1"
               >
-                {subCat?.title}
+                {subCat?.title ?? `Sub #${sub}`}
                 <button
                   type="button"
                   onClick={() => removeTag(parent, sub)}

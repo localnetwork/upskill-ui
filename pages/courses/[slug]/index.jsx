@@ -121,13 +121,27 @@ export default function Course() {
         <div className="container mx-auto grid lg:grid-cols-[1fr_400px] gap-12">
           <div className="space-y-6">
             <nav className="flex items-center gap-2 text-sm font-bold text-[#9dc4ff]">
-              <a className="hover:underline" href="#">
-                Development
-              </a>
-              <ChevronRight className="inline-block text-accent" size={16} />
-              <a className="hover:underline" href="#">
-                Web Development
-              </a>
+              {console.log("course.categories", course?.categories)}
+              {[...(course?.categories || [])]
+                .sort((a, b) => (a.parent_id === null ? -1 : 1))
+                .map((cat, index) => (
+                  <>
+                    {index > 0 && (
+                      <ChevronRight
+                        key={`chevron-${cat.id}`}
+                        className="inline-block text-accent"
+                        size={16}
+                      />
+                    )}
+                    <Link
+                      key={cat.id}
+                      className="hover:underline"
+                      href={"/categories/" + cat.slug}
+                    >
+                      {cat.title}
+                    </Link>
+                  </>
+                ))}
             </nav>
             <h1 className="text-4xl font-secondary lg:text-6xl font-black serif-heading leading-tight">
               {course?.title}

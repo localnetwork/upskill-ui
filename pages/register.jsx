@@ -106,7 +106,7 @@ export default function Register() {
             {router.query.mode == "instructor" && (
               <div className="pb-[50px]">
                 <h1 className="pb-[10px] font-medium text-[40px] text-[#2a2b3f] ">
-                  Become a Upskill Instructor
+                  Become an Upskill Instructor
                 </h1>
                 <p className="text-[16px] font-light text-gray-600">
                   Discover a supportive community of online instructors. Get

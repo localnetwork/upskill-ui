@@ -5,21 +5,24 @@ import { useEffect, useState } from "react";
 import courseStore from "@/lib/store/courseStore";
 import dynamic from "next/dynamic";
 import Image from "next/image";
-// import ImageUpload from "@/components/forms/ImageUpload";
 import Spinner from "@/components/icons/Spinner";
 import toast from "react-hot-toast";
 import { extractErrors } from "@/lib/services/errorsExtractor";
+
 const TextEditor = dynamic(() => import("@/components/forms/TextEditor"), {
-  ssr: false, // 👈 disables SSR for this component
+  ssr: false,
 });
 
 const ImageUpload = dynamic(() => import("@/components/forms/ImageUpload"), {
-  ssr: false, // 👈 disables SSR for this component
+  ssr: false,
 });
 
 import { setContext } from "@/lib/api/interceptor";
 import PromoVideoUpload from "@/components/forms/PromoVideoUpload";
-import CategoryPicker from "@/components/forms/CategoryPicker";
+import CategoryPicker, {
+  getMergedCategoryIds,
+} from "@/components/forms/CategoryPicker";
+
 export async function getServerSideProps(context) {
   const { slug } = context.params;
 
@@ -56,7 +59,11 @@ export default function CourseBasics({ course }) {
       courseManagement?.instructional_level ||
       course?.instructional_level ||
       "",
-    category_ids: courseManagement?.category_ids || course?.category_ids || [],
+    category_ids: (
+      courseManagement?.category_ids ||
+      course?.category_ids ||
+      []
+    ).map((cat) => String(cat.category_id)),
   });
 
   const [errors, setErrors] = useState(null);
@@ -92,40 +99,46 @@ export default function CourseBasics({ course }) {
   };
 
   const handleSubmit = async (e) => {
-    setIsLoading(true);
     e.preventDefault();
+    setIsLoading(true);
+
+    // Transform category_ids from [{ parent, sub }, ...]
+    // to flat merged string array: ["1", "19", "16", "22", "23"]
+    const submitPayload = {
+      ...payload,
+      category_ids: getMergedCategoryIds(payload.category_ids),
+    };
+
     courseStore.setState({
       courseManagement: { ...courseManagement, ...payload },
     });
+
     toast.dismiss();
+
     try {
       const response = await BaseApi.put(
         `${process.env.NEXT_PUBLIC_API_URL}/courses/${course?.uuid}`,
-        payload,
+        submitPayload, // ✅ send transformed payload
       );
-      setIsLoading(false);
       toast.success("Course updated successfully");
       setErrors(null);
     } catch (error) {
       toast.error(
         error?.data?.message || "An error occured. Please try again later.",
       );
-      setErrors(error?.data.errors || null);
+      setErrors(error?.data?.errors || null);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // ⬇️ ADD THIS
   useEffect(() => {
     const handleKeyDown = (e) => {
-      // Ctrl+S (Windows/Linux) or Cmd+S (Mac)
       if ((e.ctrlKey || e.metaKey) && e.key === "s") {
-        e.preventDefault(); // stop browser save dialog
-        // Manually trigger form submission
+        e.preventDefault();
         const form = document.querySelector("form[data-save-form]");
         if (form) {
-          form.requestSubmit(); // modern way to trigger submit event
+          form.requestSubmit();
         }
       }
     };
@@ -141,7 +154,7 @@ export default function CourseBasics({ course }) {
       title="Course Landing Page"
     >
       <p>
-        Your course landing page is crucial to your success on Upskill. If it’s
+        Your course landing page is crucial to your success on Upskill. If it's
         done right, it can also help you gain visibility in search engines like
         Google. As you complete this section, think about creating a compelling
         Course Landing Page that demonstrates why someone would want to enroll
@@ -188,6 +201,7 @@ export default function CourseBasics({ course }) {
             for search
           </p>
         </div>
+
         <div>
           <label className="mb-2 block font-normal" htmlFor="subtitle">
             Course Subtitle
@@ -213,7 +227,7 @@ export default function CourseBasics({ course }) {
               </p>
             )}
             <span className="text-[12px] absolute top-[15px] right-[15px] text-[oklch(30.98%_0.005_261.63deg)]">
-              {payload.title.length}/120
+              {payload.subtitle.length}/120
             </span>
           </div>
 
@@ -261,7 +275,7 @@ export default function CourseBasics({ course }) {
             className="mb-2 block font-normal"
             htmlFor="instructional_level"
           >
-            Course
+            Course Level
           </label>
           <div className="relative">
             <select
@@ -308,7 +322,7 @@ export default function CourseBasics({ course }) {
           courseManagement={courseManagement}
           name="promo_video"
           label="Promotional Video"
-          description="Your promo video is a quick and compelling way for students to preview what they’ll learn in your course. Students considering your course are more likely to enroll if your promo video is well-made."
+          description="Your promo video is a quick and compelling way for students to preview what they'll learn in your course. Students considering your course are more likely to enroll if your promo video is well-made."
         />
 
         <div className="mt-[20px]">

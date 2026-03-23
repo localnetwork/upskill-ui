@@ -1,0 +1,62 @@
+import PopularEducators from "@/components/entities/categories/show/PopularEducators";
+import BaseApi from "@/lib/api/_base.api";
+
+export async function getServerSideProps(context) {
+  const id = context.params.id; // Access the dynamic route parameter
+  try {
+    const response = await BaseApi.get(
+      process.env.NEXT_PUBLIC_API_URL + `/categories/${id}`,
+    );
+
+    return {
+      props: {
+        category: response.data,
+      },
+    };
+  } catch (error) {
+    console.error("Error fetching categories:", error);
+    return { notFound: true };
+  }
+}
+
+export default function Page({ category }) {
+  return (
+    <>
+      <section class="py-16 md:py-20 bg-[#F8FAFC]">
+        <div className="container">
+          <div class="max-w-4xl">
+            <h1 class="text-5xl md:text-6xl font-headline font-extrabold tracking-tighter text-on-surface mb-6">
+              {category.title}
+            </h1>
+            <p class="text-on-surface-variant text-xl md:text-2xl leading-relaxed font-medium">
+              Accelerate your career in technology. Master the engineering
+              standards used by world-class software teams—from foundational
+              architecture to large-scale distributed systems.
+            </p>
+            <div class="mt-8 flex items-center space-x-6">
+              <div class="flex flex-col">
+                <span class="text-2xl font-bold text-on-surface font-headline">
+                  1,248
+                </span>
+                <span class="text-xs font-bold uppercase tracking-widest text-secondary/70">
+                  Expert Courses
+                </span>
+              </div>
+              <div class="h-10 w-px bg-outline-variant"></div>
+              <div class="flex flex-col">
+                <span class="text-2xl font-bold text-on-surface font-headline">
+                  850k+
+                </span>
+                <span class="text-xs font-bold uppercase tracking-widest text-secondary/70">
+                  Enrolled
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <PopularEducators category={category} />
+    </>
+  );
+}

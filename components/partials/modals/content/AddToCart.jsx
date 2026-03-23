@@ -35,7 +35,7 @@ export default function AddToCart() {
           <Link
             href="/cart"
             onClick={() => modalState.setState({ modalInfo: null })}
-            className="bg-[#0056D2] flex items-center justify-center gap-[5px] text-center max-w-[200px] font-semibold text-white px-[20px] py-[8px] rounded-[5px] w-full hover:bg-[#1d6de0]"
+            className="bg-[#0056D2] min-w-[120px] flex items-center justify-center gap-[5px] text-center max-w-[200px] font-semibold text-white px-[20px] py-[8px] rounded-[5px] w-full hover:bg-[#1d6de0]"
           >
             Go to Cart
           </Link>

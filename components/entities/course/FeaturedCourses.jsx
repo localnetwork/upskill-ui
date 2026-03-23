@@ -17,12 +17,10 @@ export default function FeaturedCourses() {
     fetchCourses();
   }, []);
   return (
-    <>
-      <div className="grid grid-cols-4 gap-[15px]">
-        {courses.map((course) => (
-          <CourseCard key={course.id} course={course} />
-        ))}
-      </div>
-    </>
+    <div className="grid grid-cols-4 gap-[15px]">
+      {courses.map((course) => (
+        <CourseCard key={course.id} course={course} />
+      ))}
+    </div>
   );
 }
