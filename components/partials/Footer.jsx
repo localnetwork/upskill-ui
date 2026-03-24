@@ -1,6 +1,7 @@
 import React from "react";
 import Logo from "../icons/Logo";
 import Image from "next/image";
+import Link from "next/link";
 
 const Footer = () => {
   return (
@@ -27,24 +28,24 @@ const Footer = () => {
           <h4 className="font-bold mb-6">Explore</h4>
           <ul className="space-y-4 text-sm text-slate-400">
             <li>
-              <a className="hover:text-white" href="#">
+              <Link className="hover:text-white" href="#">
                 Courses
-              </a>
+              </Link>
             </li>
             <li>
-              <a className="hover:text-white" href="#">
-                Mentors
-              </a>
+              <Link className="hover:text-white" href="#">
+                Educators
+              </Link>
             </li>
             <li>
-              <a className="hover:text-white" href="#">
+              <Link className="hover:text-white" href="#">
                 Success Stories
-              </a>
+              </Link>
             </li>
             <li>
-              <a className="hover:text-white" href="#">
+              <Link className="hover:text-white" href="#">
                 Business
-              </a>
+              </Link>
             </li>
           </ul>
         </div>
@@ -52,24 +53,24 @@ const Footer = () => {
           <h4 className="font-bold mb-6">Company</h4>
           <ul className="space-y-4 text-sm text-slate-400">
             <li>
-              <a className="hover:text-white" href="#">
+              <Link className="hover:text-white" href="/about">
                 About Us
-              </a>
+              </Link>
             </li>
             <li>
-              <a className="hover:text-white" href="#">
+              <Link className="hover:text-white" href="#">
                 Careers
-              </a>
+              </Link>
             </li>
             <li>
-              <a className="hover:text-white" href="#">
+              <Link className="hover:text-white" href="#">
                 Contact
-              </a>
+              </Link>
             </li>
             <li>
-              <a className="hover:text-white" href="#">
+              <Link className="hover:text-white" href="#">
                 Blog
-              </a>
+              </Link>
             </li>
           </ul>
         </div>
@@ -77,24 +78,24 @@ const Footer = () => {
           <h4 className="font-bold mb-6">Support</h4>
           <ul className="space-y-4 text-sm text-slate-400">
             <li>
-              <a className="hover:text-white" href="#">
+              <Link className="hover:text-white" href="#">
                 Help Center
-              </a>
+              </Link>
             </li>
             <li>
-              <a className="hover:text-white" href="#">
+              <Link className="hover:text-white" href="#">
                 Terms of Service
-              </a>
+              </Link>
             </li>
             <li>
-              <a className="hover:text-white" href="#">
+              <Link className="hover:text-white" href="#">
                 Privacy Policy
-              </a>
+              </Link>
             </li>
             <li>
-              <a className="hover:text-white" href="#">
+              <Link className="hover:text-white" href="#">
                 Cookies
-              </a>
+              </Link>
             </li>
           </ul>
         </div>

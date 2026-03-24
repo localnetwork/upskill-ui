@@ -8,7 +8,7 @@ import globalStore from "@/lib/store/globalStore";
 import UserNav from "../entities/user/UserNav";
 import UserResendNotif from "../entities/user/UserResendNotif";
 import Image from "next/image";
-import { Search, ShoppingCart } from "lucide-react";
+import { ArrowDown, ChevronDown, Search, ShoppingCart } from "lucide-react";
 import ExploreDropdown from "../dropdowns/ExploreDropdown";
 
 const UserCartCount = dynamic(() => import("../entities/user/UserCartCount"), {
@@ -63,15 +63,18 @@ export default function Header() {
               </Link>
 
               <div className="mt-1">
-                <div class="hidden md:flex items-center gap-6 text-sm font-semibold text-slate-600">
+                <div className="hidden md:flex items-center gap-6 text-sm font-semibold text-slate-600">
                   <div className="relative group">
-                    <div class="hover:text-primary transition-colors">
-                      Explore
+                    <div className="flex items-center gap-1 hover:text-primary transition-colors">
+                      Explore <ChevronDown size={16} />
                     </div>
 
                     <ExploreDropdown />
                   </div>
-                  <Link class="hover:text-primary transition-colors" href="#">
+                  <Link
+                    className="hover:text-primary transition-colors"
+                    href="/courses"
+                  >
                     Courses
                   </Link>
                 </div>
@@ -79,13 +82,13 @@ export default function Header() {
             </div>
 
             <div className="flex font-light items-center space-x-6 w-full justify-end">
-              <div class="hidden md:flex relative w-48 lg:w-64">
+              <div className="hidden md:flex relative w-48 lg:w-64">
                 <Search
                   className="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 text-lg"
                   size={15}
                 />
                 <input
-                  class="w-full pl-9 pr-4 py-2 bg-slate-100 border-transparent rounded-full text-sm focus:bg-white focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                  className="w-full pl-9 pr-4 py-2 bg-slate-100 border-transparent rounded-full text-sm focus:bg-white focus:border-primary focus:ring-1 focus:ring-primary transition-all"
                   placeholder="Search..."
                   type="text"
                 />
@@ -118,7 +121,7 @@ export default function Header() {
                     </Link>
                   </div>
                 )}
-                <div class="h-6 w-px bg-slate-200 hidden sm:block"></div>
+                <div className="h-6 w-px bg-slate-200 hidden sm:block"></div>
                 {!profile ? (
                   <nav>
                     <ul className="flex space-x-4 items-center">

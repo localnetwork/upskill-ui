@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import categories from "@/lib/preBuildScripts/static/categories.json";
 
 const normalizeEntry = ({ parent, sub }) => ({
@@ -8,15 +8,24 @@ const normalizeEntry = ({ parent, sub }) => ({
 
 export const getMergedCategoryIds = (selectedCategories = []) => {
   const ids = new Set();
-  selectedCategories.forEach(({ parent, sub: subId }) => {
-    if (parent !== undefined) ids.add(String(parent));
-    if (subId !== undefined) ids.add(String(subId));
-  });
+
+  for (const entry of selectedCategories) {
+    if (!entry || typeof entry !== "object" || Array.isArray(entry)) continue;
+
+    const { parent, sub } = entry;
+
+    if (parent != null && typeof parent !== "function") {
+      ids.add(String(parent));
+    }
+    if (sub != null && typeof sub !== "function") {
+      ids.add(String(sub));
+    }
+  }
+
   return [...ids];
 };
 
-// Reconstruct [{ parent, sub }] from flat string IDs using categories.json
-const resolveInitialValue = (flatIds = []) => {
+export const resolveInitialValue = (flatIds = []) => {
   if (!flatIds.length) return [];
 
   const ids = flatIds.map(Number);
@@ -44,23 +53,25 @@ export default function CategoryPicker({
   const initialSelected = useMemo(() => {
     if (!Array.isArray(value) || value.length === 0) return [];
 
-    // Already in [{ parent, sub }] format
     if (typeof value[0] === "object" && "parent" in value[0]) {
       return value.map(normalizeEntry);
     }
 
-    // Flat string ID array — reconstruct shape from categories.json
     return resolveInitialValue(value);
-  }, []);
+  }, [value]);
 
-  const [activeParent, setActiveParent] = useState(() => {
-    if (!initialSelected.length) return null;
-    return (
-      categories.find((c) => Number(c.id) === initialSelected[0].parent) ?? null
-    );
-  });
+  const [activeParent, setActiveParent] = useState(null);
+  const [selectedCategories, setSelectedCategories] = useState([]);
 
-  const [selectedCategories, setSelectedCategories] = useState(initialSelected);
+  useEffect(() => {
+    setSelectedCategories(initialSelected);
+    if (initialSelected.length > 0) {
+      const firstParent = categories.find(
+        (c) => Number(c.id) === initialSelected[0].parent,
+      );
+      setActiveParent(firstParent ?? null);
+    }
+  }, [initialSelected]);
 
   const handleChange = (updated) => {
     setSelectedCategories(updated);

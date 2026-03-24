@@ -7,7 +7,7 @@ import { useState } from "react";
 import Spinner from "@/components/icons/Spinner";
 import { extractErrors } from "@/lib/services/errorsExtractor";
 import toast from "react-hot-toast";
-import { EyeIcon, EyeOffIcon } from "lucide-react"; // 👁️ Eye icons
+import { EyeIcon, EyeOffIcon } from "lucide-react";
 import Link from "next/link";
 import Input from "@/components/forms/Input";
 import Password from "@/components/forms/Password";
@@ -16,9 +16,8 @@ export default function Login() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState(null);
-  const [showPassword, setShowPassword] = useState(false); // 👁️ Toggle state
+  const [showPassword, setShowPassword] = useState(false);
   const [payload, setPayload] = useState({});
-
   const [isFocused, setIsFocused] = useState(false);
 
   const onChange = (e) => {
@@ -35,20 +34,53 @@ export default function Login() {
     toast.dismiss();
     e.preventDefault();
     setIsLoading(true);
-
-    // const payload = {
-    //   username: e.target.username.value,
-    //   password: e.target.password.value,
-    // };
-
+    console.log("bla bla");
     try {
+      console.log("attempt login");
       const response = await AUTHAPI.login(payload);
-      persistentStore.setState({ profile: response?.data?.user });
-      router.push("/");
+
+      console.log("hhhhh", response);
+
+      // ✅ CASE 1: Requires 2FA
+      if (
+        response?.data?.status === "requires_2fa" ||
+        response?.data?.requires_2fa
+      ) {
+        toast.success("Enter your 2FA code");
+
+        // Store temporary token for 2FA verification
+        persistentStore.setState({
+          preAuthToken: response?.data?.pre_auth_token,
+        });
+
+        // Redirect to 2FA verification page
+        router.push("/verify-2fa");
+        return;
+      }
+
+      // ✅ CASE 2: Normal login (2FA not required or already verified)
+      if (response?.data?.token && response?.data?.user) {
+        persistentStore.setState({
+          profile: response?.data?.user,
+          token: response?.data?.token,
+        });
+
+        toast.success("Login successful!");
+        router.push("/");
+        return;
+      }
+
+      // ❌ Unexpected response format
+      toast.error("Unexpected response from server");
     } catch (error) {
-      console.log("Error", error);
+      console.error("Login error:", error);
       setErrors(error?.data?.errors);
-      if (error?.data?.message) toast.error(error.data.message);
+
+      if (error?.data?.message) {
+        toast.error(error.data.message);
+      } else {
+        toast.error("Login failed. Please try again.");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -71,7 +103,7 @@ export default function Login() {
           {/* RIGHT FORM */}
           <div className="py-[50px]">
             <h2 className="text-3xl font-bold mb-6">
-              Log in to continue your learning journey
+              Log in to continue your learning journey hahahah
             </h2>
 
             <form className="flex flex-col gap-y-[20px]" onSubmit={onLogin}>
@@ -84,8 +116,6 @@ export default function Login() {
                 onFocus={onFocus}
                 error={extractErrors(errors, "username")}
               />
-
-              {/* PASSWORD with Eye Icon */}
 
               <Password
                 id="password"

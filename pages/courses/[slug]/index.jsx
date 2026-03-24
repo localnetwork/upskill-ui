@@ -49,6 +49,8 @@ export default function Course() {
   const { slug } = router.query;
   const [course, setCourse] = useState(null);
 
+  const [isScrolled, setIsScrolled] = useState(false);
+
   const [notFound, setNotFound] = useState(false);
 
   const updateCart = cartStore((state) => state.setCartCount);
@@ -113,6 +115,19 @@ export default function Course() {
     if (slug) {
       fetchData();
     }
+
+    const scrollTest = () => {
+      const offset = window.pageYOffset;
+
+      if (offset > 100) {
+        setIsScrolled(true);
+      } else {
+        setIsScrolled(false);
+      }
+    };
+
+    window.addEventListener("scroll", scrollTest);
+    window.addEventListener("load", scrollTest);
   }, [slug]);
 
   return (
@@ -241,7 +256,7 @@ export default function Course() {
           <aside className="relative lg:-mt-90 z-10">
             <div className="lg:sticky lg:top-24 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden">
               <div
-                className="relative group cursor-pointer"
+                className={`relative group cursor-pointer transition-all ${isScrolled ? "mt-[-225px]" : ""}`}
                 onClick={() => {
                   modalState.setState({
                     modalInfo: {
@@ -276,6 +291,7 @@ export default function Course() {
                   Preview this course
                 </div>
               </div>
+
               <div className="p-8">
                 <div className="flex items-baseline gap-3 mb-6">
                   <span className="text-4xl font-black">

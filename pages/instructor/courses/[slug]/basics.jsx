@@ -21,6 +21,7 @@ import { setContext } from "@/lib/api/interceptor";
 import PromoVideoUpload from "@/components/forms/PromoVideoUpload";
 import CategoryPicker, {
   getMergedCategoryIds,
+  resolveInitialValue,
 } from "@/components/forms/CategoryPicker";
 
 export async function getServerSideProps(context) {
@@ -59,11 +60,11 @@ export default function CourseBasics({ course }) {
       courseManagement?.instructional_level ||
       course?.instructional_level ||
       "",
-    category_ids: (
-      courseManagement?.category_ids ||
-      course?.category_ids ||
-      []
-    ).map((cat) => String(cat.category_id)),
+    category_ids: resolveInitialValue(
+      (courseManagement?.category_ids || course?.category_ids || []).map(
+        (cat) => String(cat.category_id ?? cat),
+      ),
+    ),
   });
 
   const [errors, setErrors] = useState(null);
@@ -102,8 +103,6 @@ export default function CourseBasics({ course }) {
     e.preventDefault();
     setIsLoading(true);
 
-    // Transform category_ids from [{ parent, sub }, ...]
-    // to flat merged string array: ["1", "19", "16", "22", "23"]
     const submitPayload = {
       ...payload,
       category_ids: getMergedCategoryIds(payload.category_ids),
@@ -118,7 +117,7 @@ export default function CourseBasics({ course }) {
     try {
       const response = await BaseApi.put(
         `${process.env.NEXT_PUBLIC_API_URL}/courses/${course?.uuid}`,
-        submitPayload, // ✅ send transformed payload
+        submitPayload,
       );
       toast.success("Course updated successfully");
       setErrors(null);
@@ -296,12 +295,12 @@ export default function CourseBasics({ course }) {
 
         <CategoryPicker
           label="Course Category"
-          name="category"
+          name="category_ids"
           value={payload.category_ids}
           onChange={(selected) =>
             setPayload((prev) => ({ ...prev, category_ids: selected }))
           }
-          error={extractErrors(errors, "category")}
+          error={extractErrors(errors, "category_ids")}
         />
 
         <ImageUpload
