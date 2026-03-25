@@ -15,7 +15,7 @@
     "access": ["add-course"]
   },
   {
-    "name": "Account Settings",
+    "name": "Settings",
     "link": "/settings",
     "access": ["*"]
   },

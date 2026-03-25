@@ -14,7 +14,9 @@ function StatusBadge({ enabled }) {
       }`}
     >
       <span
-        className={`w-1.5 h-1.5 rounded-full ${enabled ? "bg-emerald-500" : "bg-zinc-400"}`}
+        className={`w-1.5 h-1.5 rounded-full ${
+          enabled ? "bg-emerald-500" : "bg-zinc-400"
+        }`}
       />
       {enabled ? "Enabled" : "Disabled"}
     </span>
@@ -58,7 +60,9 @@ function SetupStep({ onConfirmed, onCancel }) {
       const res = await AUTHAPI.confirm2FA(code);
       onConfirmed(res.data.backup_codes);
     } catch (err) {
-      setError(err?.data?.error || "Invalid code. Try again.");
+      setError(
+        err?.data?.error || err?.data?.message || "Invalid code. Try again.",
+      );
     } finally {
       setConfirming(false);
     }
@@ -239,7 +243,7 @@ function DisableStep({ onDisabled, onCancel }) {
       await AUTHAPI.disable2FA(code);
       onDisabled();
     } catch (err) {
-      setError(err?.data?.error || "Invalid code.");
+      setError(err?.data?.error || err?.data?.message || "Invalid code.");
     } finally {
       setLoading(false);
     }
@@ -289,12 +293,83 @@ function DisableStep({ onDisabled, onCancel }) {
   );
 }
 
+/** ✅ NEW: Regenerate Backup Codes Step */
+function RegenerateStep({ onRegenerated, onCancel }) {
+  const [code, setCode] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleRegenerate = async () => {
+    if (code.length !== 6) {
+      setError("Enter your current 6-digit authenticator code.");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
+    try {
+      const res = await AUTHAPI.regenerateBackupCodes(code);
+      onRegenerated(res.data?.backup_codes || []);
+    } catch (err) {
+      setError(err?.data?.error || err?.data?.message || "Invalid code.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-5">
+      <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl">
+        <p className="text-sm text-amber-800">
+          Regenerating will{" "}
+          <strong>invalidate all existing backup codes</strong>. Enter your
+          authenticator code to continue.
+        </p>
+      </div>
+
+      <div className="space-y-2">
+        <label className="block text-sm font-medium text-zinc-700">
+          Authenticator code
+        </label>
+        <input
+          type="text"
+          inputMode="numeric"
+          maxLength={6}
+          placeholder="000000"
+          value={code}
+          onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
+          className="w-full max-w-xs px-4 py-2.5 border border-zinc-300 rounded-lg font-mono text-lg tracking-[0.4em] text-center focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+        />
+        {error && <p className="text-sm text-red-500">{error}</p>}
+      </div>
+
+      <div className="flex gap-3">
+        <button
+          onClick={handleRegenerate}
+          disabled={loading || code.length !== 6}
+          className="px-5 py-2.5 bg-amber-600 text-white text-sm font-medium rounded-lg hover:bg-amber-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+        >
+          {loading ? "Regenerating…" : "Regenerate codes"}
+        </button>
+
+        <button
+          onClick={onCancel}
+          className="px-5 py-2.5 border border-zinc-300 text-zinc-700 text-sm font-medium rounded-lg hover:bg-zinc-50 transition-colors"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function SecuritySettings() {
   const [status, setStatus] = useState(null);
   const [loadingStatus, setLoadingStatus] = useState(true);
-  const [view, setView] = useState("idle");
+  const [view, setView] = useState("idle"); // idle | setup | backup-codes | disabling | regenerating
   const [backupCodes, setBackupCodes] = useState([]);
 
   useEffect(() => {
@@ -315,7 +390,17 @@ export default function SecuritySettings() {
     fetchStatus();
   };
 
-  const handleDone = () => setView("idle");
+  const handleRegenerated = (codes) => {
+    setBackupCodes(codes);
+    setView("backup-codes");
+    fetchStatus();
+  };
+
+  const handleDone = () => {
+    setView("idle");
+    fetchStatus();
+  };
+
   const handleDisabled = () => {
     setView("idle");
     fetchStatus();
@@ -352,6 +437,7 @@ export default function SecuritySettings() {
                 />
               </svg>
             </div>
+
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-base font-semibold text-zinc-900">
@@ -361,9 +447,11 @@ export default function SecuritySettings() {
                   <StatusBadge enabled={status.totp_enabled} />
                 )}
               </div>
+
               <p className="text-sm text-zinc-500 mt-0.5">
                 Add an extra layer of security using Google Authenticator.
               </p>
+
               {!loadingStatus && status?.totp_enabled && (
                 <p className="text-xs text-zinc-400 mt-1">
                   {status.backup_codes_remaining} backup code
@@ -376,12 +464,20 @@ export default function SecuritySettings() {
           {view === "idle" && !loadingStatus && status && (
             <div className="shrink-0">
               {status.totp_enabled ? (
-                <button
-                  onClick={() => setView("disabling")}
-                  className="px-4 py-2 text-sm font-medium text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors"
-                >
-                  Disable
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setView("regenerating")}
+                    className="px-4 py-2 text-sm font-medium text-amber-700 border border-amber-200 rounded-lg hover:bg-amber-50 transition-colors"
+                  >
+                    Regenerate
+                  </button>
+                  <button
+                    onClick={() => setView("disabling")}
+                    className="px-4 py-2 text-sm font-medium text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors"
+                  >
+                    Disable
+                  </button>
+                </div>
               ) : (
                 <button
                   onClick={() => setView("setup")}
@@ -403,12 +499,21 @@ export default function SecuritySettings() {
                 onCancel={() => setView("idle")}
               />
             )}
+
             {view === "backup-codes" && (
               <BackupCodesStep codes={backupCodes} onDone={handleDone} />
             )}
+
             {view === "disabling" && (
               <DisableStep
                 onDisabled={handleDisabled}
+                onCancel={() => setView("idle")}
+              />
+            )}
+
+            {view === "regenerating" && (
+              <RegenerateStep
+                onRegenerated={handleRegenerated}
                 onCancel={() => setView("idle")}
               />
             )}
