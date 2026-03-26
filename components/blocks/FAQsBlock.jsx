@@ -30,6 +30,7 @@ export default function FAQsBlock() {
             <details
               className="group bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm"
               open=""
+              key={index} 
             >
               <summary className="flex items-center justify-between p-6 cursor-pointer list-none">
                 <span className="font-bold text-slate-900">

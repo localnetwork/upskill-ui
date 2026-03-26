@@ -110,7 +110,7 @@ export default function VideoPreview({
           console.log("PiP error:", err);
         }
       },
-      { threshold: 0.5 }
+      { threshold: 0.5 },
     );
 
     observer.observe(containerRef.current);
@@ -125,7 +125,7 @@ export default function VideoPreview({
         {
           course_id: course.id,
           curriculum_id: lecture.id,
-        }
+        },
       );
       console.log("✅ Progress saved for", lecture.title);
     } catch (error) {
@@ -145,7 +145,7 @@ export default function VideoPreview({
         sections: prev.sections.map((section) => ({
           ...section,
           curriculums: section.curriculums.map((c) =>
-            c.id === lecture.id ? { ...c, is_taken: true } : c
+            c.id === lecture.id ? { ...c, is_taken: true } : c,
           ),
         })),
       };
@@ -256,7 +256,7 @@ export default function VideoPreview({
                 <button
                   onClick={() =>
                     router.push(
-                      `/courses/${course.slug}/learn?lecture=${nextLecture.uuid}`
+                      `/courses/${course.slug}/learn?lecture=${nextLecture.uuid}`,
                     )
                   }
                   className="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-sm transition"

@@ -2,22 +2,31 @@ const PAYPAL_API_BASE = "https://api-m.sandbox.paypal.com";
 
 export default async function handler(req, res) {
   try {
-    const { code, error, state } = req.query;
+    const { code, error } = req.query;
 
     if (error) {
-      return res.redirect(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/settings/payouts?paypal=error`,
-      );
+      return res.redirect("http://127.0.0.1:3000/settings/payout?paypal=error");
     }
 
     if (!code) {
       return res.status(400).json({ error: "Missing code" });
     }
 
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
-    const redirectUri = `${baseUrl}/api/paypal/callback`;
+    const redirectUri = "http://127.0.0.1:3000/api/paypal/callback";
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+    const tokenCookieName = process.env.NEXT_PUBLIC_TOKEN; // your auth cookie name
 
-    // 1) Exchange code for access token
+    console.log("🔹 PayPal Callback Start");
+    console.log("baseUrl:", baseUrl);
+    console.log("code:", code);
+
+    if (!baseUrl) {
+      return res.status(500).json({ error: "Missing API_URL env var" });
+    }
+
+    // =========================
+    // 1. Exchange code → access token
+    // =========================
     const tokenRes = await fetch(`${PAYPAL_API_BASE}/v1/oauth2/token`, {
       method: "POST",
       headers: {
@@ -36,54 +45,124 @@ export default async function handler(req, res) {
     });
 
     const tokenData = await tokenRes.json();
+
     if (!tokenRes.ok) {
-      return res
-        .status(400)
-        .json({ error: "Token exchange failed", details: tokenData });
+      console.error("❌ TOKEN ERROR:", tokenData);
+      return res.status(400).json({
+        error: "Token exchange failed",
+        details: tokenData,
+      });
     }
 
-    // 2) Fetch email from userinfo
+    const accessToken = tokenData.access_token;
+    console.log("✅ Access Token received");
+
+    // =========================
+    // 2. Get PayPal user info
+    // =========================
     const userRes = await fetch(
       `${PAYPAL_API_BASE}/v1/identity/openidconnect/userinfo?schema=openid`,
-      { headers: { Authorization: `Bearer ${tokenData.access_token}` } },
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      },
     );
 
     const userInfo = await userRes.json();
+
     if (!userRes.ok) {
-      return res
-        .status(400)
-        .json({ error: "Userinfo failed", details: userInfo });
+      console.error("❌ USER INFO ERROR:", userInfo);
+      return res.status(400).json({
+        error: "Userinfo failed",
+        details: userInfo,
+      });
     }
 
     const paypalEmail = userInfo.email;
     const paypalAccountId = userInfo.payer_id || userInfo.user_id || null;
 
+    console.log("✅ PayPal User:", { paypalEmail, paypalAccountId });
+
     if (!paypalEmail) {
-      return res
-        .status(400)
-        .json({ error: "No email returned", details: userInfo });
+      return res.status(400).json({
+        error: "No email returned",
+        details: userInfo,
+      });
     }
 
-    // 3) Save to YOUR endpoint
-    const saveRes = await fetch(
-      `${baseUrl}/api/instructors/payout-methods/paypal`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ paypalEmail, paypalAccountId }),
+    // =========================
+    // 3. Extract your user token from cookie
+    // =========================
+    const cookieHeader = req.headers.cookie || "";
+
+    console.log("req.headers.cookie", req.headers.cookie);
+    let userToken = null;
+
+    if (cookieHeader) {
+      const cookies = Object.fromEntries(
+        cookieHeader.split("; ").map((c) => {
+          const [key, ...v] = c.split("=");
+          return [key, decodeURIComponent(v.join("="))];
+        }),
+      );
+      userToken = cookies[tokenCookieName];
+    }
+
+    console.log("🔐 Extracted Token:", userToken ? "FOUND" : "NOT FOUND");
+
+    if (!userToken) {
+      return res.status(401).json({
+        error: "Unauthorized",
+        message: "User token cookie not found",
+      });
+    }
+
+    // =========================
+    // 4. Save to backend
+    // =========================
+    console.log("🔹 Saving to backend...");
+
+    const saveRes = await fetch(`${baseUrl}/payout-accounts`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${userToken}`,
       },
-    );
+      body: JSON.stringify({
+        provider: "paypal",
+        email: paypalEmail,
+        accountId: paypalAccountId,
+      }),
+    });
+
+    const saveData = await saveRes.json().catch(() => ({}));
+
+    console.log("➡️ POST:", `${baseUrl}/payout-accounts`);
+    console.log("📦 RESPONSE STATUS:", saveRes.status);
+    console.log("📦 RESPONSE DATA:", saveData);
 
     if (!saveRes.ok) {
-      const details = await saveRes.json().catch(() => ({}));
-      return res.status(500).json({ error: "Failed saving to DB", details });
+      return res.status(500).json({
+        error: "Save failed",
+        details: saveData,
+      });
     }
 
-    // 4) Redirect back
-    return res.redirect(`${baseUrl}/settings/payouts?paypal=connected`);
+    console.log("✅ Saved successfully");
+
+    // =========================
+    // 5. Redirect back to FE
+    // =========================
+    return res.redirect(
+      "http://127.0.0.1:3000/settings/payout?paypal=connected",
+    );
   } catch (e) {
-    return res
-      .status(500)
-      .json({ error: "Callback handler crashed", details: String(e) });
+    console.error("❌ CALLBACK CRASH:", e);
+
+    return res.status(500).json({
+      error: "Callback handler crashed",
+      details: e?.message || JSON.stringify(e, null, 2),
+    });
   }
 }

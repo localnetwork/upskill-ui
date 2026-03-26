@@ -59,7 +59,7 @@ export default function VideoForm({ onSave, onCancel, lecture }) {
           headers: {
             "Content-Type": "multipart/form-data",
           },
-        }
+        },
       );
 
       console.log("File uploaded successfully:", response.data.data);

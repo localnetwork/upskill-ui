@@ -72,7 +72,7 @@ const isLoggedInBlock = async (req) => {
   const token = req.cookies.get(process.env.NEXT_PUBLIC_TOKEN)?.value;
   // console.log("token", token);
   const decoded = await decodeToken(token);
-  const restrictedPaths = ["/login", "/register", "/forgot"];
+  const restrictedPaths = ["/login", "/register", "/forgot", "/verify-2fa"];
 
   if (token && restrictedPaths.includes(req.nextUrl.pathname)) {
     const url = req.nextUrl.clone();
@@ -124,5 +124,6 @@ export const config = {
     "/checkout",
     "/checkout/:path*",
     "/cart",
+    "/verify-2fa",
   ],
 };

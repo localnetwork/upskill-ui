@@ -1,84 +1,106 @@
 "use client";
 
-import { useState } from "react";
+import BaseApi from "@/lib/api/_base.api";
+import { Check, CheckCircle, Wallet } from "lucide-react";
+import { useEffect, useState } from "react";
+
+import PAYOUTACCOUNTAPI from "@/lib/api/payout-accounts/request";
 
 export default function Page() {
   const [loading, setLoading] = useState(false);
+  // 🔹 SWR hook usage
+  const {
+    data: payoutAccounts,
+    error,
+    isLoading,
+  } = PAYOUTACCOUNTAPI.getPayoutAccounts();
 
+  const paypalAccount = payoutAccounts?.find(
+    (acc) => acc.provider === "paypal",
+  );
   const connectPayPal = () => {
+    const clientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID;
+
+    if (!clientId) {
+      alert("Missing PayPal Client ID");
+      return;
+    }
+
     setLoading(true);
 
-    const redirectUri = "http://127.0.0.1:3000/api/paypal/callback"; // Change to your actual callback URL
+    const redirectUri = "http://127.0.0.1:3000/api/paypal/callback";
 
     const params = new URLSearchParams({
-      client_id: process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID,
+      client_id: clientId,
       response_type: "code",
-      scope: "email",
+      scope:
+        "openid profile email https://uri.paypal.com/services/paypalattributes",
       redirect_uri: redirectUri,
     });
 
-    // ✅ Sandbox OAuth authorize URL (required flowEntry)
     const url = `https://www.sandbox.paypal.com/signin/authorize?flowEntry=static&${params.toString()}`;
 
-    window.open(url, "paypal-connect", "width=500,height=700");
-
-    // reset loading after popup opens
-    setTimeout(() => setLoading(false), 800);
+    // 🔹 Redirect instead of opening a popup
+    window.location.href = url;
   };
 
   return (
-    <div className="max-w-xl mx-auto mt-10 space-y-6">
-      <h2 className="text-2xl font-semibold text-gray-900">Payout Method</h2>
+    <div className="bg-[#F8FAFC] py-[100px] h-full">
+      <div className="container space-y-6">
+        <h2 className="text-2xl font-semibold text-gray-900">
+          Payout & Tax Settings
+        </h2>
 
-      <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-        <div className="flex items-start gap-4">
-          {/* PayPal Icon */}
-          <div className="h-12 w-12 flex items-center justify-center rounded-full bg-blue-50">
-            <svg
-              viewBox="0 0 24 24"
-              className="h-6 w-6 text-blue-600"
-              fill="currentColor"
-            >
-              <path d="M7.5 3A4.5 4.5 0 003 7.5v9A4.5 4.5 0 007.5 21h9a4.5 4.5 0 004.5-4.5v-9A4.5 4.5 0 0016.5 3h-9Zm6.02 4.23c.93 0 1.67.25 2.2.75.54.5.8 1.18.8 2.05 0 .87-.23 1.65-.7 2.32-.47.67-1.13 1.19-1.98 1.55-.85.36-1.84.54-2.97.54h-.91L9.5 18H7.9l1.4-8.95h4.24Zm-1.1 4.95c.74 0 1.32-.2 1.75-.6.43-.4.64-.95.64-1.66 0-.42-.14-.75-.43-.98-.28-.23-.7-.35-1.25-.35H10.8l-.43 3.6h.95Z" />
-            </svg>
+        <div className="rounded-lg p-6 border border-[#e2e8f0] shadow-sm">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-[#dcecff] rounded-lg">
+                <Wallet className="text-primary" size={25} />
+              </div>
+              <div>
+                <div className="flex gap-1 mb-2 items-center">
+                  <p className="font-bold">PayPal</p>
+                  {paypalAccount?.is_default === "1" && (
+                    <span className="ml-2 rounded-full text-[10px] bg-[#dcecff] text-primary px-[10px] py-[3px] font-semibold">
+                      Default
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500">
+                  Connect your PayPal account to receive payouts
+                </p>
+
+                {paypalAccount?.provider_email && (
+                  <p className="text-sm text-primary font-bold">
+                    {paypalAccount?.provider_email}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {paypalAccount?.provider_email && (
+              <span className="rounded-full bg-primary p-1">
+                <Check className="text-white" size={20} />
+              </span>
+            )}
           </div>
 
-          <div className="flex-1">
-            <h3 className="text-lg font-medium text-gray-900">PayPal</h3>
-
-            <p className="mt-1 text-sm text-gray-600">
-              Connect your PayPal account to receive instructor payouts. We’ll
-              securely retrieve your verified PayPal email.
-            </p>
-
-            <button
-              onClick={connectPayPal}
-              disabled={loading}
-              className={`mt-4 inline-flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-medium transition
-                ${
-                  loading
-                    ? "bg-gray-300 text-gray-600 cursor-not-allowed"
-                    : "bg-blue-600 text-white hover:bg-blue-700"
-                }`}
-            >
-              {loading ? (
-                <>
-                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                  Connecting…
-                </>
-              ) : (
-                <>
-                  <span>Connect PayPal</span>
-                </>
-              )}
-            </button>
-          </div>
+          <button
+            onClick={connectPayPal}
+            disabled={loading}
+            className="w-full cursor-pointer max-w-[320px] py-4 bg-primary text-white font-bold rounded-full"
+          >
+            {loading ? (
+              <>Redirecting...</>
+            ) : (
+              <>
+                {paypalAccount?.provider_email
+                  ? "Change Paypal Account"
+                  : "Connect PayPal"}
+              </>
+            )}
+          </button>
         </div>
-
-        <p className="mt-4 text-xs text-gray-500">
-          You’ll be redirected to PayPal to log in securely. No PayPal
-          credentials are stored on our platform.
-        </p>
       </div>
     </div>
   );

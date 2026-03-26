@@ -1,53 +1,110 @@
 "use client";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/router";
 import persistentStore from "@/lib/store/persistentStore";
 import AUTHAPI from "@/lib/api/auth/request";
 import toast from "react-hot-toast";
 import Link from "next/link";
 import { setCookie } from "nookies";
+import { Lock, Loader2, ArrowLeft, AlertTriangle, Info } from "lucide-react";
 
-// ─── Icons ────────────────────────────────────────────────────────────────────
+// ─── OTP Input: 6 individual digit boxes ─────────────────────────────────────
 
-function ShieldIcon() {
+function OTPInput({ value, onChange, disabled }) {
+  const inputsRef = useRef([]);
+  const digits = value.split("").concat(Array(6).fill("")).slice(0, 6);
+
+  const handleChange = (i, e) => {
+    const val = e.target.value.replace(/\D/g, "");
+    if (!val) return;
+    const char = val.slice(-1);
+    const next = digits.map((d, idx) => (idx === i ? char : d)).join("");
+    onChange(next);
+    if (i < 5) inputsRef.current[i + 1]?.focus();
+  };
+
+  const handleKeyDown = (i, e) => {
+    if (e.key === "Backspace") {
+      e.preventDefault();
+      if (digits[i]) {
+        const next = digits.map((d, idx) => (idx === i ? "" : d)).join("");
+        onChange(next);
+      } else if (i > 0) {
+        inputsRef.current[i - 1]?.focus();
+        const next = digits.map((d, idx) => (idx === i - 1 ? "" : d)).join("");
+        onChange(next);
+      }
+    } else if (e.key === "ArrowLeft" && i > 0) {
+      inputsRef.current[i - 1]?.focus();
+    } else if (e.key === "ArrowRight" && i < 5) {
+      inputsRef.current[i + 1]?.focus();
+    }
+  };
+
+  const handlePaste = (e) => {
+    e.preventDefault();
+    const pasted = e.clipboardData
+      .getData("text")
+      .replace(/\D/g, "")
+      .slice(0, 6);
+    onChange(pasted);
+    const nextIdx = Math.min(pasted.length, 5);
+    inputsRef.current[nextIdx]?.focus();
+  };
+
+  useEffect(() => {
+    if (value === "") inputsRef.current[0]?.focus();
+  }, [value]);
+
   return (
-    <svg
-      className="w-6 h-6 text-white"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      strokeWidth={1.8}
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"
-      />
-    </svg>
+    <div className="flex gap-2.5 justify-center" onPaste={handlePaste}>
+      {digits.map((digit, i) => (
+        <input
+          key={i}
+          ref={(el) => (inputsRef.current[i] = el)}
+          type="text"
+          inputMode="numeric"
+          maxLength={1}
+          value={digit}
+          onChange={(e) => handleChange(i, e)}
+          onKeyDown={(e) => handleKeyDown(i, e)}
+          disabled={disabled}
+          autoFocus={i === 0}
+          style={{
+            fontFamily: "'DM Mono', 'Fira Mono', 'Courier New', monospace",
+            letterSpacing: "0.05em",
+          }}
+          className={`
+            w-11 h-14 text-center text-xl font-semibold rounded-xl border-2 transition-all duration-150 outline-none
+            ${digit ? "border-slate-800 bg-slate-50 text-slate-900" : "border-slate-200 bg-white text-slate-900"}
+            focus:border-slate-800 focus:bg-white focus:shadow-[0_0_0_3px_rgba(15,23,42,0.08)]
+            disabled:opacity-40 disabled:cursor-not-allowed
+            caret-transparent select-none
+          `}
+        />
+      ))}
+    </div>
   );
 }
 
-function Spinner() {
+// ─── Attempt bar ──────────────────────────────────────────────────────────────
+
+function AttemptBar({ attempts, max }) {
+  if (!attempts) return null;
+  const remaining = max - attempts;
   return (
-    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-      <circle
-        className="opacity-25"
-        cx="12"
-        cy="12"
-        r="10"
-        stroke="currentColor"
-        strokeWidth="4"
-      />
-      <path
-        className="opacity-75"
-        fill="currentColor"
-        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-      />
-    </svg>
+    <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-50 border border-amber-200">
+      <AlertTriangle size={14} stroke="#d97706" />
+      <span className="text-xs font-medium text-amber-700">
+        {remaining === 1
+          ? "Last attempt — you'll be redirected after this"
+          : `${remaining} attempts remaining`}
+      </span>
+    </div>
   );
 }
 
-// ─── TOTP tab → POST /verify-2fa ─────────────────────────────────────────────
+// ─── TOTP Form ────────────────────────────────────────────────────────────────
 
 function TOTPForm() {
   const router = useRouter();
@@ -57,8 +114,8 @@ function TOTPForm() {
   const MAX_ATTEMPTS = 3;
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (code.length !== 6) return;
+    e?.preventDefault?.();
+    if (code.length !== 6 || loading) return;
 
     setLoading(true);
     try {
@@ -98,7 +155,9 @@ function TOTPForm() {
           toast.error(Array.isArray(msg) ? msg[0] : msg),
         );
       } else {
-        toast.error(err?.data?.message || "Invalid code. Please try again.");
+        toast.error(
+          err?.data?.message || "That code didn't match. Please try again.",
+        );
       }
 
       if (next >= MAX_ATTEMPTS) {
@@ -110,52 +169,51 @@ function TOTPForm() {
     }
   };
 
+  // Auto-submit when all 6 digits entered
+  useEffect(() => {
+    if (code.length === 6) handleSubmit();
+  }, [code]);
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
-      <div className="space-y-1.5">
-        <label className="block text-sm font-medium text-zinc-700">
-          Authenticator code
-        </label>
-        <input
-          type="text"
-          inputMode="numeric"
-          maxLength={6}
-          placeholder="000000"
-          value={code}
-          onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
-          autoFocus
-          disabled={loading}
-          className="w-full px-4 py-3 border border-zinc-300 rounded-lg font-mono text-2xl tracking-[0.5em] text-center focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent disabled:opacity-50"
-        />
-        <p className="text-xs text-zinc-400 text-center">
-          {code.length}/6 digits entered
+    <div className="space-y-6">
+      <div className="space-y-2 text-center">
+        <p className="text-sm text-slate-500">
+          Enter the 6-digit code from your authenticator app
         </p>
       </div>
 
-      {attempts > 0 && (
-        <p className="text-sm text-amber-600 font-medium text-center">
-          {attempts}/{MAX_ATTEMPTS} failed attempts
-        </p>
-      )}
+      <OTPInput value={code} onChange={setCode} disabled={loading} />
+
+      <AttemptBar attempts={attempts} max={MAX_ATTEMPTS} />
 
       <button
-        type="submit"
+        type="button"
+        onClick={handleSubmit}
         disabled={loading || code.length !== 6}
-        className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-zinc-900 text-white text-sm font-medium rounded-lg hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+        className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-semibold transition-all duration-200"
+        style={{
+          background: code.length === 6 && !loading ? "#0f172a" : "#e2e8f0",
+          color: code.length === 6 && !loading ? "#fff" : "#94a3b8",
+          cursor: code.length === 6 && !loading ? "pointer" : "not-allowed",
+        }}
       >
         {loading ? (
           <>
-            <Spinner /> Verifying…
+            <Loader2 size={16} className="animate-spin" /> Verifying…
           </>
         ) : (
-          "Verify Code"
+          "Verify & Sign In"
         )}
       </button>
-    </form>
+
+      <p className="text-xs text-center text-slate-400">
+        Codes refresh every 30 seconds. Make sure your device clock is synced.
+      </p>
+    </div>
   );
 }
 
-// ─── Backup code tab → POST /verify-backup-code ───────────────────────────────
+// ─── Backup Code Form ─────────────────────────────────────────────────────────
 
 function BackupCodeForm() {
   const router = useRouter();
@@ -163,9 +221,9 @@ function BackupCodeForm() {
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    e?.preventDefault?.();
     const trimmed = code.trim().toUpperCase();
-    if (trimmed.length < 6) return;
+    if (trimmed.length < 6 || loading) return;
 
     setLoading(true);
     try {
@@ -176,40 +234,37 @@ function BackupCodeForm() {
         return;
       }
 
-      // Dedicated endpoint — does not issue a JWT, only marks the code used.
       const res = await AUTHAPI.redeemBackupCode(preAuthToken, trimmed);
-
-      if (res?.data?.status === "success" && res?.data?.token) {
-        persistentStore.setState({
-          token: res.data.token,
-          profile: res.data.user,
-          preAuthToken: null,
-        });
-        setCookie(null, process.env.NEXT_PUBLIC_TOKEN, res.data.token, {
-          path: "/",
-        });
-        toast.success("Backup code accepted. You are now logged in.");
-        router.push("/");
-      } else {
-        toast.error("Unexpected response. Please try again.");
-      }
+      persistentStore.setState({
+        token: res.data.token,
+        profile: res.data.user,
+        preAuthToken: null,
+      });
+      setCookie(null, process.env.NEXT_PUBLIC_TOKEN, res.data.token, {
+        path: "/",
+      });
+      toast.success("Backup code accepted. You're now signed in.");
+      router.push("/");
     } catch (err) {
+      toast.error(err?.data?.message || "Invalid or already-used backup code.");
       setCode("");
-      toast.error(err?.data?.message || "Invalid or already used backup code.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
-      <div className="space-y-1.5">
-        <label className="block text-sm font-medium text-zinc-700">
-          Backup code
-        </label>
+    <div className="space-y-6">
+      <div className="space-y-2 text-center">
+        <p className="text-sm text-slate-500">
+          Enter one of the backup codes you saved when you set up 2FA
+        </p>
+      </div>
+
+      <div className="space-y-2">
         <input
           type="text"
-          placeholder="e.g. A1B2C3D4"
+          placeholder="********"
           value={code}
           onChange={(e) =>
             setCode(e.target.value.replace(/[^A-Za-z0-9]/g, "").toUpperCase())
@@ -217,97 +272,149 @@ function BackupCodeForm() {
           autoFocus
           disabled={loading}
           maxLength={12}
-          className="w-full px-4 py-3 border border-zinc-300 rounded-lg font-mono text-xl tracking-widest text-center uppercase focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent disabled:opacity-50"
+          style={{
+            fontFamily: "'DM Mono', 'Fira Mono', monospace",
+            letterSpacing: "0.12em",
+          }}
+          className="w-full px-4 py-3.5 border-2 border-slate-200 rounded-xl text-lg text-center uppercase tracking-widest focus:outline-none focus:border-slate-800 focus:shadow-[0_0_0_3px_rgba(15,23,42,0.08)] transition-all disabled:opacity-40 bg-white text-slate-900"
         />
-        <p className="text-xs text-zinc-400 text-center">
+        <p className="text-xs text-slate-400 text-center flex items-center justify-center gap-1.5">
+          <Info size={11} />
           Each backup code can only be used once
         </p>
       </div>
 
       <button
-        type="submit"
+        type="button"
+        onClick={handleSubmit}
         disabled={loading || code.trim().length < 6}
-        className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-zinc-900 text-white text-sm font-medium rounded-lg hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+        className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-semibold transition-all duration-200"
+        style={{
+          background:
+            code.trim().length >= 6 && !loading ? "#0f172a" : "#e2e8f0",
+          color: code.trim().length >= 6 && !loading ? "#fff" : "#94a3b8",
+          cursor:
+            code.trim().length >= 6 && !loading ? "pointer" : "not-allowed",
+        }}
       >
         {loading ? (
           <>
-            <Spinner /> Verifying…
+            <Loader2 size={16} className="animate-spin" /> Verifying…
           </>
         ) : (
           "Use Backup Code"
         )}
       </button>
-    </form>
+    </div>
   );
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-const TABS = [
-  { id: "totp", label: "Authenticator app" },
-  { id: "backup", label: "Backup code" },
-];
-
 export default function Verify2FA() {
-  const [tab, setTab] = useState("totp");
+  const [mode, setMode] = useState("totp");
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-zinc-50 py-12 px-4">
-      <div className="w-full max-w-md space-y-6">
-        {/* Header */}
-        <div className="text-center space-y-3">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-zinc-900 mx-auto">
-            <ShieldIcon />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-zinc-900">
-              Two-Factor Authentication
-            </h1>
-            <p className="text-sm text-zinc-500 mt-1">
-              Verify your identity to continue
-            </p>
-          </div>
-        </div>
+    <div
+      className="min-h-screen flex items-center justify-center px-4 py-12"
+      style={{
+        background: "linear-gradient(145deg, #f8fafc 0%, #f1f5f9 100%)",
+      }}
+    >
+      {/* Subtle background grid */}
+      <div
+        className="fixed inset-0 pointer-events-none"
+        style={{
+          backgroundImage:
+            "radial-gradient(circle at 1px 1px, #cbd5e1 1px, transparent 0)",
+          backgroundSize: "28px 28px",
+          opacity: 0.35,
+        }}
+      />
+
+      <div className="relative w-full max-w-sm space-y-5">
+        {/* Back link */}
+        <Link
+          href="/login"
+          className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-400 hover:text-slate-700 transition-colors"
+        >
+          <ArrowLeft size={13} /> Back to login
+        </Link>
 
         {/* Card */}
-        <div className="bg-white border border-zinc-200 rounded-2xl overflow-hidden shadow-sm">
-          {/* Tabs */}
-          <div className="flex border-b border-zinc-100">
-            {TABS.map((t) => (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => setTab(t.id)}
-                className={`flex-1 py-3 text-sm font-medium transition-colors ${
-                  tab === t.id
-                    ? "text-zinc-900 border-b-2 border-zinc-900 -mb-px bg-white"
-                    : "text-zinc-400 hover:text-zinc-600"
-                }`}
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Form area */}
-          <div className="p-6">
-            {tab === "totp" ? <TOTPForm /> : <BackupCodeForm />}
-          </div>
-        </div>
-
-        {/* Tip */}
-        <div className="px-4 py-3 bg-blue-50 border border-blue-100 rounded-xl text-xs text-blue-700">
-          <span className="font-semibold">💡 Tip:</span> Make sure your device
-          time is synced. Time drift causes TOTP codes to fail.
-        </div>
-
-        {/* Back to login */}
-        <p className="text-center text-sm text-zinc-500">
-          <Link
-            href="/login"
-            className="text-zinc-700 font-medium hover:underline underline-offset-2"
+        <div
+          className="bg-white rounded-2xl shadow-lg overflow-hidden"
+          style={{
+            boxShadow:
+              "0 4px 6px -1px rgba(0,0,0,0.05), 0 20px 60px -10px rgba(0,0,0,0.1), 0 0 0 1px rgba(0,0,0,0.04)",
+          }}
+        >
+          {/* Header stripe */}
+          <div
+            className="px-8 pt-8 pb-6 text-center"
+            style={{ borderBottom: "1px solid #f1f5f9" }}
           >
-            ← Back to Login
+            <div
+              className="inline-flex items-center justify-center w-11 h-11 rounded-2xl mb-4 text-white"
+              style={{
+                background: "linear-gradient(135deg, #1e293b 0%, #334155 100%)",
+              }}
+            >
+              <Lock size={20} />
+            </div>
+            <h1
+              className="text-xl font-bold text-slate-900 tracking-tight"
+              style={{ fontFamily: "'Sora', 'DM Sans', system-ui, sans-serif" }}
+            >
+              Verify your identity
+            </h1>
+            <p className="text-sm text-slate-500 mt-1">
+              Two-factor authentication required
+            </p>
+          </div>
+
+          {/* Mode toggle */}
+          <div className="px-6 pt-5">
+            <div
+              className="flex rounded-xl p-1 gap-1"
+              style={{ background: "#f1f5f9" }}
+            >
+              {[
+                { id: "totp", label: "Authenticator app" },
+                { id: "backup", label: "Backup code" },
+              ].map((t) => (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => setMode(t.id)}
+                  className="flex-1 py-2 text-xs font-semibold rounded-lg transition-all duration-200"
+                  style={{
+                    background: mode === t.id ? "#fff" : "transparent",
+                    color: mode === t.id ? "#0f172a" : "#94a3b8",
+                    boxShadow:
+                      mode === t.id ? "0 1px 3px rgba(0,0,0,0.08)" : "none",
+                  }}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Form */}
+          <div className="px-6 pb-8 pt-6">
+            {mode === "totp" ? <TOTPForm /> : <BackupCodeForm />}
+          </div>
+        </div>
+
+        {/* Help text */}
+        <p className="text-center text-xs text-slate-400">
+          Lost access to your authenticator?{" "}
+          <Link
+            href="/support"
+            className="text-slate-600 font-medium hover:underline underline-offset-2"
+          >
+            Contact support
           </Link>
         </p>
       </div>
