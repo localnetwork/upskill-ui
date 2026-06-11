@@ -2,14 +2,14 @@ import Image from "next/image";
 import CARTAPI from "@/lib/api/cart/request";
 import { mutate } from "swr";
 export default function CartItemCard({ item, isLast }) {
-  const handleDelete = async (id) => {
+  const handleDelete = async (cartItemId) => {
     const confirmed = window.confirm(
       "Are you sure you want to remove this item from the cart?"
     );
     if (!confirmed) return;
 
     try {
-      const response = await CARTAPI.removeItem(id);
+      const response = await CARTAPI.removeItem(cartItemId);
 
       mutate(`${process.env.NEXT_PUBLIC_API_URL}/cart/count`);
       mutate(`${process.env.NEXT_PUBLIC_API_URL}/cart`);
@@ -47,7 +47,7 @@ export default function CartItemCard({ item, isLast }) {
             <button
               className="hover:bg-[#F0F6FF] px-[15px] py-[5px] rounded-md cursor-pointer"
               onClick={(e) => {
-                handleDelete(item.cart_id);
+                handleDelete(item.id);
               }}
             >
               Remove

@@ -28,9 +28,13 @@ export default function UserCartCount() {
   const { data: cartItems, mutate: mutateCartItems } = CARTAPI.getCartInfo({
     render: !!profile && isLearner,
     onSuccess: (data) => {
+      const nextCartTotal =
+        data?.data?.cartTotal === undefined || data?.data?.cartTotal === null
+          ? null
+          : Number(data.data.cartTotal);
       cartStore.setState({
         cart: data?.data.cartItems || [],
-        cartTotal: data?.data.cartTotal || null,
+        cartTotal: nextCartTotal,
       });
     },
     onError: (error) => {

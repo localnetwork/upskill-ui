@@ -258,6 +258,7 @@ export default function Course() {
               <div
                 className={`relative group cursor-pointer transition-all ${isScrolled ? "mt-[-225px]" : ""}`}
                 onClick={() => {
+                  console.log("course", course);
                   modalState.setState({
                     modalInfo: {
                       type: "COURSE_PROMO_VIDEO",

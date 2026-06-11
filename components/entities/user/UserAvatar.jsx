@@ -29,16 +29,23 @@ export default function UserAvatar({ className, profile, size = "md" }) {
   const profilePic =
     profile?.user_picture || currentProfile?.user_picture || null;
 
+  const imageSrc =
+    profilePic?.path && (profilePic.path.startsWith("http://") || profilePic.path.startsWith("https://"))
+      ? profilePic.path
+      : profilePic?.path
+        ? `${process.env.NEXT_PUBLIC_API_DOMAIN}${profilePic.path}`
+        : null;
+
   return (
     <div>
-      {profilePic ? (
+      {imageSrc ? (
         <div
           className={`${appliedSize} ${className ?? ""} rounded-full text-white border-[#e5e7eb] border-[5px] 
           select-none overflow-hidden bg-[#3588FC] 
           flex items-center justify-center font-semibold`}
         >
           <Image
-            src={process.env.NEXT_PUBLIC_API_DOMAIN + profilePic.path}
+            src={imageSrc}
             alt="User Avatar"
             width={100}
             height={100}

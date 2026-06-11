@@ -34,42 +34,75 @@ export default function Page() {
                 router.push(`/courses/${item.course.slug}/learn`)
               }
             >
-              {item?.course?.cover_image && (
-                <div className="relative">
-                  <Link
-                    className="absolute p-[15px] group-hover:opacity-100 opacity-0 bg-[rgba(0,0,0,.5)] flex items-center justify-center bg-opacity-20 top-0 left-0 w-full h-full"
-                    href={`/courses/${item.course.slug}/learn`}
-                  >
-                    <span className="p-3 bg-white rounded-full flex items-center justify-center group-hover:scale-100 scale-80 transition-all">
-                      <Play size={30} className="text-black opacity-80" />
-                    </span>
-                  </Link>
-                  <Image
-                    src={
-                      process.env.NEXT_PUBLIC_API_DOMAIN +
-                      item.course.cover_image?.path
-                    }
-                    alt={item.course.title}
-                    width={400}
-                    height={200}
-                    className="w-full h-[200px] object-cover mb-4"
-                  />
-                </div>
-              )}
+              {(() => {
+                const progress = Number(item?.progress?.progress_pct || 0);
+                const completedLessons = Number(
+                  item?.progress?.completed_lessons || 0,
+                );
+                const totalLessons = Number(item?.progress?.total_lessons || 0);
+                const progressLabel =
+                  progress >= 100
+                    ? "Completed"
+                    : progress > 0
+                      ? "Continue Course"
+                      : "Start Course";
+                const progressWidth = Math.min(100, Math.max(0, progress));
+                const coverPath = item?.course?.cover_image?.path;
 
-              <h3 className="font-semibold text-[18px]">
-                {item.course.title}
-              </h3>
+                return (
+                  <>
+                    <div className="relative">
+                      <Link
+                        className="absolute p-[15px] group-hover:opacity-100 opacity-0 bg-[rgba(0,0,0,.5)] flex items-center justify-center bg-opacity-20 top-0 left-0 w-full h-full"
+                        href={`/courses/${item.course.slug}/learn`}
+                      >
+                        <span className="p-3 bg-white rounded-full flex items-center justify-center group-hover:scale-100 scale-80 transition-all">
+                          <Play size={30} className="text-black opacity-80" />
+                        </span>
+                      </Link>
+                      <Image
+                        src={
+                          coverPath
+                            ? process.env.NEXT_PUBLIC_API_DOMAIN + coverPath
+                            : "/placeholder-cover.webp"
+                        }
+                        alt={item.course.title}
+                        width={400}
+                        height={200}
+                        className="w-full h-[200px] object-cover mb-4"
+                      />
+                    </div>
 
-              <p className="font-light text-[14px]">
-                {item.course.educator?.firstName} {item.course.educator?.lastName}
-              </p>
+                    <h3 className="font-semibold text-[18px]">
+                      {item.course.title}
+                    </h3>
 
-              <div className="mt-3 text-[14px] font-light">
-                <div className="h-[2px] bg-[#ddd] w-full"></div>
+                    <p className="font-light text-[14px]">
+                      {item.course.educator?.firstName}{" "}
+                      {item.course.educator?.lastName}
+                    </p>
 
-                <div className="mt-1">Start Course</div>
-              </div>
+                    <div className="mt-3 text-[14px] font-light">
+                      <div className="h-[4px] bg-[#ddd] w-full rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-[#0056D2]"
+                          style={{ width: `${progressWidth}%` }}
+                        />
+                      </div>
+
+                      <div className="mt-1 flex justify-between text-[13px]">
+                        <span>{progressLabel}</span>
+                        <span>
+                          {Math.round(progressWidth)}%{" "}
+                          {totalLessons > 0
+                            ? `(${completedLessons}/${totalLessons})`
+                            : ""}
+                        </span>
+                      </div>
+                    </div>
+                  </>
+                );
+              })()}
             </div>
           ))
         ) : (

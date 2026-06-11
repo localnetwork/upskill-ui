@@ -7,13 +7,11 @@ import CourseAssetPreview from "@/components/entities/course/learn/CourseAssetPr
 import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import CourseOverview from "@/components/entities/course/learn/CourseOverview";
-import axios from "axios";
 export async function getServerSideProps(context) {
   const { params, req, res } = context;
   const { slug } = params;
 
-  // Optional: if your interceptor needs request context
-  setContext({ req, res });
+  setContext(context);
 
   try {
     const response = await BaseApi.get(
@@ -26,7 +24,27 @@ export async function getServerSideProps(context) {
       },
     };
   } catch (error) {
-    console.error("Error:", error);
+    const status = error?.status;
+    const message = String(error?.data?.message || "").toLowerCase();
+
+    if (status === 401 || message.includes("invalid") || message.includes("expired")) {
+      return {
+        redirect: {
+          destination: "/login",
+          permanent: false,
+        },
+      };
+    }
+
+    if (status === 403 || status === 404) {
+      return {
+        redirect: {
+          destination: "/my-courses/learning",
+          permanent: false,
+        },
+      };
+    }
+
     return { notFound: true };
   }
 }

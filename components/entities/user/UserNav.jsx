@@ -13,7 +13,11 @@ export default function UserNav() {
   const dropdownRef = useRef(null);
   const router = useRouter();
 
-  const filteredMenu = filteredLinks(userNavLinks, profile?.roles);
+  const filteredMenu = filteredLinks(
+    userNavLinks,
+    profile?.roles,
+    profile?.permissions,
+  );
 
   // ✅ Close dropdown when clicking outside
   useEffect(() => {

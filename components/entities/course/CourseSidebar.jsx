@@ -9,10 +9,27 @@ export default function CourseSidebar({ course }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const courseManagement = courseStore((state) => state.courseManagement);
-  const activeCourse = courseManagement?.uuid === course?.uuid ? courseManagement : course;
-  const workflowStatus = activeCourse?.workflowStatus || activeCourse?.workflow_status || "DRAFT";
-  const isPublished =
-    String(activeCourse?.published) === "1" || activeCourse?.isPublished === true;
+
+  const parseDate = (value) => {
+    const timestamp = value ? new Date(value).getTime() : 0;
+    return Number.isNaN(timestamp) ? 0 : timestamp;
+  };
+
+  const activeCourse =
+    courseManagement?.uuid === course?.uuid
+      ? parseDate(courseManagement?.updatedAt) >= parseDate(course?.updatedAt)
+        ? { ...course, ...courseManagement }
+        : { ...courseManagement, ...course }
+      : course;
+
+  const workflowStatus = String(
+    activeCourse?.workflowStatus || activeCourse?.workflow_status || "DRAFT",
+  ).toUpperCase();
+  const isPublished = (
+    activeCourse?.isPublished !== undefined
+      ? activeCourse?.isPublished
+      : activeCourse?.published
+  ) === true || String(activeCourse?.published) === "1";
 
   const editingLinks = [
     {
@@ -43,7 +60,8 @@ export default function CourseSidebar({ course }) {
   const normalizeCourseState = (nextCourse = {}) => ({
     ...activeCourse,
     ...nextCourse,
-    uuid: nextCourse?.uuid || nextCourse?.id || activeCourse?.uuid || course?.uuid,
+    uuid:
+      nextCourse?.uuid || nextCourse?.id || activeCourse?.uuid || course?.uuid,
     published:
       nextCourse?.published !== undefined
         ? String(nextCourse.published)
@@ -60,7 +78,9 @@ export default function CourseSidebar({ course }) {
 
     setIsSubmitting(true);
     try {
-      const response = await CourseAPI.submitForReview(activeCourse?.uuid || course?.uuid);
+      const response = await CourseAPI.submitForReview(
+        activeCourse?.uuid || course?.uuid,
+      );
       const updatedCourse = response?.data?.data || {};
       toast.success("Course submitted for review");
       courseStore.setState({
@@ -82,7 +102,9 @@ export default function CourseSidebar({ course }) {
 
     setIsSubmitting(true);
     try {
-      const response = await CourseAPI.unpublish(activeCourse?.uuid || course?.uuid);
+      const response = await CourseAPI.unpublish(
+        activeCourse?.uuid || course?.uuid,
+      );
       const updatedCourse = response?.data?.data || {};
       toast.success("Course drafted successfully");
       courseStore.setState({
@@ -91,6 +113,28 @@ export default function CourseSidebar({ course }) {
     } catch (error) {
       console.error("Error unpublishing course:", error);
       toast.error(error?.data?.message || "Error unpublishing course");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handlePublish = async () => {
+    const confirm = window.confirm(
+      "Publishing this course will make it visible to learners. Continue?",
+    );
+    if (!confirm) return;
+
+    setIsSubmitting(true);
+    try {
+      const response = await CourseAPI.publish(activeCourse?.uuid || course?.uuid);
+      const updatedCourse = response?.data?.data || {};
+      toast.success("Course published successfully");
+      courseStore.setState({
+        courseManagement: normalizeCourseState(updatedCourse),
+      });
+    } catch (error) {
+      console.error("Error publishing course:", error);
+      toast.error(error?.data?.message || "Error publishing course");
     } finally {
       setIsSubmitting(false);
     }
@@ -165,12 +209,26 @@ export default function CourseSidebar({ course }) {
             >
               {isSubmitting ? "Please wait..." : "Request for Review"}
             </button>
+          ) : workflowStatus === "APPROVED" ? (
+            <button
+              onClick={handlePublish}
+              disabled={isSubmitting}
+              className={`bg-[#0056D2] font-semibold text-white px-[20px] py-[10px] rounded-[5px] w-full hover:bg-[#1d6de0] ${
+                isSubmitting ? "opacity-70 cursor-not-allowed" : ""
+              }`}
+            >
+              {isSubmitting ? "Please wait..." : "Publish this Course"}
+            </button>
           ) : (
             <button
               disabled
               className="bg-[#0056D2] opacity-70 cursor-not-allowed font-semibold text-white px-[20px] py-[10px] rounded-[5px] w-full"
             >
-              {workflowStatus === "PENDING_APPROVAL" ? "Pending Review" : "Under Review"}
+              {workflowStatus === "PENDING_APPROVAL"
+                ? "Pending Review"
+                : workflowStatus === "REJECTED"
+                  ? "Changes Required"
+                  : "Under Review"}
             </button>
           )}
         </div>

@@ -10,6 +10,11 @@
     "access": ["*"]
   },
   {
+    "name": "Admin Dashboard",
+    "link": "/admin",
+    "access": ["admin"]
+  },
+  {
     "name": "Instructor Dashboard",
     "link": "/instructor/courses",
     "access": ["add-course"]

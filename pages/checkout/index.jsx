@@ -39,35 +39,43 @@ export default function Checkout() {
 
   const handleCheckout = async () => {
     setIsLoading(true);
-    console.log("cartTotal", cartTotal);
-    if (cartTotal === null) {
+
+    const hasNoCartItems = !Array.isArray(cart) || cart.length === 0;
+    const totalNumber = Number(cartTotal);
+    const hasInvalidTotal =
+      cartTotal === null || cartTotal === undefined || Number.isNaN(totalNumber);
+
+    if (hasNoCartItems || hasInvalidTotal) {
       setIsLoading(false);
       router.replace("/cart");
       return;
-    } else {
-      let payload = {
-        payment_method: "paypal",
-      };
-      try {
-        const response = await BaseApi.post(
-          process.env.NEXT_PUBLIC_API_URL + "/checkout",
-          payload
-        );
+    }
 
-        if (response.data.redirect_url) {
-          router.push(response.data.redirect_url);
-        }
-      } catch (error) {
-        setIsLoading(false);
+    const payload = {
+      payment_method: "paypal",
+    };
+    try {
+      const response = await BaseApi.post(
+        process.env.NEXT_PUBLIC_API_URL + "/checkout",
+        payload,
+      );
 
-        if (error.status === 400) {
-          toast.error(error.data.message || "Unable to process checkout.");
-          router.replace("/cart");
-          return;
-        }
-
-        console.error("Error during checkout:", error);
+      if (response.data.redirect_url) {
+        router.push(response.data.redirect_url);
+        return;
       }
+      setIsLoading(false);
+      toast.error("Unable to start checkout. Please try again.");
+    } catch (error) {
+      setIsLoading(false);
+
+      if (error.status === 400) {
+        toast.error(error.data.message || "Unable to process checkout.");
+        router.replace("/cart");
+        return;
+      }
+
+      console.error("Error during checkout:", error);
     }
   };
 
