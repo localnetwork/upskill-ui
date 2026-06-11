@@ -32,7 +32,7 @@ export default function Page() {
         `${process.env.NEXT_PUBLIC_API_URL}/courses`,
         payload
       );
-      router.push(`/instructor/courses/${response.data.data.uuid}/curriculum`);
+      router.push(`/instructor/courses/${response.data.data.slug}/curriculum`);
       setIsLoading(false);
     } catch (error) {
       console.log("error", error);

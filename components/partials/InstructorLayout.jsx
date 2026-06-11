@@ -2,6 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react";
 import InstructorSidebar from "../entities/instructor/InstructorSidebar";
+import persistentStore from "@/lib/store/persistentStore";
+import { parseCookies } from "nookies";
+import { useRouter } from "next/router";
+import BaseApi from "@/lib/api/_base.api";
+import { getAuthTokenFromCookieMap } from "@/lib/services/authToken";
 
 const STORAGE_KEY = "instructor_sidebar_collapsed";
 
@@ -34,6 +39,10 @@ function useMediaQuery(query) {
 
 export default function InstructorLayout({ children }) {
   const [collapsed, setCollapsed] = useState(false);
+  const [canAccess, setCanAccess] = useState(false);
+  const [accessResolved, setAccessResolved] = useState(false);
+  const profile = persistentStore((state) => state.profile);
+  const router = useRouter();
 
   // Breakpoints (adjust if you want)
   const isSm = useMediaQuery("(max-width: 639px)"); // <640
@@ -47,6 +56,64 @@ export default function InstructorLayout({ children }) {
       if (saved !== null) setCollapsed(saved === "true");
     } catch {}
   }, []);
+
+  useEffect(() => {
+    let mounted = true;
+    const verifyAccess = async () => {
+      const cookies = parseCookies();
+      const token = getAuthTokenFromCookieMap(cookies);
+      if (!token) {
+        router.replace("/login");
+        if (mounted) {
+          setCanAccess(false);
+          setAccessResolved(true);
+        }
+        return;
+      }
+
+      const currentRoles = Array.isArray(profile?.roles) ? profile.roles : [];
+      const hasEducatorRole = currentRoles.includes("EDUCATOR");
+      if (hasEducatorRole) {
+        if (mounted) {
+          setCanAccess(true);
+          setAccessResolved(true);
+        }
+        return;
+      }
+
+      try {
+        const meRes = await BaseApi.get(`${process.env.NEXT_PUBLIC_API_URL}/users/me`);
+        const me = meRes?.data?.data;
+        const meRoles = Array.isArray(me?.roles) ? me.roles : [];
+        persistentStore.setState({
+          profile: {
+            ...(profile || {}),
+            ...(me || {}),
+            roles: meRoles,
+          },
+        });
+
+        if (mounted) {
+          setCanAccess(meRoles.includes("EDUCATOR"));
+          setAccessResolved(true);
+        }
+        if (!meRoles.includes("EDUCATOR")) {
+          router.replace("/register?mode=instructor");
+        }
+      } catch (_error) {
+        if (mounted) {
+          setCanAccess(false);
+          setAccessResolved(true);
+        }
+        router.replace("/login");
+      }
+    };
+
+    verifyAccess();
+    return () => {
+      mounted = false;
+    };
+  }, [profile, router]);
 
   const toggleSidebar = () => {
     setCollapsed((prev) => {
@@ -68,6 +135,10 @@ export default function InstructorLayout({ children }) {
   }, [isSm, isMd, isLgUp]);
 
   const sidebarWidth = collapsed ? collapsedWidth : expandedWidth;
+
+  if (!accessResolved || !canAccess) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen">

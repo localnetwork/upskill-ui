@@ -21,6 +21,8 @@ const CartDrawer = dynamic(() => import("../entities/cart/CartDrawer"), {
 
 export default function Header() {
   const profile = persistentStore((state) => state.profile);
+  const roleList = Array.isArray(profile?.roles) ? profile.roles : [];
+  const isLearner = roleList.includes("LEARNER");
   const cartDrawerOpen = globalStore((state) => state.cartDrawerOpen);
   const setCartDrawerOpen = (val) =>
     globalStore.setState({ cartDrawerOpen: val });
@@ -105,7 +107,7 @@ export default function Header() {
                       </span>
                     </>
                   ) : (
-                    <UserCartCount />
+                    <>{isLearner ? <UserCartCount /> : null}</>
                   )}
                 </span>
 

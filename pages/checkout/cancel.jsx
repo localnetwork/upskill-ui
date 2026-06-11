@@ -1,45 +1,10 @@
-import BaseApi from "@/lib/api/_base.api";
-import { CheckCircle, CircleX } from "lucide-react";
-import Image from "next/image";
+import { CircleX } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/router";
-import { useEffect } from "react";
-import { setContext } from "@/lib/api/interceptor";
-export async function getServerSideProps(context) {
-  const { query } = context;
-  const { order_id, token } = query;
-  setContext(context);
-
-  try {
-    // ✅ include token as query param so backend can capture PayPal payment
-    // const res = await BaseApi.get(
-    //   `${process.env.NEXT_PUBLIC_API_URL}/orders/${order_id}`,
-    //   { params: { token } }
-    // );
-
-    // Cancel Order
-    await BaseApi.post(
-      `${process.env.NEXT_PUBLIC_API_URL}/orders/${order_id}/cancel`,
-      { reason: "Payment was cancelled by the user." }
-    );
-
-    return {
-      props: {
-        data: null,
-      },
-    };
-  } catch (error) {
-    console.log("has error", error);
-    return {
-      notFound: true,
-    };
-  }
+export async function getServerSideProps() {
+  return { props: {} };
 }
 
 export default function Page({}) {
-  const router = useRouter();
-  // const { order, orderLines } = data;
-
   return (
     <div className="py-[50px] flex flex-col justify-center items-center bg-[#F6F6F6] min-h-[calc(100vh-100px)]">
       <div>

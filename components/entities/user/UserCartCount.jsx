@@ -11,9 +11,12 @@ export default function UserCartCount() {
   const profile = persistentStore((s) => s.profile);
   const cartDrawerOpen = globalStore((s) => s.cartDrawerOpen);
 
+  const roleList = Array.isArray(profile?.roles) ? profile.roles : [];
+  const isLearner = roleList.includes("LEARNER");
+
   // ✅ Call the hook returned by the static method
   const { data: cartCount } = CARTAPI.getCartCount({
-    render: !!profile,
+    render: !!profile && isLearner,
     onSuccess: (data) => {
       cartStore.setState({ cartCount: data?.count });
     },
@@ -23,7 +26,7 @@ export default function UserCartCount() {
   })();
 
   const { data: cartItems, mutate: mutateCartItems } = CARTAPI.getCartInfo({
-    render: !!profile,
+    render: !!profile && isLearner,
     onSuccess: (data) => {
       cartStore.setState({
         cart: data?.data.cartItems || [],
@@ -36,9 +39,12 @@ export default function UserCartCount() {
   })();
 
   const handleCartDrawer = () => {
+    if (!isLearner) return;
     globalStore.setState({ cartDrawerOpen: !cartDrawerOpen });
     mutate("/cart");
   };
+
+  if (!isLearner) return null;
 
   return (
     <div

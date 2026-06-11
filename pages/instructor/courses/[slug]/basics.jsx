@@ -49,6 +49,20 @@ export async function getServerSideProps(context) {
 export default function CourseBasics({ course }) {
   const courseManagement = courseStore((state) => state.courseManagement);
   const [isLoading, setIsLoading] = useState(false);
+  const [levels, setLevels] = useState([]);
+
+  const normalizeLevelValue = (value) => {
+    if (!value) return "";
+    if (typeof value === "object") {
+      return String(value.id || value.value || "");
+    }
+    return String(value);
+  };
+
+  const initialInstructionalLevel =
+    normalizeLevelValue(courseManagement?.instructional_level) ||
+    normalizeLevelValue(course?.instructional_level?.id) ||
+    normalizeLevelValue(course?.instructional_level);
 
   const [payload, setPayload] = useState({
     title: courseManagement?.title || course?.title || "",
@@ -56,10 +70,7 @@ export default function CourseBasics({ course }) {
     subtitle: courseManagement?.subtitle || course?.subtitle || "",
     cover_image: courseManagement?.cover_image || course?.cover_image || "",
     promo_video: courseManagement?.promo_video || course?.promo_video || "",
-    instructional_level:
-      courseManagement?.instructional_level ||
-      course?.instructional_level ||
-      "",
+    instructional_level: initialInstructionalLevel,
     category_ids: resolveInitialValue(
       (courseManagement?.category_ids || course?.category_ids || []).map(
         (cat) => String(cat.category_id ?? cat),
@@ -130,6 +141,21 @@ export default function CourseBasics({ course }) {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    const fetchCourseLevels = async () => {
+      try {
+        const response = await BaseApi.get(
+          `${process.env.NEXT_PUBLIC_API_URL}/course-levels`,
+        );
+        setLevels(Array.isArray(response?.data) ? response.data : []);
+      } catch (_error) {
+        setLevels([]);
+      }
+    };
+
+    fetchCourseLevels();
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -285,9 +311,11 @@ export default function CourseBasics({ course }) {
               onChange={handleChange}
             >
               <option value="">-- Select level --</option>
-              <option value="1">Beginner</option>
-              <option value="2">Intermediate</option>
-              <option value="3">Advanced</option>
+              {levels.map((level) => (
+                <option key={level.id} value={level.id}>
+                  {level.title}
+                </option>
+              ))}
               <option value="4">All Levels</option>
             </select>
           </div>

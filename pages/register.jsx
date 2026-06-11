@@ -48,7 +48,7 @@ export default function Register() {
       confirm_password: e.target.confirm_password.value,
       firstname: e.target.firstname.value,
       lastname: e.target.lastname.value,
-      role: router?.query?.mode === "instructor" ? "2" : "3",
+      role: router?.query?.mode === "instructor" ? "EDUCATOR" : "LEARNER",
     };
 
     try {

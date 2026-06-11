@@ -2,6 +2,21 @@ import { NextResponse } from "next/server";
 import { jwtVerify } from "jose";
 
 const secretKey = new TextEncoder().encode(process.env.NEXT_PUBLIC_JWT_SECRET);
+const tokenCookieNames = Array.from(
+  new Set(
+    [process.env.NEXT_PUBLIC_TOKEN, "upskill-token", "app_token"].filter(
+      Boolean,
+    ),
+  ),
+);
+
+const getTokenFromRequest = (req) => {
+  for (const cookieName of tokenCookieNames) {
+    const token = req.cookies.get(cookieName)?.value;
+    if (token) return token;
+  }
+  return null;
+};
 
 // Decode JWT
 const decodeToken = async (token) => {
@@ -15,7 +30,7 @@ const decodeToken = async (token) => {
 
 // 🔹 Admin (id = 1)
 const isAdmin = async (req) => {
-  const token = req.cookies.get(process.env.NEXT_PUBLIC_TOKEN)?.value;
+  const token = getTokenFromRequest(req);
   const decoded = await decodeToken(token);
   const restrictedPaths = ["/my-progress", "/register"];
 
@@ -33,7 +48,7 @@ const isAdmin = async (req) => {
 
 // 🔹 Student (id = 2)
 const isMember = async (req) => {
-  const token = req.cookies.get(process.env.NEXT_PUBLIC_TOKEN)?.value;
+  const token = getTokenFromRequest(req);
   const decoded = await decodeToken(token);
   const restrictedPaths = ["/statistics", "/population", "/puroks"];
 
@@ -51,7 +66,7 @@ const isMember = async (req) => {
 
 // 🔹 Teacher (id = 3)
 const isTeacher = async (req) => {
-  const token = req.cookies.get(process.env.NEXT_PUBLIC_TOKEN)?.value;
+  const token = getTokenFromRequest(req);
   const decoded = await decodeToken(token);
   const restrictedPaths = ["/statistics", "/population", "/puroks"];
 
@@ -69,7 +84,7 @@ const isTeacher = async (req) => {
 
 // 🔹 Block login/register/forgot for logged-in users
 const isLoggedInBlock = async (req) => {
-  const token = req.cookies.get(process.env.NEXT_PUBLIC_TOKEN)?.value;
+  const token = getTokenFromRequest(req);
   // console.log("token", token);
   const decoded = await decodeToken(token);
   const restrictedPaths = ["/login", "/register", "/forgot", "/verify-2fa"];
@@ -83,7 +98,7 @@ const isLoggedInBlock = async (req) => {
 };
 
 const isAnonymous = async (req) => {
-  const token = req.cookies.get(process.env.NEXT_PUBLIC_TOKEN)?.value;
+  const token = getTokenFromRequest(req);
   const decoded = await decodeToken(token);
   const restrictedPaths = ["/profile", "/checkout", "/cart"];
 

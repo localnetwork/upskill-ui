@@ -2,8 +2,8 @@ import { useState, useMemo, useEffect } from "react";
 import categories from "@/lib/preBuildScripts/static/categories.json";
 
 const normalizeEntry = ({ parent, sub }) => ({
-  parent: Number(parent),
-  sub: Number(sub),
+  parent: String(parent),
+  sub: String(sub),
 });
 
 export const getMergedCategoryIds = (selectedCategories = []) => {
@@ -28,14 +28,14 @@ export const getMergedCategoryIds = (selectedCategories = []) => {
 export const resolveInitialValue = (flatIds = []) => {
   if (!flatIds.length) return [];
 
-  const ids = flatIds.map(Number);
+  const ids = flatIds.map(String);
   const result = [];
 
   for (const parent of categories) {
-    if (!ids.includes(Number(parent.id))) continue;
+    if (!ids.includes(String(parent.id))) continue;
     for (const sub of parent.children ?? []) {
-      if (ids.includes(Number(sub.id))) {
-        result.push({ parent: Number(parent.id), sub: Number(sub.id) });
+      if (ids.includes(String(sub.id))) {
+        result.push({ parent: String(parent.id), sub: String(sub.id) });
       }
     }
   }
@@ -67,7 +67,7 @@ export default function CategoryPicker({
     setSelectedCategories(initialSelected);
     if (initialSelected.length > 0) {
       const firstParent = categories.find(
-        (c) => Number(c.id) === initialSelected[0].parent,
+        (c) => String(c.id) === initialSelected[0].parent,
       );
       setActiveParent(firstParent ?? null);
     }
@@ -85,8 +85,8 @@ export default function CategoryPicker({
   };
 
   const toggleSub = (parent, sub) => {
-    const p = Number(parent);
-    const s = Number(sub);
+    const p = String(parent);
+    const s = String(sub);
 
     const exists = selectedCategories.some(
       (item) => item.parent === p && item.sub === s,
@@ -103,8 +103,8 @@ export default function CategoryPicker({
   };
 
   const removeTag = (parent, sub) => {
-    const p = Number(parent);
-    const s = Number(sub);
+    const p = String(parent);
+    const s = String(sub);
     handleChange(
       selectedCategories.filter(
         (item) => !(item.parent === p && item.sub === s),
@@ -157,8 +157,8 @@ export default function CategoryPicker({
               {activeParent.children.map((sub) => {
                 const isSelected = selectedCategories.some(
                   (item) =>
-                    item.parent === Number(activeParent.id) &&
-                    item.sub === Number(sub.id),
+                    item.parent === String(activeParent.id) &&
+                    item.sub === String(sub.id),
                 );
                 return (
                   <button
@@ -187,9 +187,9 @@ export default function CategoryPicker({
       {selectedCategories.length > 0 && (
         <div className="flex flex-wrap gap-2 mt-1">
           {selectedCategories.map(({ parent, sub }) => {
-            const parentCat = categories.find((c) => Number(c.id) === parent);
+            const parentCat = categories.find((c) => String(c.id) === parent);
             const subCat = parentCat?.children?.find(
-              (s) => Number(s.id) === sub,
+              (s) => String(s.id) === sub,
             );
             return (
               <span

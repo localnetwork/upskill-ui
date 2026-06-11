@@ -5,6 +5,7 @@ import { Film, FileText } from "lucide-react";
 import VideoForm from "./lecture-types/VideoForm";
 import ArticleForm from "./lecture-types/ArticleForm";
 import BaseApi from "@/lib/api/_base.api";
+import HLSVideo from "@/components/video-players/HLSVideo";
 
 export default function LectureContentSelector({
   lectureTitle,
@@ -46,7 +47,7 @@ export default function LectureContentSelector({
 
   async function handleDelete() {
     const confirm = window.confirm(
-      "Are you sure you want to delete this content?"
+      "Are you sure you want to delete this content?",
     );
     if (!confirm) return;
     try {
@@ -54,12 +55,12 @@ export default function LectureContentSelector({
       switch (lecture.curriculum_resource_type) {
         case "video":
           response = await BaseApi.delete(
-            `${process.env.NEXT_PUBLIC_API_URL}/course-resources/videos/${lecture.id}`
+            `${process.env.NEXT_PUBLIC_API_URL}/course-resources/videos/${lecture.id}`,
           );
           break;
         case "article":
           response = await BaseApi.delete(
-            `${process.env.NEXT_PUBLIC_API_URL}/course-resources/articles/${lecture.id}`
+            `${process.env.NEXT_PUBLIC_API_URL}/course-resources/articles/${lecture.id}`,
           );
           break;
         default:
@@ -81,10 +82,8 @@ export default function LectureContentSelector({
             <h3 className="font-semibold">{title}</h3>
             <p className="text-sm text-gray-600">{description}</p>
             {lecture.asset?.path && (
-              <video
+              <HLSVideo
                 src={process.env.NEXT_PUBLIC_API_DOMAIN + lecture.asset.path}
-                controls
-                className="w-full h-auto rounded"
               />
             )}
           </div>

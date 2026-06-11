@@ -7,6 +7,8 @@ import CoursePromoVideo from "./content/CoursePromoVideo";
 
 export default function Modal() {
   const modalInfo = modalState((state) => state.modalInfo);
+
+  console.log("modalInfo", modalInfo);
   const size = modalInfo?.size || "md";
   const handleClose = () => {
     modalState.setState({ modalInfo: null });

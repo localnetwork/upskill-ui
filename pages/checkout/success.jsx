@@ -7,27 +7,20 @@ import { useRouter } from "next/router";
 
 export async function getServerSideProps(context) {
   const { query } = context;
-  const { order_id, token } = query; // ✅ capture both
+  const { order_id, token } = query;
   setContext(context);
 
-  console.log("order_id", order_id);
-
   try {
-    // ✅ include token as query param so backend can capture PayPal payment
-    const res = await BaseApi.get(
-      `${process.env.NEXT_PUBLIC_API_URL}/orders/${order_id}`,
-      { params: { token } }
-    );
-
-    console.log("res", res);
+    const res = await BaseApi.post(`${process.env.NEXT_PUBLIC_API_URL}/checkout/capture`, {
+      providerOrderId: token,
+    });
 
     return {
       props: {
-        data: res.data,
+        data: res?.data?.data || null,
       },
     };
   } catch (error) {
-    console.log("has error", error);
     return {
       notFound: true,
     };
@@ -36,7 +29,8 @@ export async function getServerSideProps(context) {
 
 export default function Page({ data }) {
   const router = useRouter();
-  const { order, orderLines } = data;
+  const order = data?.order;
+  const orderLines = order?.items || [];
 
   return (
     <div className="py-[50px] flex flex-col justify-center items-center bg-[#F6F6F6] min-h-[calc(100vh-100px)]">
@@ -60,24 +54,21 @@ export default function Page({ data }) {
             >
               <div className="flex items-center">
                 <Image
-                  src={
-                    process.env.NEXT_PUBLIC_API_DOMAIN +
-                    item?.course?.data?.cover_image?.path
-                  }
+                  src={"/placeholder-cover.webp"}
                   width={50}
                   height={30}
-                  alt={item?.course?.data?.title}
+                  alt={item?.courseId}
                   className="w-[70px] h-[50px] object-cover rounded-md border-[1px] border-[oklch(86.72%_0.0192_282.72deg)]"
                 />
-                <span className="ml-2">{item?.course?.data?.title}</span>
+                <span className="ml-2">{item?.courseId}</span>
               </div>
-              <span>₱{item.price}</span>
+              <span>₱{item.totalAmount}</span>
             </div>
           ))}
         </div>
         <div className="flex justify-between font-semibold text-[18px] mt-4">
           <span>Total:</span>
-          <span>₱{order.total_amount}</span>
+          <span>₱{order?.totalAmount}</span>
         </div>
       </div>
 

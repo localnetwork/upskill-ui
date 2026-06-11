@@ -4,13 +4,14 @@ import InstructorLayout from "@/components/partials/InstructorLayout";
 import BaseApi from "@/lib/api/_base.api";
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import persistentStore from "@/lib/store/persistentStore";
+import { useRouter } from "next/router";
+import toast from "react-hot-toast";
 
 export default function Page() {
-  const levels = [
-    { title: "Beginner", value: 1 },
-    { title: "Intermediate", value: 2 },
-    { title: "Advanced", value: 3 },
-  ];
+  const router = useRouter();
+  const profile = persistentStore((state) => state.profile);
+  const [levels, setLevels] = useState([]);
 
   const [params, setParams] = useState({
     title: "",
@@ -22,9 +23,42 @@ export default function Page() {
   const [courses, setCourses] = useState([]);
   const [totalPages, setTotalPages] = useState(1);
 
+  const fetchCourseLevels = async () => {
+    try {
+      const response = await BaseApi.get(
+        `${process.env.NEXT_PUBLIC_API_URL}/course-levels`,
+      );
+      const data = Array.isArray(response?.data) ? response.data : [];
+      setLevels(data);
+    } catch (_error) {
+      setLevels([]);
+    }
+  };
+
   const fetchAuthoredCourses = async (overrideParams = params) => {
     setIsLoading(true);
     try {
+      const meResponse = await BaseApi.get(
+        `${process.env.NEXT_PUBLIC_API_URL}/users/me`,
+      );
+      const currentUser = meResponse?.data?.data;
+      const roles = Array.isArray(currentUser?.roles) ? currentUser.roles : [];
+      if (!roles.includes("EDUCATOR")) {
+        toast.error("Your account is not an educator account.");
+        router.replace("/register?mode=instructor");
+        return;
+      }
+
+      persistentStore.setState({
+        profile: {
+          ...(profile || {}),
+          ...(currentUser || {}),
+          roles,
+          firstname: currentUser?.firstName || currentUser?.firstname || "",
+          lastname: currentUser?.lastName || currentUser?.lastname || "",
+        },
+      });
+
       const queryParams = {
         title: overrideParams.title,
         page: overrideParams.page,
@@ -42,6 +76,13 @@ export default function Page() {
       setTotalPages(response.data.pagination?.total_pages || 1);
     } catch (error) {
       console.error("Error fetching courses:", error);
+      if (error?.status === 401) {
+        toast.error("Session expired. Please log in again.");
+        router.replace("/login");
+      } else if (error?.status === 403) {
+        toast.error("Access denied: educator role is required.");
+        router.replace("/register?mode=instructor");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -49,6 +90,7 @@ export default function Page() {
 
   // Load initial data on mount
   useEffect(() => {
+    fetchCourseLevels();
     fetchAuthoredCourses();
   }, []);
 
@@ -96,7 +138,7 @@ export default function Page() {
             >
               <option value="">Select level</option>
               {levels.map((level) => (
-                <option key={level.value} value={level.value}>
+                <option key={level.id} value={level.id}>
                   {level.title}
                 </option>
               ))}

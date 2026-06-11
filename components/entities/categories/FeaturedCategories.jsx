@@ -10,7 +10,13 @@ export default function FeaturedCategories() {
       const response = await BaseApi.get(
         process.env.NEXT_PUBLIC_API_URL + "/categories",
       );
-      setCategories(response.data);
+      const rows = response?.data?.data || [];
+      setCategories(
+        rows.map((category) => ({
+          ...category,
+          title: category.name,
+        })),
+      );
     } catch (error) {
       console.error("Error fetching categories:", error);
     }
