@@ -7,10 +7,44 @@ export default function Browse() {
   const [courses, setCourses] = useState([]);
   const fetchCourses = async () => {
     try {
-      const response = await BaseApi.get(
-        process.env.NEXT_PUBLIC_API_URL + "/courses",
-      );
-      setCourses(response.data.data);
+      const [coursesResult, cartResult, enrollmentsResult] = await Promise.allSettled([
+        BaseApi.get(process.env.NEXT_PUBLIC_API_URL + "/courses"),
+        BaseApi.get(process.env.NEXT_PUBLIC_API_URL + "/cart"),
+        BaseApi.get(process.env.NEXT_PUBLIC_API_URL + "/enrollments"),
+      ]);
+
+      const baseCourses =
+        coursesResult.status === "fulfilled"
+          ? coursesResult.value?.data?.data || []
+          : [];
+
+      const cartCourseIds =
+        cartResult.status === "fulfilled"
+          ? new Set(
+              (cartResult.value?.data?.data?.cartItems || [])
+                .map((item) => item?.course?.id)
+                .filter(Boolean),
+            )
+          : new Set();
+
+      const enrolledCourseIds =
+        enrollmentsResult.status === "fulfilled"
+          ? new Set(
+              (enrollmentsResult.value?.data?.data || [])
+                .map((item) => item?.course?.id)
+                .filter(Boolean),
+            )
+          : new Set();
+
+      const mergedCourses = baseCourses.map((course) => ({
+        ...course,
+        is_in_cart: Boolean(course?.is_in_cart || cartCourseIds.has(course.id)),
+        is_enrolled: Boolean(
+          course?.is_enrolled || enrolledCourseIds.has(course.id),
+        ),
+      }));
+
+      setCourses(mergedCourses);
     } catch (error) {
       console.error("Error fetching courses:", error);
     }

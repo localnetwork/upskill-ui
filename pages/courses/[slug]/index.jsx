@@ -37,6 +37,7 @@ import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import cartStore from "@/lib/store/cartStore";
 import CARTAPI from "@/lib/api/cart/request";
+import WISHLISTAPI from "@/lib/api/wishlist/request";
 
 import { mutate } from "swr";
 import globalStore from "@/lib/store/globalStore";
@@ -48,6 +49,7 @@ export default function Course() {
   const router = useRouter();
   const { slug } = router.query;
   const [course, setCourse] = useState(null);
+  const [isWishlistSubmitting, setIsWishlistSubmitting] = useState(false);
 
   const [isScrolled, setIsScrolled] = useState(false);
 
@@ -94,6 +96,48 @@ export default function Course() {
       } else {
         toast.error("Failed to add course to cart. Please try again later.");
       }
+    }
+  };
+
+  const handleWishlist = async (e) => {
+    e.preventDefault();
+    if (!course) return;
+    if (isWishlistSubmitting) return;
+
+    const isLogged = await isLoggedIn();
+    if (!isLogged) {
+      modalState.setState({
+        modalInfo: {
+          type: "LOGIN",
+          message: "Please log in to save courses to your wishlist.",
+        },
+      });
+      return;
+    }
+
+    const previousWishlistState = Boolean(course?.is_in_wishlist);
+    const nextWishlistState = !previousWishlistState;
+    setCourse((prev) =>
+      prev ? { ...prev, is_in_wishlist: nextWishlistState } : prev,
+    );
+    setIsWishlistSubmitting(true);
+
+    try {
+      if (previousWishlistState) {
+        await WISHLISTAPI.remove(course.id);
+        toast.success("Removed from wishlist");
+      } else {
+        await WISHLISTAPI.add(course.id);
+        toast.success("Added to wishlist");
+      }
+    } catch (error) {
+      setCourse((prev) =>
+        prev ? { ...prev, is_in_wishlist: previousWishlistState } : prev,
+      );
+      console.error("Error updating wishlist:", error);
+      toast.error(error?.data?.message || "Failed to update wishlist");
+    } finally {
+      setIsWishlistSubmitting(false);
     }
   };
 
@@ -316,9 +360,12 @@ export default function Course() {
                   ) : (
                     <>
                       {course?.is_in_cart ? (
-                        <div className="block px-4 text-center w-full py-4 bg-primary text-white font-black text-lg rounded-xl hover:brightness-110 active:scale-95 transition-all">
-                          Already in Cart
-                        </div>
+                        <Link
+                          href="/cart"
+                          className="block px-4 text-center w-full py-4 bg-primary text-white font-black text-lg rounded-xl hover:brightness-110 active:scale-95 transition-all"
+                        >
+                          Go to Cart
+                        </Link>
                       ) : (
                         <button
                           onClick={(e) => handleCart(e)}
@@ -333,8 +380,19 @@ export default function Course() {
                     <button className="flex-1 py-3 border border-slate-900 text-slate-900 font-bold rounded-xl hover:bg-slate-50 transition-colors">
                       Buy Now
                     </button>
-                    <button className="w-12 h-12 flex items-center justify-center border border-slate-200 rounded-xl hover:bg-red-50 hover:border-red-200 hover:text-red-500 transition-all">
-                      <Heart size={20} />
+                    <button
+                      onClick={handleWishlist}
+                      disabled={isWishlistSubmitting}
+                      className={`w-12 h-12 flex items-center justify-center border rounded-xl transition-all ${
+                        course?.is_in_wishlist
+                          ? "border-red-200 bg-red-50 text-red-500"
+                          : "border-slate-200 hover:bg-red-50 hover:border-red-200 hover:text-red-500"
+                      } ${isWishlistSubmitting ? "opacity-70 cursor-not-allowed" : ""}`}
+                    >
+                      <Heart
+                        size={20}
+                        fill={course?.is_in_wishlist ? "currentColor" : "none"}
+                      />
                     </button>
                   </div>
                 </div>
