@@ -1,14 +1,16 @@
 import CourseManagementLayout from "@/components/partials/CourseManagementLayout";
 import InstructorLayout from "@/components/partials/InstructorLayout";
 import BaseApi from "@/lib/api/_base.api";
+import { setContext } from "@/lib/api/interceptor";
 
 export async function getServerSideProps(context) {
   const { slug } = context.params;
+  setContext(context);
 
   let course = null;
   try {
     const response = await BaseApi.get(
-      process.env.NEXT_PUBLIC_API_URL + `/courses/${slug}`
+      process.env.NEXT_PUBLIC_API_URL + `/courses/${slug}/manage`
     );
     course = response?.data?.data;
   } catch (error) {

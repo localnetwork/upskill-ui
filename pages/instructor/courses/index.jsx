@@ -69,7 +69,7 @@ export default function Page() {
 
       const query = new URLSearchParams(queryParams).toString();
       const response = await BaseApi.get(
-        `${process.env.NEXT_PUBLIC_API_URL}/courses/authored?${query}`
+        `${process.env.NEXT_PUBLIC_API_URL}/courses/authored?${query}`,
       );
 
       setCourses(response.data.data || []);

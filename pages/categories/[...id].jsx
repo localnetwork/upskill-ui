@@ -2,7 +2,10 @@ import PopularEducators from "@/components/entities/categories/show/PopularEduca
 import BaseApi from "@/lib/api/_base.api";
 
 export async function getServerSideProps(context) {
-  const id = context.params.id; // Access the dynamic route parameter
+  const segments = Array.isArray(context.params.id)
+    ? context.params.id
+    : [context.params.id];
+  const id = segments[segments.length - 1];
   try {
     const response = await BaseApi.get(
       process.env.NEXT_PUBLIC_API_URL + `/categories/${id}`,

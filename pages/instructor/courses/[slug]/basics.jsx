@@ -32,7 +32,7 @@ export async function getServerSideProps(context) {
   let course = null;
   try {
     const response = await BaseApi.get(
-      `${process.env.NEXT_PUBLIC_API_URL}/courses/${slug}`,
+      `${process.env.NEXT_PUBLIC_API_URL}/courses/${slug}/manage`,
     );
 
     course = response?.data?.data;
@@ -80,6 +80,13 @@ export default function CourseBasics({ course }) {
 
   const [errors, setErrors] = useState(null);
 
+  const normalizeMediaId = (value) => {
+    if (!value) return "";
+    if (typeof value === "string") return value;
+    if (typeof value === "object" && value.id) return String(value.id);
+    return "";
+  };
+
   const handleChange = (eOrPayload, maybe) => {
     let target = null;
 
@@ -117,6 +124,8 @@ export default function CourseBasics({ course }) {
     const submitPayload = {
       ...payload,
       category_ids: getMergedCategoryIds(payload.category_ids),
+      cover_image: normalizeMediaId(payload.cover_image),
+      promo_video: normalizeMediaId(payload.promo_video),
     };
 
     courseStore.setState({

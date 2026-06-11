@@ -32,12 +32,22 @@ export const resolveInitialValue = (flatIds = []) => {
   const result = [];
 
   for (const parent of categories) {
-    if (!ids.includes(String(parent.id))) continue;
+    const parentId = String(parent.id);
+
+    let matchedChild = null;
     for (const sub of parent.children ?? []) {
-      if (ids.includes(String(sub.id))) {
-        result.push({ parent: String(parent.id), sub: String(sub.id) });
+      const subId = String(sub.id);
+      if (ids.includes(subId)) {
+        matchedChild = subId;
+        break;
       }
     }
+
+    if (matchedChild) {
+      result.push({ parent: parentId, sub: matchedChild });
+      continue;
+    }
+
   }
 
   return result;

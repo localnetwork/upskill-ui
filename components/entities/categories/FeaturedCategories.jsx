@@ -8,13 +8,13 @@ export default function FeaturedCategories() {
   const fetchCategories = async () => {
     try {
       const response = await BaseApi.get(
-        process.env.NEXT_PUBLIC_API_URL + "/categories",
+        process.env.NEXT_PUBLIC_API_URL + "/categories?tree=true",
       );
       const rows = response?.data?.data || [];
       setCategories(
         rows.map((category) => ({
           ...category,
-          title: category.name,
+          title: category.name || category.title,
         })),
       );
     } catch (error) {
