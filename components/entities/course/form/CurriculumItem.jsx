@@ -26,17 +26,28 @@ export default function CurriculumItem({ item, onSave, onUpdate, onDelete }) {
   const [error, setError] = useState("");
   const [currentItem, setCurrentItem] = useState(item);
   const [deleting, setDeleting] = useState(false);
+  const [openContentOnSync, setOpenContentOnSync] = useState(false);
 
   const isLecture = currentItem.curriculum_type === "lecture";
   const isQuiz = currentItem.curriculum_type === "quiz";
   const isCoding = currentItem.curriculum_type === "coding_exercise";
 
   useEffect(() => {
-    setMode(item.isNew ? "edit" : null);
+    const shouldAutoOpenContent =
+      openContentOnSync &&
+      !item.isNew &&
+      (item.curriculum_type === "lecture" ||
+        item.curriculum_type === "quiz" ||
+        item.curriculum_type === "coding_exercise");
+
+    setMode(shouldAutoOpenContent ? "content" : item.isNew ? "edit" : null);
     setTitle(item.title || "");
     setDescription(item.curriculum_description || "");
     setCurrentItem(item);
     setError("");
+    if (shouldAutoOpenContent) {
+      setOpenContentOnSync(false);
+    }
   }, [item]);
 
   // --- CREATE
@@ -70,10 +81,15 @@ export default function CurriculumItem({ item, onSave, onUpdate, onDelete }) {
       setTitle(saved.title);
       setDescription(saved.description);
 
+      const shouldOpenContent =
+        currentItem.curriculum_type === "lecture" ||
+        currentItem.curriculum_type === "quiz" ||
+        currentItem.curriculum_type === "coding_exercise";
+      setOpenContentOnSync(shouldOpenContent);
       onSave?.(saved);
 
       // open content editor right after saving
-      if (isLecture || isQuiz || isCoding) {
+      if (shouldOpenContent) {
         setMode("content");
       } else {
         setMode(null);

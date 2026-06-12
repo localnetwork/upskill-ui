@@ -14,6 +14,27 @@ import toast from "react-hot-toast";
 
 import { Editor } from "@tinymce/tinymce-react";
 
+function CurriculumItemSkeleton() {
+  return (
+    <div className="flex items-center gap-2 rounded bg-white">
+      <div className="[border:1px_solid_oklch(67.22%_0.0355_279.77deg)] px-[20px] py-[15px] mb-2 bg-gray-50 w-full animate-pulse">
+        <div className="flex justify-between items-center w-full">
+          <div className="flex items-center w-full">
+            <div className="w-[18px] h-[18px] rounded bg-gray-200 mr-2" />
+            <div className="h-5 w-[45%] bg-gray-200 rounded" />
+            <div className="ml-3 flex items-center gap-2">
+              <div className="h-5 w-5 rounded bg-gray-200" />
+              <div className="h-5 w-5 rounded bg-gray-200" />
+            </div>
+          </div>
+          <div className="h-8 w-24 rounded bg-gray-200" />
+        </div>
+      </div>
+      <span className="text-gray-300">☰</span>
+    </div>
+  );
+}
+
 export default function CourseSection({
   section,
   onAddItem,
@@ -384,7 +405,11 @@ export default function CourseSection({
                     </div>
                   )}
                   {loadingItems ? (
-                    <p className="text-sm text-gray-500">Loading...</p>
+                    <div className="space-y-2">
+                      {[1, 2, 3].map((index) => (
+                        <CurriculumItemSkeleton key={`curriculum-skeleton-${index}`} />
+                      ))}
+                    </div>
                   ) : items.length > 0 ? (
                     <div className="space-y-2">
                       {items.map((it, index) => (
