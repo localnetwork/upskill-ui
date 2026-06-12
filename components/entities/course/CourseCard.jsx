@@ -20,9 +20,8 @@ export default function CourseCard({ course }) {
   const [mounted, setMounted] = useState(false);
   const [isInCart, setIsInCart] = useState(false);
   const [isEnrolled, setIsEnrolled] = useState(false);
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
   const profile = persistentStore((state) => state.profile);
-
-  console.log("course", course);
 
   useEffect(() => {
     setMounted(true);
@@ -84,7 +83,7 @@ export default function CourseCard({ course }) {
     e.stopPropagation();
     toast.dismiss();
 
-    if (!course || isEnrolled || isInCart) return;
+    if (!course || isEnrolled || isInCart || isAddingToCart) return;
 
     if (!profile) {
       modalState.setState({
@@ -93,6 +92,8 @@ export default function CourseCard({ course }) {
       });
       return;
     }
+
+    setIsAddingToCart(true);
 
     try {
       await BaseApi.post(`${process.env.NEXT_PUBLIC_API_URL}/cart`, {
@@ -110,7 +111,9 @@ export default function CourseCard({ course }) {
           data: course,
         },
       });
+      setIsAddingToCart(false);
     } catch (_error) {
+      setIsAddingToCart(false);
       toast.error("An error occurred while adding to cart.");
     }
   };
@@ -241,12 +244,23 @@ export default function CourseCard({ course }) {
                   Go to Cart
                 </Link>
               ) : (
-                <button
-                  onClick={handleCart}
-                  className="border-[2px] hover:text-white text-[#0056D2] border-[#0056D2] flex items-center justify-center gap-[5px] text-center font-semibold px-[20px] py-[5px] rounded-[5px] hover:bg-[#1d6de0]"
-                >
-                  Add to Cart
-                </button>
+                <>
+                  {isAddingToCart ? (
+                    <span
+                      disabled
+                      className="opacity-50 border-[2px] hover:text-white text-[#0056D2] border-[#0056D2] flex items-center justify-center gap-[5px] text-center font-semibold px-[20px] py-[5px] rounded-[5px] hover:bg-[#1d6de0]"
+                    >
+                      Adding to cart
+                    </span>
+                  ) : (
+                    <button
+                      onClick={handleCart}
+                      className="border-[2px] hover:text-white text-[#0056D2] border-[#0056D2] flex items-center justify-center gap-[5px] text-center font-semibold px-[20px] py-[5px] rounded-[5px] hover:bg-[#1d6de0]"
+                    >
+                      Add to Cart
+                    </button>
+                  )}
+                </>
               )}
             </div>
           </div>

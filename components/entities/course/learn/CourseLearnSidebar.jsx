@@ -1,6 +1,7 @@
 import {
   Check,
   ChevronDown,
+  Code,
   MonitorPlay,
   Newspaper,
   PanelLeftOpen,
@@ -9,6 +10,31 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
+
+function isCurriculumCompleted(curriculum) {
+  return Boolean(
+    curriculum?.completed ||
+      curriculum?.is_taken ||
+      Number(curriculum?.progress_pct || 0) >= 100,
+  );
+}
+
+function formatSectionDuration(totalSeconds) {
+  const seconds = Number(totalSeconds || 0);
+  if (seconds <= 0) return "0 min";
+
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.ceil((seconds % 3600) / 60);
+
+  if (hours > 0) {
+    if (minutes > 0) {
+      return `${hours}hr${hours > 1 ? "s" : ""} and ${minutes} min${minutes > 1 ? "s" : ""}`;
+    }
+    return `${hours}hr${hours > 1 ? "s" : ""}`;
+  }
+
+  return `${minutes} min${minutes > 1 ? "s" : ""}`;
+}
 
 export default function CourseLearnSidebar({
   sections,
@@ -78,6 +104,20 @@ export default function CourseLearnSidebar({
       <div className="overflow-y-auto">
         {sections.map((section) => {
           const isOpen = openSection === section.id;
+          const sectionCurriculums = Array.isArray(section?.curriculums)
+            ? section.curriculums
+            : [];
+          const completedCount = sectionCurriculums.filter(
+            isCurriculumCompleted,
+          ).length;
+          const totalCount = sectionCurriculums.length;
+          const sectionDuration = formatSectionDuration(
+            sectionCurriculums.reduce(
+              (sum, curriculum) =>
+                sum + Number(curriculum?.estimated_duration || 0),
+              0,
+            ),
+          );
 
           return (
             <div
@@ -101,11 +141,12 @@ export default function CourseLearnSidebar({
                 </div>
                 <div className="flex text-[14px] font-light mt-1">
                   <span>
-                    1<span className="separator px-1">/</span>
-                    {section?.curriculums.length}
+                    {completedCount}
+                    <span className="separator px-1">/</span>
+                    {totalCount}
                   </span>
                   <span className="separator px-2">|</span>
-                  <span>1hr and 15 mins</span>
+                  <span>{sectionDuration}</span>
                 </div>
               </div>
 
@@ -129,6 +170,9 @@ export default function CourseLearnSidebar({
                         break;
                       case "quiz":
                         icon = "❓";
+                        break;
+                      case "coding_exercise":
+                        icon = <Code size={15} />;
                         break;
                       default:
                         icon = "📚";

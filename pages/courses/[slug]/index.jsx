@@ -45,10 +45,89 @@ import modalState from "@/lib/store/modalState";
 import { isLoggedIn } from "@/lib/services/auth";
 import CourseFeedback from "@/components/entities/course/show/CourseFeedback";
 import CourseReviews from "@/components/entities/course/show/CourseReviews";
+
+const shimmer =
+  "animate-pulse bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 rounded";
+
+function CoursePageSkeleton() {
+  return (
+    <div className="pb-[50px]">
+      <header className="bg-[#0f172a] text-white py-12 lg:py-20 px-4 lg:px-8">
+        <div className="container mx-auto grid lg:grid-cols-[1fr_400px] gap-12">
+          <div className="space-y-6">
+            <div className={`${shimmer} h-4 w-[260px] bg-slate-700`} />
+            <div className={`${shimmer} h-12 w-[85%] bg-slate-700`} />
+            <div className={`${shimmer} h-8 w-[70%] bg-slate-700`} />
+            <div className="flex flex-wrap items-center gap-6">
+              <div className={`${shimmer} h-6 w-[220px] bg-slate-700`} />
+              <div className={`${shimmer} h-6 w-[160px] bg-slate-700`} />
+            </div>
+            <div className="flex gap-6">
+              <div className={`${shimmer} h-5 w-[130px] bg-slate-700`} />
+              <div className={`${shimmer} h-5 w-[90px] bg-slate-700`} />
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div className="container mx-auto px-4 lg:px-8 relative">
+        <div className="grid lg:grid-cols-[1fr_400px] gap-12">
+          <main className="py-12 space-y-16">
+            <section className="space-y-4">
+              <div className={`${shimmer} h-10 w-[260px]`} />
+              <div className={`${shimmer} h-5 w-full`} />
+              <div className={`${shimmer} h-5 w-[96%]`} />
+              <div className={`${shimmer} h-5 w-[75%]`} />
+            </section>
+
+            <section className="space-y-4">
+              <div className={`${shimmer} h-10 w-[220px]`} />
+              <div className="space-y-3">
+                <div className={`${shimmer} h-14 w-full`} />
+                <div className={`${shimmer} h-14 w-full`} />
+                <div className={`${shimmer} h-14 w-full`} />
+              </div>
+            </section>
+
+            <section className="space-y-4">
+              <div className={`${shimmer} h-10 w-[190px]`} />
+              <div className={`${shimmer} h-5 w-[80%]`} />
+              <div className={`${shimmer} h-5 w-[65%]`} />
+            </section>
+
+            <section className="space-y-4">
+              <div className={`${shimmer} h-10 w-[150px]`} />
+              <div className={`${shimmer} h-24 w-full`} />
+            </section>
+          </main>
+
+          <aside className="relative lg:-mt-90 z-10">
+            <div className="lg:sticky lg:top-24 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden">
+              <div className={`${shimmer} w-full aspect-video`} />
+              <div className="p-8 space-y-5">
+                <div className={`${shimmer} h-10 w-[140px]`} />
+                <div className={`${shimmer} h-14 w-full`} />
+                <div className={`${shimmer} h-12 w-full`} />
+                <div className="space-y-3">
+                  <div className={`${shimmer} h-4 w-[80%]`} />
+                  <div className={`${shimmer} h-4 w-[85%]`} />
+                  <div className={`${shimmer} h-4 w-[70%]`} />
+                  <div className={`${shimmer} h-4 w-[75%]`} />
+                </div>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Course() {
   const router = useRouter();
   const { slug } = router.query;
   const [course, setCourse] = useState(null);
+  const [isCourseLoading, setIsCourseLoading] = useState(true);
   const [isWishlistSubmitting, setIsWishlistSubmitting] = useState(false);
 
   const [isScrolled, setIsScrolled] = useState(false);
@@ -166,6 +245,8 @@ export default function Course() {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        setIsCourseLoading(true);
+        setNotFound(false);
         const response = await BaseApi.get(
           process.env.NEXT_PUBLIC_API_URL + "/courses/route/" + slug,
         );
@@ -176,6 +257,8 @@ export default function Course() {
         if (error.status === 404) {
           setNotFound(true);
         }
+      } finally {
+        setIsCourseLoading(false);
       }
     };
     if (slug) {
@@ -195,6 +278,18 @@ export default function Course() {
     window.addEventListener("scroll", scrollTest);
     window.addEventListener("load", scrollTest);
   }, [slug]);
+
+  if (isCourseLoading) {
+    return <CoursePageSkeleton />;
+  }
+
+  if (notFound) {
+    return (
+      <div className="container mx-auto px-4 lg:px-8 py-16">
+        <h1 className="text-3xl font-black font-secondary">Course not found</h1>
+      </div>
+    );
+  }
 
   return (
     <div className="pb-[50px]">

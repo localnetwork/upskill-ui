@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "material-icons/iconfont/material-icons.css";
-:root {
+
+@theme {
   --color-primary: #0052cc;
 }
 body {

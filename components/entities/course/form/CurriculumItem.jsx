@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import {
+  Code,
   MonitorPlay,
   Newspaper,
   NotebookText,
@@ -168,6 +169,11 @@ export default function CurriculumItem({ item, onSave, onUpdate, onDelete }) {
                   <MonitorPlay size={18} className="inline mr-2" />
                 ) : currentItem?.curriculum_resource_type === "article" ? (
                   <Newspaper size={18} className="inline mr-2" />
+                ) : currentItem?.curriculum_resource_type === "quiz" ? (
+                  <NotebookText size={18} className="inline mr-2" />
+                ) : currentItem?.curriculum_resource_type ===
+                  "coding_exercise" ? (
+                  <Code size={18} className="inline mr-2" />
                 ) : (
                   <OctagonAlert
                     size={18}
@@ -325,14 +331,20 @@ export default function CurriculumItem({ item, onSave, onUpdate, onDelete }) {
             <QuizItem
               quiz={currentItem}
               onClose={() => setMode(null)}
-              onUpdate={handleUpdate}
+              onSave={(updated) => {
+                setCurrentItem((prev) => ({ ...prev, ...updated }));
+                onUpdate?.({ ...currentItem, ...updated });
+              }}
             />
           )}
           {isCoding && (
             <CodingExerciseItem
               exercise={currentItem}
               onClose={() => setMode(null)}
-              onUpdate={handleUpdate}
+              onSave={(updated) => {
+                setCurrentItem((prev) => ({ ...prev, ...updated }));
+                onUpdate?.({ ...currentItem, ...updated });
+              }}
             />
           )}
         </div>

@@ -8,9 +8,7 @@ import {
   BookOpen,
   HelpCircle,
   Code,
-  FileText,
   ClipboardCheck,
-  Users,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -203,9 +201,7 @@ export default function CourseSection({
     { label: "Lecture", value: "lecture", icon: BookOpen },
     { label: "Quiz", value: "quiz", icon: HelpCircle },
     { label: "Coding Exercise", value: "coding_exercise", icon: Code },
-    { label: "Practice Test", value: "practice_test", icon: FileText },
     { label: "Assignment", value: "assignment", icon: ClipboardCheck },
-    { label: "Role Play", value: "role_play", icon: Users },
   ];
 
   const handleDragStart = (e, index) => {

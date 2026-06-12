@@ -1,212 +1,161 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useMemo, useState } from "react";
 import Editor from "@monaco-editor/react";
-import prettier from "prettier/standalone";
-import parserBabel from "prettier/parser-babel";
+import BaseApi from "@/lib/api/_base.api";
 
-export default function CodingExerciseItem({ exercise, onClose }) {
-  const [title, setTitle] = useState(exercise?.title || "");
-  const [description, setDescription] = useState("");
-  const [language, setLanguage] = useState("javascript"); // javascript | php | java
-  const [starterCode, setStarterCode] = useState("");
-  const [expectedOutput, setExpectedOutput] = useState("");
-  const [consoleOutput, setConsoleOutput] = useState("");
-  const [isSimulated, setIsSimulated] = useState(false);
+const AVAILABLE_LANGUAGES = [
+  "javascript",
+  "typescript",
+  "python",
+  "java",
+  "php",
+  "go",
+  "csharp",
+];
 
-  // Default starter codes
-  const defaultCodes = {
-    javascript: `console.log("Hello, world!");
-console.log("Sum of 2 + 3 =", 2 + 3);`,
-    php: `<?php
-echo 'Hello, PHP world!';
-echo " Sum of 2 + 3 = 5";
-print ' This is a test.';`,
-    java: `System.out.println("Hello, Java world!");
-System.out.println("Sum of 2 + 3 = " + (2 + 3));
-String name = "Alice";
-System.out.println("Hello, " + name + "!");`,
-  };
+function parseStarterCode(value) {
+  if (!value) {
+    return {
+      starter_code: {},
+      expected_output: {},
+      languages: [],
+    };
+  }
 
-  const defaultOutputs = {
-    javascript: `Hello, world!
-Sum of 2 + 3 = 5`,
-    php: `Hello, PHP world!
- Sum of 2 + 3 = 5
- This is a test.`,
-    java: `Hello, Java world!
-Sum of 2 + 3 = 
-Hello, !`,
-  };
-
-  // Initialize default code and console output
-  useEffect(() => {
-    setStarterCode(defaultCodes[language]);
-    setConsoleOutput(defaultOutputs[language]);
-    setIsSimulated(language !== "javascript");
-  }, [language]);
-
-  const handleSave = () => {
-    console.log("Saved Coding Exercise:", {
-      title,
-      description,
-      language,
-      starterCode,
-      expectedOutput,
-    });
-    onClose?.();
-  };
-
-  // ---------- Helpers for simulation ----------
-  function extractStringCaptures(code, regex) {
-    const matches = [];
-    let m;
-    while ((m = regex.exec(code)) !== null) {
-      const group = m.slice(1).reverse().find(Boolean);
-      if (group !== undefined) matches.push(group);
-      if (regex.lastIndex === m.index) regex.lastIndex++;
+  try {
+    if (typeof value === "object") {
+      return value;
     }
-    return matches;
+    return JSON.parse(value);
+  } catch (_error) {
+    return {
+      starter_code: {},
+      expected_output: {},
+      languages: [],
+    };
   }
+}
 
-  function simulatePhpOutput(code) {
-    const regex = /\b(?:echo|print)\s+(['"`])([\s\S]*?)\1\s*;?/gi;
-    return extractStringCaptures(code, regex);
-  }
+export default function CodingExerciseItem({ exercise, onClose, onSave }) {
+  const parsedAsset = parseStarterCode(exercise?.asset?.starter_code ? exercise.asset : null);
+  const initialLanguages = Array.isArray(exercise?.asset?.languages) && exercise.asset.languages.length
+    ? exercise.asset.languages
+    : Array.isArray(parsedAsset.languages) && parsedAsset.languages.length
+      ? parsedAsset.languages
+      : ["javascript"];
 
-  function simulateJavaOutput(code) {
-    const regex = /System\.out\.println\s*\(\s*(['"`])([\s\S]*?)\1\s*\)\s*;?/gi;
-    return extractStringCaptures(code, regex);
-  }
+  const [instructions, setInstructions] = useState(exercise?.asset?.instructions || "");
+  const [languages, setLanguages] = useState(initialLanguages);
+  const [activeLanguage, setActiveLanguage] = useState(initialLanguages[0]);
+  const [starterCodeByLanguage, setStarterCodeByLanguage] = useState(
+    parsedAsset.starter_code || {},
+  );
+  const [expectedOutputByLanguage, setExpectedOutputByLanguage] = useState(
+    parsedAsset.expected_output || {},
+  );
+  const [saving, setSaving] = useState(false);
 
-  function simulateOutput(code, lang) {
-    setIsSimulated(true);
-    setConsoleOutput("");
-    if (!code || !code.trim()) return ["(no output)"];
-    if (lang === "php") {
-      const lines = simulatePhpOutput(code);
-      return lines.length ? lines : ["(no printable strings found)"];
-    }
-    if (lang === "java") {
-      const lines = simulateJavaOutput(code);
-      return lines.length
-        ? lines
-        : ["(no System.out.println string literals found)"];
-    }
-    return ["(simulation not available for this language)"];
-  }
+  const canSave = useMemo(
+    () => Boolean(String(instructions || "").trim()) && languages.length > 0,
+    [instructions, languages],
+  );
 
-  // ---------- Run code ----------
-  const runCode = () => {
-    setIsSimulated(false);
-    setConsoleOutput("");
-
-    if (language === "javascript") {
-      const logs = [];
-      const originalConsoleLog = console.log;
-      try {
-        console.log = (...args) => {
-          logs.push(args.map((a) => String(a)).join(" "));
-          originalConsoleLog(...args);
-        };
-        eval(starterCode);
-        setConsoleOutput(
-          logs.join("\n") || "Code executed (no console output)."
-        );
-      } catch (err) {
-        setConsoleOutput(`Error: ${err.message}`);
-      } finally {
-        console.log = originalConsoleLog;
+  const toggleLanguage = (language) => {
+    setLanguages((prev) => {
+      const exists = prev.includes(language);
+      if (exists && prev.length === 1) return prev;
+      const next = exists ? prev.filter((item) => item !== language) : [...prev, language];
+      if (!next.includes(activeLanguage)) {
+        setActiveLanguage(next[0]);
       }
-      return;
-    }
-
-    const simulated = simulateOutput(starterCode, language);
-    setConsoleOutput(simulated.join("\n"));
+      return next;
+    });
   };
 
-  // ---------- Format code ----------
-  const formatCode = () => {
-    if (language !== "javascript") {
-      setConsoleOutput("Formatting is supported only for JavaScript.");
-      return;
-    }
+  const saveExercise = async () => {
+    if (!canSave) return;
+
     try {
-      const formatted = prettier.format(starterCode || "", {
-        parser: "babel",
-        plugins: [parserBabel],
-        semi: true,
-        singleQuote: true,
-      });
-      setStarterCode(formatted);
-    } catch (err) {
-      setConsoleOutput(`Formatting Error: ${err.message}`);
+      setSaving(true);
+      const response = await BaseApi.put(
+        `${process.env.NEXT_PUBLIC_API_URL}/course-curriculums/${exercise.id}`,
+        {
+          title: exercise.title,
+          description: exercise.curriculum_description || "",
+          codingInstructions: instructions,
+          codingStarterCode: {
+            languages,
+            starter_code: starterCodeByLanguage,
+            expected_output: expectedOutputByLanguage,
+          },
+        },
+      );
+      onSave?.(response?.data?.data);
+    } catch (error) {
+      console.error("Error saving coding exercise:", error);
+    } finally {
+      setSaving(false);
     }
   };
 
   return (
     <div className="border p-4 rounded bg-white shadow space-y-4">
-      {/* Header */}
       <div className="flex justify-between items-center">
-        <div className="text-sm text-orange-600 flex items-center gap-2">
-          <span>⚠️</span>
-          <span>Unpublished Coding Exercise:</span>
-          <strong>{exercise?.title || "New Exercise"}</strong>
-        </div>
+        <p className="font-semibold">Coding exercise content</p>
         <button onClick={onClose} className="text-gray-500 hover:text-black">
           ✕
         </button>
       </div>
 
-      {/* Title */}
       <div>
-        <label className="block text-sm font-medium mb-1">Exercise Title</label>
-        <input
-          type="text"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="Enter exercise title"
-          className="w-full border rounded p-2 text-sm"
-        />
-      </div>
-
-      {/* Description */}
-      <div>
-        <label className="block text-sm font-medium mb-1">
-          Problem Description
-        </label>
+        <label className="block text-sm font-medium mb-1">Instructions</label>
         <textarea
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          placeholder="Describe the problem..."
+          value={instructions}
+          onChange={(e) => setInstructions(e.target.value)}
+          placeholder="Describe the task, input/output rules, and evaluation criteria."
           rows={4}
           className="w-full border rounded p-2 text-sm"
         />
       </div>
 
-      {/* Language Selector */}
-      <div className="flex items-center gap-3">
-        <label className="text-sm font-medium">Language:</label>
-        <select
-          value={language}
-          onChange={(e) => {
-            setLanguage(e.target.value);
-          }}
-          className="border rounded p-1 text-sm"
-        >
-          <option value="javascript">JavaScript</option>
-          <option value="php">PHP (simulated)</option>
-          <option value="java">Java (simulated)</option>
-        </select>
+      <div>
+        <label className="block text-sm font-medium mb-1">Supported languages</label>
+        <div className="flex flex-wrap gap-2">
+          {AVAILABLE_LANGUAGES.map((language) => (
+            <button
+              key={language}
+              onClick={() => toggleLanguage(language)}
+              className={`px-2 py-1 border rounded text-sm ${languages.includes(language) ? "bg-[#0056D2] text-white border-[#0056D2]" : "bg-white text-gray-700"}`}
+            >
+              {language}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Editor */}
+      <div className="flex flex-wrap gap-2">
+        {languages.map((language) => (
+          <button
+            key={language}
+            onClick={() => setActiveLanguage(language)}
+            className={`px-2 py-1 border rounded text-sm ${activeLanguage === language ? "bg-black text-white" : "bg-white text-gray-700"}`}
+          >
+            {language}
+          </button>
+        ))}
+      </div>
+
       <div className="border rounded overflow-hidden">
         <Editor
-          height="300px"
-          defaultLanguage="javascript"
-          language={language}
-          value={starterCode}
-          onChange={(val) => setStarterCode(val ?? "")}
+          height="280px"
+          language={activeLanguage}
+          value={starterCodeByLanguage[activeLanguage] || ""}
+          onChange={(val) =>
+            setStarterCodeByLanguage((prev) => ({
+              ...prev,
+              [activeLanguage]: val ?? "",
+            }))
+          }
           theme="vs-dark"
           options={{
             minimap: { enabled: false },
@@ -216,62 +165,24 @@ Hello, !`,
         />
       </div>
 
-      {/* Buttons */}
-      <div className="flex items-center gap-3">
-        <button
-          onClick={runCode}
-          className="px-4 py-1 border rounded text-white bg-purple-600 hover:bg-purple-700 text-sm"
-        >
-          ▶️ Run {language === "javascript" ? "(JS exec)" : "(simulate)"}
-        </button>
-        {language === "javascript" && (
-          <button
-            onClick={formatCode}
-            className="px-4 py-1 border rounded text-white bg-indigo-600 hover:bg-indigo-700 text-sm"
-          >
-            ✨ Format Code
-          </button>
-        )}
-        <button
-          onClick={() => {
-            setConsoleOutput("");
-            setIsSimulated(false);
-          }}
-          className="px-3 py-1 border rounded text-sm"
-        >
-          Clear
-        </button>
-      </div>
-
-      {/* Console Output */}
-      {consoleOutput && (
-        <div>
-          <div className="text-xs text-gray-500 mb-1">
-            {isSimulated
-              ? "Simulated output (no code executed):"
-              : "Console output:"}
-          </div>
-          <pre className="bg-gray-900 text-green-400 p-3 rounded text-sm overflow-auto">
-            {consoleOutput}
-          </pre>
-        </div>
-      )}
-
-      {/* Expected Output */}
       <div>
         <label className="block text-sm font-medium mb-1">
-          Expected Output (optional)
+          Expected output for {activeLanguage} (optional)
         </label>
         <textarea
-          value={expectedOutput}
-          onChange={(e) => setExpectedOutput(e.target.value)}
-          placeholder="Add expected output..."
           rows={2}
           className="w-full border rounded p-2 text-sm font-mono"
+          value={expectedOutputByLanguage[activeLanguage] || ""}
+          onChange={(e) =>
+            setExpectedOutputByLanguage((prev) => ({
+              ...prev,
+              [activeLanguage]: e.target.value,
+            }))
+          }
+          placeholder="Expected output"
         />
       </div>
 
-      {/* Footer */}
       <div className="flex justify-end gap-3 border-t pt-3">
         <button
           onClick={onClose}
@@ -280,15 +191,15 @@ Hello, !`,
           Cancel
         </button>
         <button
-          onClick={handleSave}
-          disabled={!title.trim()}
+          onClick={saveExercise}
+          disabled={!canSave || saving}
           className={`px-4 py-1 rounded text-white ${
-            title.trim()
+            canSave && !saving
               ? "bg-purple-600 hover:bg-purple-700"
               : "bg-gray-400 cursor-not-allowed"
           }`}
         >
-          Save
+          {saving ? "Saving..." : "Save Coding Exercise"}
         </button>
       </div>
     </div>

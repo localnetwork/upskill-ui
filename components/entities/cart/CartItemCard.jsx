@@ -1,20 +1,28 @@
 import Image from "next/image";
 import CARTAPI from "@/lib/api/cart/request";
 import { mutate } from "swr";
+import { useState } from "react";
 export default function CartItemCard({ item, isLast }) {
+  const [isRemoving, setIsRemoving] = useState(false);
+
   const handleDelete = async (cartItemId) => {
+    if (isRemoving) return;
+
     const confirmed = window.confirm(
       "Are you sure you want to remove this item from the cart?",
     );
     if (!confirmed) return;
 
     try {
-      const response = await CARTAPI.removeItem(cartItemId);
+      setIsRemoving(true);
+      await CARTAPI.removeItem(cartItemId);
 
       mutate(`${process.env.NEXT_PUBLIC_API_URL}/cart/count`);
       mutate(`${process.env.NEXT_PUBLIC_API_URL}/cart`);
     } catch (error) {
       console.error("Error removing item from cart:", error);
+    } finally {
+      setIsRemoving(false);
     }
   };
   return (
@@ -43,12 +51,17 @@ export default function CartItemCard({ item, isLast }) {
         <div className="col-span-1 flex font-light justify-end text-[#0056D2]">
           <div>
             <button
-              className="hover:bg-[#F0F6FF] px-[15px] py-[5px] rounded-md cursor-pointer"
+              className={`px-[15px] py-[5px] rounded-md ${
+                isRemoving
+                  ? "opacity-60 cursor-not-allowed"
+                  : "hover:bg-[#F0F6FF] cursor-pointer"
+              }`}
+              disabled={isRemoving}
               onClick={(e) => {
                 handleDelete(item.id);
               }}
             >
-              Remove
+              {isRemoving ? "Removing..." : "Remove"}
             </button>
           </div>
         </div>

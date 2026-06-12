@@ -3,6 +3,8 @@ import { useRouter } from "next/router";
 import Spinner from "@/components/icons/Spinner";
 import VideoPreview from "./components/VideoPreview";
 import ArticlePreview from "./components/ArticlePreview";
+import QuizPreview from "./components/QuizPreview";
+import CodingExercisePreview from "./components/CodingExercisePreview";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import "react-tooltip/dist/react-tooltip.css";
 import { Tooltip } from "react-tooltip";
@@ -69,6 +71,20 @@ export default function CourseAssetPreview({
         />
       );
       break;
+    case "quiz":
+      component = (
+        <QuizPreview course={course} lecture={lecture} setCourse={setCourse} />
+      );
+      break;
+    case "coding_exercise":
+      component = (
+        <CodingExercisePreview
+          course={course}
+          lecture={lecture}
+          setCourse={setCourse}
+        />
+      );
+      break;
     default:
       component = null;
   }
@@ -96,7 +112,9 @@ export default function CourseAssetPreview({
   }, [router]);
 
   return (
-    <div className="w-full h-[500px] bg-[#16161D] relative">
+    <div
+      className={`w-full bg-[#16161D] relative ${lecture?.curriculum_resource_type === "quiz" ? "h-[600px]" : "h-[500px]"}`}
+    >
       {isLoading ? (
         <span className="preloader absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
           <Spinner className="w-10 h-10 text-white animate-spin" />
@@ -122,7 +140,7 @@ export default function CourseAssetPreview({
               data-tooltip-content={
                 prevLecture ? prevLecture.title : "No previous lecture"
               }
-              className="bg-black cursor-pointer absolute top-[50%] translate-y-[-50%] bg-opacity-50 hover:bg-opacity-70 z-[5] text-white px-4 py-2"
+              className="bg-black z-[100] cursor-pointer absolute top-[50%] translate-y-[-50%] bg-opacity-50 hover:bg-opacity-70 z-[5] text-white px-4 py-2"
             >
               <ChevronLeft size={24} />
             </button>
