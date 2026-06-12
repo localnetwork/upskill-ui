@@ -142,17 +142,17 @@ export default function AdminDashboard({ initialTab }) {
   return (
     <div className="container py-8">
       <div>
-        <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
           <div>
-            <h1 class="text-[2.25rem] font-extrabold tracking-tight text-on-surface mb-2">
+            <h1 className="text-[2.25rem] font-extrabold tracking-tight text-on-surface mb-2">
               Admin Dashboard
             </h1>
-            <p class="text-on-surface-variant max-w-2xl">
+            <p className="text-on-surface-variant max-w-2xl">
               Welcome back, Administrator. Here's a snapshot of the academic
               progress and platform growth across your assigned modules.
             </p>
           </div>
-          <div class="flex p-1.5 bg-surface-container-low rounded-full gap-1">
+          <div className="flex p-1.5 bg-surface-container-low rounded-full gap-1">
             <Link
               href="/admin?tab=overview"
               className={`px-6 py-2 rounded-full font-bold text-sm transition-all scale-100 ${activeTab === "overview" ? "bg-[#0056d2] text-white" : "text-slate-500"}`}
@@ -181,14 +181,14 @@ export default function AdminDashboard({ initialTab }) {
         <>
           {activeTab === "overview" && (
             <>
-              <div class="cards mb-12">
+              <div className="cards mb-12">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <Card
                     iconBg="#f0f7ff"
                     icon={<User />}
                     label="Users"
                     value={overview.users}
-                    title={`<span class="text-green-500">+12%</span>`}
+                    title={`<span className="text-green-500">+12%</span>`}
                     description="Active users this month"
                   />
                   <Card
@@ -196,14 +196,14 @@ export default function AdminDashboard({ initialTab }) {
                     icon={<GraduationCap />}
                     label="Courses"
                     value={overview.courses}
-                    title={`<span class="text-green-500">stable</span>`}
+                    title={`<span className="text-green-500">stable</span>`}
                     description={`4 courses in draft mode.`}
                   />
                   <Card
                     iconBg="#E4E9ED"
                     icon={<ShoppingCart />}
                     label="Paid Orders"
-                    title={`<span class="text-green-500">0%</span>`}
+                    title={`<span className="text-green-500">0%</span>`}
                     description="No new transaction today"
                     value={overview.paidOrders}
                   />
@@ -211,108 +211,108 @@ export default function AdminDashboard({ initialTab }) {
                     iconBg="#BCD4F5"
                     icon={<Banknote />}
                     label="Revenue"
-                    title={`<span class="text-green-500">MTD</span>`}
+                    title={`<span className="text-green-500">MTD</span>`}
                     description={`Payout cycle: 15th of month.`}
                     value={`₱${overview.revenue}`}
                   />
                 </div>
               </div>
 
-              <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div class="lg:col-span-2 bg-surface border border-[#e2e8f0] rounded-lg overflow-hidden flex flex-col">
-                  <div class="px-8 py-6 border-b border-[#e2e8f0] flex justify-between items-center">
-                    <h3 class="text-lg font-bold">Platform Engagement</h3>
-                    <div class="flex gap-2">
-                      <button class="px-3 py-1 text-xs font-bold text-primary bg-[#0056d2]-container rounded-md">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="lg:col-span-2 bg-surface border border-[#e2e8f0] rounded-lg overflow-hidden flex flex-col">
+                  <div className="px-8 py-6 border-b border-[#e2e8f0] flex justify-between items-center">
+                    <h3 className="text-lg font-bold">Platform Engagement</h3>
+                    <div className="flex gap-2">
+                      <button className="px-3 py-1 text-xs font-bold text-primary bg-[#0056d2]-container rounded-md">
                         Weekly
                       </button>
-                      <button class="px-3 py-1 text-xs font-bold text-slate-500 hover:bg-slate-50 rounded-md">
+                      <button className="px-3 py-1 text-xs font-bold text-slate-500 hover:bg-slate-50 rounded-md">
                         Monthly
                       </button>
                     </div>
                   </div>
-                  <div class="flex-grow p-8 min-h-[300px] relative bg-surface-container-low/30 overflow-hidden">
-                    <div class="absolute inset-0 flex items-end px-8 pb-8 gap-4">
-                      <div class="flex-1 bg-[#0056d2]/20 h-[40%] rounded-t-md transition-all hover:bg-[#0056d2]/40"></div>
-                      <div class="flex-1 bg-[#0056d2]/20 h-[60%] rounded-t-md transition-all hover:bg-[#0056d2]/40"></div>
-                      <div class="flex-1 bg-[#0056d2]/20 h-[35%] rounded-t-md transition-all hover:bg-[#0056d2]/40"></div>
-                      <div class="flex-1 bg-[#0056d2]/20 h-[80%] rounded-t-md transition-all hover:bg-[#0056d2]/40"></div>
-                      <div class="flex-1 bg-[#0056d2]/20 h-[55%] rounded-t-md transition-all hover:bg-[#0056d2]/40"></div>
-                      <div class="flex-1 bg-[#0056d2]/20 h-[90%] rounded-t-md transition-all hover:bg-[#0056d2]/40"></div>
-                      <div class="flex-1 bg-[#0056d2]/20 h-[70%] rounded-t-md transition-all hover:bg-[#0056d2]/40"></div>
+                  <div className="flex-grow p-8 min-h-[300px] relative bg-surface-container-low/30 overflow-hidden">
+                    <div className="absolute inset-0 flex items-end px-8 pb-8 gap-4">
+                      <div className="flex-1 bg-[#0056d2]/20 h-[40%] rounded-t-md transition-all hover:bg-[#0056d2]/40"></div>
+                      <div className="flex-1 bg-[#0056d2]/20 h-[60%] rounded-t-md transition-all hover:bg-[#0056d2]/40"></div>
+                      <div className="flex-1 bg-[#0056d2]/20 h-[35%] rounded-t-md transition-all hover:bg-[#0056d2]/40"></div>
+                      <div className="flex-1 bg-[#0056d2]/20 h-[80%] rounded-t-md transition-all hover:bg-[#0056d2]/40"></div>
+                      <div className="flex-1 bg-[#0056d2]/20 h-[55%] rounded-t-md transition-all hover:bg-[#0056d2]/40"></div>
+                      <div className="flex-1 bg-[#0056d2]/20 h-[90%] rounded-t-md transition-all hover:bg-[#0056d2]/40"></div>
+                      <div className="flex-1 bg-[#0056d2]/20 h-[70%] rounded-t-md transition-all hover:bg-[#0056d2]/40"></div>
                     </div>
-                    <div class="absolute inset-0 flex flex-col justify-between pointer-events-none p-8 opacity-10">
-                      <div class="border-b border-on-surface w-full"></div>
-                      <div class="border-b border-on-surface w-full"></div>
-                      <div class="border-b border-on-surface w-full"></div>
-                      <div class="border-b border-on-surface w-full"></div>
+                    <div className="absolute inset-0 flex flex-col justify-between pointer-events-none p-8 opacity-10">
+                      <div className="border-b border-on-surface w-full"></div>
+                      <div className="border-b border-on-surface w-full"></div>
+                      <div className="border-b border-on-surface w-full"></div>
+                      <div className="border-b border-on-surface w-full"></div>
                     </div>
-                    <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
-                      <p class="text-xs font-bold uppercase tracking-widest text-slate-400">
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                      <p className="text-xs font-bold uppercase tracking-widest text-slate-400">
                         Activity Trend (Draft)
                       </p>
                     </div>
                   </div>
                 </div>
-                <div class="bg-surface border border-[#e2e8f0] rounded-lg flex flex-col">
-                  <div class="px-8 py-6 border-b border-[#e2e8f0]">
-                    <h3 class="text-lg font-bold">Recent Activity</h3>
+                <div className="bg-surface border border-[#e2e8f0] rounded-lg flex flex-col">
+                  <div className="px-8 py-6 border-b border-[#e2e8f0]">
+                    <h3 className="text-lg font-bold">Recent Activity</h3>
                   </div>
-                  <div class="flex-grow divide-y divide-outline">
-                    <div class="px-8 py-4 flex items-start gap-4 hover:bg-surface-container-low transition-colors group cursor-pointer">
-                      <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center flex-shrink-0">
-                        <UserPlus class="text-green-500 text-xl" />
+                  <div className="flex-grow divide-y divide-outline">
+                    <div className="px-8 py-4 flex items-start gap-4 hover:bg-surface-container-low transition-colors group cursor-pointer">
+                      <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center flex-shrink-0">
+                        <UserPlus className="text-green-500 text-xl" />
                       </div>
                       <div>
-                        <p class="text-sm font-bold text-on-surface">
+                        <p className="text-sm font-bold text-on-surface">
                           New User Registered
                         </p>
-                        <p class="text-xs text-on-surface-variant">
+                        <p className="text-xs text-on-surface-variant">
                           Elena Vance joined Sapphire Scholar.
                         </p>
-                        <span class="text-[10px] font-bold text-slate-400 uppercase mt-1 inline-block">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase mt-1 inline-block">
                           2 hours ago
                         </span>
                       </div>
                     </div>
-                    <div class="px-8 py-4 flex items-start gap-4 hover:bg-surface-container-low transition-colors group cursor-pointer">
-                      <div class="w-10 h-10 rounded-full bg-[#0056d2]-container flex items-center justify-center flex-shrink-0">
-                        <span class="material-symbols-outlined text-primary text-xl">
+                    <div className="px-8 py-4 flex items-start gap-4 hover:bg-surface-container-low transition-colors group cursor-pointer">
+                      <div className="w-10 h-10 rounded-full bg-[#0056d2]-container flex items-center justify-center flex-shrink-0">
+                        <span className="material-symbols-outlined text-primary text-xl">
                           fact_check
                         </span>
                       </div>
                       <div>
-                        <p class="text-sm font-bold text-on-surface">
+                        <p className="text-sm font-bold text-on-surface">
                           Review Pending
                         </p>
-                        <p class="text-xs text-on-surface-variant">
+                        <p className="text-xs text-on-surface-variant">
                           Course "Advanced UI Architecture" needs review.
                         </p>
-                        <span class="text-[10px] font-bold text-slate-400 uppercase mt-1 inline-block">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase mt-1 inline-block">
                           5 hours ago
                         </span>
                       </div>
                     </div>
-                    <div class="px-8 py-4 flex items-start gap-4 hover:bg-surface-container-low transition-colors group cursor-pointer">
-                      <div class="w-10 h-10 rounded-full bg-tertiary-container flex items-center justify-center flex-shrink-0">
-                        <span class="material-symbols-outlined text-tertiary text-xl">
+                    <div className="px-8 py-4 flex items-start gap-4 hover:bg-surface-container-low transition-colors group cursor-pointer">
+                      <div className="w-10 h-10 rounded-full bg-tertiary-container flex items-center justify-center flex-shrink-0">
+                        <span className="material-symbols-outlined text-tertiary text-xl">
                           update
                         </span>
                       </div>
                       <div>
-                        <p class="text-sm font-bold text-on-surface">
+                        <p className="text-sm font-bold text-on-surface">
                           System Update
                         </p>
-                        <p class="text-xs text-on-surface-variant">
+                        <p className="text-xs text-on-surface-variant">
                           Analytics engine successfully re-indexed.
                         </p>
-                        <span class="text-[10px] font-bold text-slate-400 uppercase mt-1 inline-block">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase mt-1 inline-block">
                           Yesterday
                         </span>
                       </div>
                     </div>
-                    <div class="px-8 py-4 text-center">
-                      <button class="text-sm font-bold text-primary hover:underline">
+                    <div className="px-8 py-4 text-center">
+                      <button className="text-sm font-bold text-primary hover:underline">
                         View All Log History
                       </button>
                     </div>
@@ -478,27 +478,27 @@ function Card({ icon, label, value, description, title, iconBg }) {
     )})`;
   };
   return (
-    <div class="bg-surface border border-[#e2e8f0] rounded-lg p-6 hover:shadow-xl transition-all duration-300 group">
-      <div class="flex justify-between items-start mb-4">
+    <div className="bg-surface border border-[#e2e8f0] rounded-lg p-6 hover:shadow-xl transition-all duration-300 group">
+      <div className="flex justify-between items-start mb-4">
         <div
           style={{ backgroundColor: iconBg, color: darkenColor(iconBg, 40) }}
           class={`p-2 rounded-lg group-hover:scale-110 transition-transform`}
         >
           {icon}
         </div>
-        <span class="text-xs font-bold uppercase tracking-widest text-on-surface-variant opacity-60">
+        <span className="text-xs font-bold uppercase tracking-widest text-on-surface-variant opacity-60">
           {label}
         </span>
       </div>
-      <div class="flex items-baseline gap-2">
-        <span class="text-4xl font-extrabold text-on-surface">{value}</span>
+      <div className="flex items-baseline gap-2">
+        <span className="text-4xl font-extrabold text-on-surface">{value}</span>
         <span
-          class="text-xs font-bold text-tertiary"
+          className="text-xs font-bold text-tertiary"
           dangerouslySetInnerHTML={{ __html: title }}
         />
       </div>
       <p
-        class="text-xs text-slate-400 mt-2"
+        className="text-xs text-slate-400 mt-2"
         dangerouslySetInnerHTML={{ __html: description }}
       ></p>
     </div>
