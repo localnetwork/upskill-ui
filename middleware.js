@@ -260,5 +260,7 @@ export const config = {
     "/verify-2fa",
     "/admin",
     "/admin/:path*",
+    "/instructor",
+    "/instructor/:path*",
   ],
 };

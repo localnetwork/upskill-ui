@@ -2,11 +2,16 @@ import { Star } from "lucide-react";
 import { useState, useRef } from "react";
 import UserAvatar from "../../user/UserAvatar";
 import Link from "next/link";
+import { useRouter } from "next/router";
+import BaseApi from "@/lib/api/_base.api";
+import toast from "react-hot-toast";
 
 export default function CourseOverview({ course }) {
   const { subtitle, instructional_level, description, author } = course;
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isCertificateLoading, setIsCertificateLoading] = useState(false);
   const containerRef = useRef(null); // ✅ fixed typing for JS/TS
+  const router = useRouter();
 
   const toggleExpanded = () => {
     if (isExpanded && containerRef.current) {
@@ -21,6 +26,43 @@ export default function CourseOverview({ course }) {
       }, 300);
     } else {
       setIsExpanded(true);
+    }
+  };
+
+  const allCurriculums =
+    course?.sections?.flatMap((section) => section?.curriculums || []) || [];
+  const completedCurriculumsCount = allCurriculums.filter(
+    (curriculum) =>
+      curriculum?.completed ||
+      curriculum?.is_taken ||
+      Number(curriculum?.progress_pct || 0) >= 100,
+  ).length;
+  const isCourseCompleted =
+    allCurriculums.length > 0 &&
+    completedCurriculumsCount >= allCurriculums.length;
+
+  const handleGenerateCertificate = async () => {
+    if (!course?.slug) return;
+    if (!isCourseCompleted) {
+      toast.error("Complete the full course to generate your certificate.");
+      return;
+    }
+
+    try {
+      setIsCertificateLoading(true);
+      const response = await BaseApi.post(
+        `${process.env.NEXT_PUBLIC_API_URL}/certifications/courses/${course.slug}/generate`,
+      );
+      const certificate = response?.data?.data;
+      if (!certificate?.slug) {
+        toast.error("Unable to generate certificate right now.");
+        return;
+      }
+      router.push(`/certifications/${certificate.slug}`);
+    } catch (error) {
+      toast.error(error?.data?.message || "Failed to generate certificate.");
+    } finally {
+      setIsCertificateLoading(false);
     }
   };
 
@@ -68,8 +110,12 @@ export default function CourseOverview({ course }) {
         <div className="w-[25%]">Certificate</div>
         <div className="w-[75%]">
           <p>Get Upskill certificate by completing entire course</p>
-          <button className="mt-[10px] px-[20px] py-[10px] border-[2px] font-bold border-[#0056D2] text-[#0056D2] hover:text-white rounded-[5px] hover:bg-[#1d6de0] transition">
-            Upskill Certificate
+          <button
+            onClick={handleGenerateCertificate}
+            disabled={isCertificateLoading || !isCourseCompleted}
+            className="mt-[10px] px-[20px] py-[10px] border-[2px] font-bold border-[#0056D2] text-[#0056D2] hover:text-white rounded-[5px] hover:bg-[#1d6de0] transition disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isCertificateLoading ? "Generating..." : "Upskill Certificate"}
           </button>
         </div>
       </div>
