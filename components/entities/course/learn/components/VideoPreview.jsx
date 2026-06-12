@@ -21,7 +21,7 @@ export default function VideoPreview({
 }) {
   const [mediaSrc, setMediaSrc] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [countdown, setCountdown] = useState(null); // ⏱ countdown value
+  const [countdown, setCountdown] = useState(null);
   const playerRef = useRef(null);
   const containerRef = useRef(null);
   const router = useRouter();
@@ -31,7 +31,7 @@ export default function VideoPreview({
 
     const cookies = parseCookies();
     const token = cookies[process.env.NEXT_PUBLIC_TOKEN];
-    const videoUrl = `${process.env.NEXT_PUBLIC_API_DOMAIN}/stream.php?course_id=${course.id}&id=${lecture.asset.id}`;
+    const videoUrl = `${process.env.NEXT_PUBLIC_API_URL}/stream.php?id=${lecture.id}`;
 
     let isMounted = true;
     let localUrl = null;
@@ -39,18 +39,26 @@ export default function VideoPreview({
     async function loadVideo() {
       try {
         setLoading(true);
+        setMediaSrc(null);
+
         const res = await fetch(videoUrl, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        if (!res.ok) throw new Error("Video request failed");
+        if (!res.ok) {
+          const bodyText = await res.text();
+          throw new Error(`Video request failed (${res.status}): ${bodyText}`);
+        }
 
         const blob = await res.blob();
         localUrl = URL.createObjectURL(blob);
-        const type = blob.type || "video/mp4";
+
+        // ✅ Always force video/mp4 — server returns application/octet-stream
+        // which Vidstack does not recognise as a video type
+        const mimeType = "video/mp4";
 
         if (isMounted) {
-          setMediaSrc({ src: localUrl, type });
+          setMediaSrc([{ src: localUrl, type: mimeType }]);
         }
       } catch (err) {
         console.error("Error loading video:", err);
@@ -65,44 +73,41 @@ export default function VideoPreview({
       isMounted = false;
       if (localUrl) URL.revokeObjectURL(localUrl);
     };
-  }, [course?.id, lecture?.asset?.id]);
+  }, [course?.id, lecture?.id]);
 
-  // ✅ Unmute video after 1 second
+  // Unmute after player mounts
   useEffect(() => {
     if (!playerRef.current || !mediaSrc) return;
 
     const timer = setTimeout(() => {
-      const videoElement = playerRef.current?.el?.querySelector("video");
-      if (videoElement) {
-        videoElement.muted = false;
-      }
-    }, 100);
+      const videoEl = playerRef.current?.el?.querySelector("video");
+      if (videoEl) videoEl.muted = false;
+    }, 300);
 
     return () => clearTimeout(timer);
   }, [mediaSrc]);
 
-  // ✅ Picture-in-Picture when out of view
+  // Picture-in-Picture when scrolled out of view
   useEffect(() => {
     if (!containerRef.current) return;
 
     const observer = new IntersectionObserver(
       async (entries) => {
         const [entry] = entries;
-        const player = playerRef.current;
-        const videoElement = player?.el?.querySelector("video");
-        if (!videoElement) return;
+        const videoEl = playerRef.current?.el?.querySelector("video");
+        if (!videoEl) return;
 
         try {
-          if (!entry.isIntersecting && !videoElement.paused) {
+          if (!entry.isIntersecting && !videoEl.paused) {
             if (
               document.pictureInPictureEnabled &&
               !document.pictureInPictureElement
             ) {
-              await videoElement.requestPictureInPicture();
+              await videoEl.requestPictureInPicture();
             }
           } else if (
             entry.isIntersecting &&
-            document.pictureInPictureElement === videoElement
+            document.pictureInPictureElement === videoEl
           ) {
             await document.exitPictureInPicture();
           }
@@ -117,15 +122,11 @@ export default function VideoPreview({
     return () => observer.disconnect();
   }, [mediaSrc]);
 
-  // ✅ Add progress when finished
   const addProgress = async () => {
     try {
       await BaseApi.post(
         process.env.NEXT_PUBLIC_API_URL + "/course-curriculums/add-progress",
-        {
-          course_id: course.id,
-          curriculum_id: lecture.id,
-        },
+        { course_id: course.id, curriculum_id: lecture.id },
       );
       console.log("✅ Progress saved for", lecture.title);
     } catch (error) {
@@ -133,11 +134,9 @@ export default function VideoPreview({
     }
   };
 
-  // ✅ Handle video ended
   const handleEnded = async () => {
     await addProgress();
 
-    // ✅ Update local course state to mark this lecture as taken
     setCourse((prev) => {
       if (!prev) return prev;
       return {
@@ -151,31 +150,24 @@ export default function VideoPreview({
       };
     });
 
-    // ✅ Start countdown if next lecture exists
-    if (nextLecture) {
-      setCountdown(5);
-    }
+    if (nextLecture) setCountdown(5);
   };
 
-  // ✅ Countdown timer logic
+  // Countdown auto-advance
   useEffect(() => {
     if (countdown === null) return;
     if (countdown <= 0) {
       router.push(`/courses/${course.slug}/learn?lecture=${nextLecture.uuid}`);
       return;
     }
-
-    const timer = setTimeout(() => {
-      setCountdown((prev) => (prev > 0 ? prev - 1 : 0));
-    }, 1000);
-
+    const timer = setTimeout(
+      () => setCountdown((p) => (p > 0 ? p - 1 : 0)),
+      1000,
+    );
     return () => clearTimeout(timer);
   }, [countdown]);
 
-  // ✅ Cancel auto navigation
-  const cancelNext = () => {
-    setCountdown(null);
-  };
+  const cancelNext = () => setCountdown(null);
 
   return (
     <div
@@ -192,7 +184,7 @@ export default function VideoPreview({
         <>
           <MediaPlayer
             ref={playerRef}
-            title={lecture?.title || "Video Preview"}
+            title={lecture?.title || "Video"}
             src={mediaSrc}
             playsinline
             crossOrigin=""
@@ -200,29 +192,32 @@ export default function VideoPreview({
             onContextMenu={(e) => e.preventDefault()}
             autoPlay
             muted
-            onEnded={handleEnded} // ✅ Trigger countdown on video end
+            onEnded={handleEnded}
           >
-            <MediaProvider controlsList="nodownload noremoteplayback" />
+            {/* ✅ Custom <video> element so controlsList reaches the DOM node */}
+            <MediaProvider>
+              <video
+                slot="media"
+                controlsList="nodownload noremoteplayback"
+                disablePictureInPicture={false}
+              />
+            </MediaProvider>
             <PlyrLayout icons={plyrLayoutIcons} />
           </MediaPlayer>
 
-          {/* ✅ Countdown Overlay */}
-          {/* ✅ Countdown Overlay with Animation */}
+          {/* Countdown overlay */}
           {countdown !== null && (
             <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 text-white z-[2000] backdrop-blur-sm">
-              {/* Circular Progress Ring */}
               <div className="relative mb-6">
                 <svg className="w-32 h-32 transform -rotate-90">
-                  {/* Background circle */}
                   <circle
                     cx="64"
                     cy="64"
                     r="56"
-                    stroke="rgba(255, 255, 255, 0.1)"
+                    stroke="rgba(255,255,255,0.1)"
                     strokeWidth="8"
                     fill="none"
                   />
-                  {/* Animated progress circle */}
                   <circle
                     cx="64"
                     cy="64"
@@ -236,7 +231,6 @@ export default function VideoPreview({
                     style={{ transition: "stroke-dashoffset 1s linear" }}
                   />
                 </svg>
-                {/* Countdown number in center */}
                 <div className="absolute inset-0 flex items-center justify-center">
                   <span className="text-5xl font-bold">{countdown}</span>
                 </div>

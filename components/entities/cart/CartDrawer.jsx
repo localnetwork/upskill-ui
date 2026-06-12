@@ -44,10 +44,7 @@ const CartDrawer = forwardRef((props, ref) => {
                     <div className="w-[80px]">
                       {item?.course?.cover_image && (
                         <Image
-                          src={
-                            process.env.NEXT_PUBLIC_API_DOMAIN +
-                            item.course.cover_image.path
-                          }
+                          src={item.course.cover_image.path}
                           width={300}
                           height={200}
                           alt={item.course.title}

@@ -1,5 +1,6 @@
 "use client";
 import BaseApi from "@/lib/api/_base.api";
+import SecureVideo from "@/components/video-players/SecureVideo";
 import { Save } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
@@ -7,7 +8,7 @@ import { useState } from "react";
 export default function VideoForm({ onSave, onCancel, lecture }) {
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(null); // 👈 local preview URL
-  const [uploadedVideo, setUploadedVideo] = useState(null); // 👈 from API after save
+  const [videoUploaded, setVideoUploaded] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const handleFileChange = (e) => {
@@ -15,7 +16,7 @@ export default function VideoForm({ onSave, onCancel, lecture }) {
     if (!selectedFile) return;
 
     setFile(selectedFile);
-    setUploadedVideo(null);
+    setVideoUploaded(false);
 
     const previewUrl = URL.createObjectURL(selectedFile);
     setPreview(previewUrl);
@@ -64,11 +65,8 @@ export default function VideoForm({ onSave, onCancel, lecture }) {
 
       console.log("File uploaded successfully:", response.data.data);
 
-      const videoUrl = response.data?.url || response.data?.path || null;
-      if (videoUrl) {
-        setUploadedVideo(videoUrl);
-        setPreview(null);
-      }
+      setVideoUploaded(true);
+      setPreview(null);
 
       if (onSave) {
         onSave({
@@ -90,12 +88,8 @@ export default function VideoForm({ onSave, onCancel, lecture }) {
       <label className="mb-2 block font-normal">Upload Video</label>
       <div className="grid grid-cols-2 gap-4">
         <div className="bg-[#F8FAFB] flex items-center justify-center">
-          {uploadedVideo ? (
-            <video
-              src={uploadedVideo}
-              controls
-              className="w-full h-[200px] object-cover"
-            />
+          {videoUploaded ? (
+            <SecureVideo lessonId={lecture.id} className="w-full h-[200px] object-cover" />
           ) : preview ? (
             <video
               src={preview}

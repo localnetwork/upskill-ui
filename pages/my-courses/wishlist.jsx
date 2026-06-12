@@ -77,13 +77,16 @@ export default function Page() {
                       handleRemove(item.course.id);
                     }}
                   >
-                    <Heart size={18} className="text-red-500" fill="currentColor" />
+                    <Heart
+                      size={18}
+                      className="text-red-500"
+                      fill="currentColor"
+                    />
                   </button>
                   <Image
                     src={
                       item?.course?.cover_image?.path
-                        ? process.env.NEXT_PUBLIC_API_DOMAIN +
-                          item.course.cover_image.path
+                        ? item.course.cover_image.path
                         : "/placeholder-cover.webp"
                     }
                     alt={item.course.title}
@@ -93,7 +96,9 @@ export default function Page() {
                   />
                 </div>
 
-                <h3 className="font-semibold text-[18px]">{item.course.title}</h3>
+                <h3 className="font-semibold text-[18px]">
+                  {item.course.title}
+                </h3>
                 <p className="font-light text-[14px]">
                   {item.course.author?.data?.firstname}{" "}
                   {item.course.author?.data?.lastname}

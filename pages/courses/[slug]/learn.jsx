@@ -27,7 +27,11 @@ export async function getServerSideProps(context) {
     const status = error?.status;
     const message = String(error?.data?.message || "").toLowerCase();
 
-    if (status === 401 || message.includes("invalid") || message.includes("expired")) {
+    if (
+      status === 401 ||
+      message.includes("invalid") ||
+      message.includes("expired")
+    ) {
       return {
         redirect: {
           destination: "/login",

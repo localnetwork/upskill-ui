@@ -55,8 +55,7 @@ export default function InstructorCoursesList({ courses, isLoading }) {
                 height={100}
                 src={
                   course?.cover_image?.path
-                    ? process.env.NEXT_PUBLIC_API_DOMAIN +
-                      course.cover_image.path
+                    ? course.cover_image.path
                     : "/placeholder-cover.webp"
                 }
                 alt={course.title}

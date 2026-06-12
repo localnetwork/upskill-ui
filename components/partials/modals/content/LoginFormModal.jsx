@@ -12,7 +12,6 @@ import Link from "next/link";
 import Input from "@/components/forms/Input";
 import Password from "@/components/forms/Password";
 import modalState from "@/lib/store/modalState";
-import { mutate } from "swr";
 export default function LoginFormModal() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);

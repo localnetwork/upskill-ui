@@ -135,9 +135,7 @@ export default function CourseCard({ course }) {
           <Link href={`/courses/${course.slug}`}>
             {course?.cover_image ? (
               <Image
-                src={
-                  process.env.NEXT_PUBLIC_API_DOMAIN + course.cover_image.path
-                }
+                src={course.cover_image.path}
                 alt={course.title}
                 width={400}
                 height={200}
@@ -185,10 +183,7 @@ export default function CourseCard({ course }) {
                   <Image
                     alt="Instructor"
                     className="object-cover min-w-6 min-h-6 rounded-full"
-                    src={
-                      process.env.NEXT_PUBLIC_API_DOMAIN +
-                      course.author.data.user_picture.path
-                    }
+                    src={course.author.data.user_picture.path}
                     width={24}
                     height={24}
                   />

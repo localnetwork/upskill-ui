@@ -253,7 +253,7 @@ export default function Course() {
                   {course?.cover_image && (
                     <Image
                       src={
-                        process.env.NEXT_PUBLIC_API_DOMAIN +
+                        
                         course?.cover_image?.path
                       }
                       width={500}

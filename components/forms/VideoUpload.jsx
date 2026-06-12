@@ -23,7 +23,7 @@ export default function VideoUpload({
   const idRef = useRef(
     name
       ? `${name}-${Math.random().toString(36).slice(2, 9)}`
-      : `file-${Math.random().toString(36).slice(2, 9)}`
+      : `file-${Math.random().toString(36).slice(2, 9)}`,
   );
 
   const handleUpload = async (e) => {
@@ -50,7 +50,7 @@ export default function VideoUpload({
               setProgress(Math.round((evt.loaded / evt.total) * 100));
             }
           },
-        }
+        },
       );
 
       const data = res.data;
@@ -69,7 +69,7 @@ export default function VideoUpload({
       toast.error(
         err?.data?.message ||
           err?.response?.data?.message ||
-          "An error occurred uploading the image."
+          "An error occurred uploading the image.",
       );
     } finally {
       setIsUploading(false);
@@ -79,18 +79,10 @@ export default function VideoUpload({
 
   const apiDomain = process.env.NEXT_PUBLIC_API_DOMAIN || "";
 
-  // const previewPath = uploadedFile?.path
-  //   ? apiDomain + uploadedFile.path
-  //   : value?.path
-  //     ? apiDomain + value.path
-  //     : preview
-  //       ? apiDomain + preview
-  //       : "/placeholder-cover.webp";
-
   const previewPath = uploadedFile?.path
-    ? apiDomain + uploadedFile.path
+    ? uploadedFile.path
     : value?.path
-      ? apiDomain + value.path
+      ? value.path
       : "/placeholder-cover.webp";
 
   const buttonText = uploadedFile ? "Change File" : "Upload File";

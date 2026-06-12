@@ -43,7 +43,9 @@ export default function Checkout() {
     const hasNoCartItems = !Array.isArray(cart) || cart.length === 0;
     const totalNumber = Number(cartTotal);
     const hasInvalidTotal =
-      cartTotal === null || cartTotal === undefined || Number.isNaN(totalNumber);
+      cartTotal === null ||
+      cartTotal === undefined ||
+      Number.isNaN(totalNumber);
 
     if (hasNoCartItems || hasInvalidTotal) {
       setIsLoading(false);
@@ -128,10 +130,7 @@ export default function Checkout() {
                     <div className="flex justify-between">
                       <div className="flex items-center gap-[10px]">
                         <Image
-                          src={
-                            process.env.NEXT_PUBLIC_API_DOMAIN +
-                            item?.course?.cover_image?.path
-                          }
+                          src={item?.course?.cover_image?.path}
                           width={50}
                           height={30}
                           alt={item?.course?.title}

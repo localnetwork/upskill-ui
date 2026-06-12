@@ -5,7 +5,7 @@ import { Film, FileText } from "lucide-react";
 import VideoForm from "./lecture-types/VideoForm";
 import ArticleForm from "./lecture-types/ArticleForm";
 import BaseApi from "@/lib/api/_base.api";
-import HLSVideo from "@/components/video-players/HLSVideo";
+import SecureVideo from "@/components/video-players/SecureVideo";
 
 export default function LectureContentSelector({
   lectureTitle,
@@ -81,11 +81,7 @@ export default function LectureContentSelector({
           <div className="space-y-2">
             <h3 className="font-semibold">{title}</h3>
             <p className="text-sm text-gray-600">{description}</p>
-            {lecture.asset?.path && (
-              <HLSVideo
-                src={process.env.NEXT_PUBLIC_API_DOMAIN + lecture.asset.path}
-              />
-            )}
+            <SecureVideo lessonId={lecture.id} />
           </div>
         );
       case "article":

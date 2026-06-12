@@ -4,16 +4,19 @@ import Image from "next/image";
 import Link from "next/link";
 export default function AddToCart() {
   const modalInfo = modalState((state) => state.modalInfo);
+
+  const handleClose = () => {
+    modalState.setState({ modalInfo: null });
+    document.body.style.overflow = "auto";
+  };
+
   return (
     <div className="flex flex-col md:flex-row gap-[15px]">
       <div className="flex items-center gap-[15px]">
         <CheckCircle className="text-green-900" size={30} />
         <div className="w-[100px]">
           <Image
-            src={
-              process.env.NEXT_PUBLIC_API_DOMAIN +
-              modalInfo?.data?.cover_image?.path
-            }
+            src={modalInfo?.data?.cover_image?.path}
             width={300}
             height={200}
             alt={modalInfo?.data?.title}
@@ -34,7 +37,7 @@ export default function AddToCart() {
         <div>
           <Link
             href="/cart"
-            onClick={() => modalState.setState({ modalInfo: null })}
+            onClick={handleClose}
             className="bg-[#0056D2] min-w-[120px] flex items-center justify-center gap-[5px] text-center max-w-[200px] font-semibold text-white px-[20px] py-[8px] rounded-[5px] w-full hover:bg-[#1d6de0]"
           >
             Go to Cart

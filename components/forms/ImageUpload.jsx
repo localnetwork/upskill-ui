@@ -23,7 +23,7 @@ export default function ImageUpload({
   const idRef = useRef(
     name
       ? `${name}-${Math.random().toString(36).slice(2, 9)}`
-      : `file-${Math.random().toString(36).slice(2, 9)}`
+      : `file-${Math.random().toString(36).slice(2, 9)}`,
   );
 
   const handleUpload = async (e) => {
@@ -50,7 +50,7 @@ export default function ImageUpload({
               setProgress(Math.round((evt.loaded / evt.total) * 100));
             }
           },
-        }
+        },
       );
 
       const data = res.data;
@@ -72,7 +72,7 @@ export default function ImageUpload({
       toast.error(
         err?.data?.message ||
           err?.response?.data?.message ||
-          "An error occurred uploading the image."
+          "An error occurred uploading the image.",
       );
     } finally {
       setIsUploading(false);
@@ -91,9 +91,9 @@ export default function ImageUpload({
   //       : "/placeholder-cover.webp";
 
   const previewPath = uploadedFile?.path
-    ? apiDomain + uploadedFile.path
+    ? uploadedFile.path
     : value?.path
-      ? apiDomain + value.path
+      ? value.path
       : "/placeholder-cover.webp";
 
   const buttonText = uploadedFile ? "Change File" : "Upload File";
@@ -116,6 +116,7 @@ export default function ImageUpload({
               <Spinner className="w-[30px] h-[30px]" />
             </div>
           )}
+
           <Image
             src={previewPath}
             width={300}

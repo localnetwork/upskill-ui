@@ -141,6 +141,28 @@ export default function Course() {
     }
   };
 
+  const handleBuyNow = async () => {
+    if (!course) return;
+
+    const isLogged = await isLoggedIn();
+    if (!isLogged) {
+      modalState.setState({
+        modalInfo: {
+          type: "LOGIN",
+          message: "Please log in to continue with express checkout.",
+        },
+      });
+      return;
+    }
+
+    if (course?.is_enrolled) {
+      router.push(`/courses/${course.slug}/learn`);
+      return;
+    }
+
+    router.push(`/checkout/express?slug=${encodeURIComponent(course.slug)}`);
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -322,8 +344,7 @@ export default function Course() {
                   height={250}
                   src={
                     course?.cover_image
-                      ? process.env.NEXT_PUBLIC_API_DOMAIN +
-                        course.cover_image.path
+                      ? course.cover_image.path
                       : "/placeholder-cover.webp"
                   }
                 />
@@ -377,7 +398,10 @@ export default function Course() {
                     </>
                   )}
                   <div className="flex gap-2">
-                    <button className="flex-1 py-3 border border-slate-900 text-slate-900 font-bold rounded-xl hover:bg-slate-50 transition-colors">
+                    <button
+                      onClick={handleBuyNow}
+                      className="flex-1 py-3 border border-slate-900 text-slate-900 font-bold rounded-xl hover:bg-slate-50 transition-colors"
+                    >
                       Buy Now
                     </button>
                     <button
@@ -439,9 +463,6 @@ export default function Course() {
                   <button className="text-sm text-red-600 font-bold border-b-2 border-red-600">
                     Report Abuse
                   </button>
-                  {/* <button className="text-sm font-bold border-b-2 border-slate-900">
-                    Gift this course
-                  </button> */}
                 </div>
               </div>
             </div>

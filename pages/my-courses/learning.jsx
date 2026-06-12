@@ -30,9 +30,7 @@ export default function Page() {
             <div
               key={item.id}
               className="cursor-pointer relative group"
-              onClick={() =>
-                router.push(`/courses/${item.course.slug}/learn`)
-              }
+              onClick={() => router.push(`/courses/${item.course.slug}/learn`)}
             >
               {(() => {
                 const progress = Number(item?.progress?.progress_pct || 0);
@@ -61,11 +59,7 @@ export default function Page() {
                         </span>
                       </Link>
                       <Image
-                        src={
-                          coverPath
-                            ? process.env.NEXT_PUBLIC_API_DOMAIN + coverPath
-                            : "/placeholder-cover.webp"
-                        }
+                        src={coverPath ? coverPath : "/placeholder-cover.webp"}
                         alt={item.course.title}
                         width={400}
                         height={200}

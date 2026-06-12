@@ -51,9 +51,7 @@ export default function CourseAuthor({ author }) {
             height={400}
             alt={`${author?.firstname} ${author?.lastname}`}
             className="w-32 h-32 rounded-full object-cover ring-4 ring-slate-50"
-            src={
-              process.env.NEXT_PUBLIC_API_DOMAIN + author?.user_picture?.path
-            }
+            src={author?.user_picture?.path}
           />
         ) : (
           <div></div>

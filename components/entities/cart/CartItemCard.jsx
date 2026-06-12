@@ -4,7 +4,7 @@ import { mutate } from "swr";
 export default function CartItemCard({ item, isLast }) {
   const handleDelete = async (cartItemId) => {
     const confirmed = window.confirm(
-      "Are you sure you want to remove this item from the cart?"
+      "Are you sure you want to remove this item from the cart?",
     );
     if (!confirmed) return;
 
@@ -25,9 +25,7 @@ export default function CartItemCard({ item, isLast }) {
       <div className="w-[150px] h-[100px] relative flex-shrink-0">
         {item.course.cover_image && (
           <Image
-            src={
-              process.env.NEXT_PUBLIC_API_DOMAIN + item.course.cover_image.path
-            }
+            src={item.course.cover_image.path}
             alt={item.course.title}
             fill
             className="object-cover border-[1px] border-solid border-[oklch(86.72%_0.0192_282.72deg)]"

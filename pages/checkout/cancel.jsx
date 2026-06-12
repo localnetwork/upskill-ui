@@ -26,7 +26,7 @@ export default function Page({}) {
               <div className="flex items-center">
                 <Image
                   src={
-                    process.env.NEXT_PUBLIC_API_DOMAIN +
+                    
                     item?.course?.data?.cover_image?.path
                   }
                   width={50}
