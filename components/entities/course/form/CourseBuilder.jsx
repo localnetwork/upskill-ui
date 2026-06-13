@@ -34,20 +34,22 @@ export default function CourseBuilder() {
       try {
         setIsSectionsLoading(true);
         const response = await BaseApi.get(
-          `${process.env.NEXT_PUBLIC_API_URL}/course-sections/course/${courseManagement?.id}`
+          `${process.env.NEXT_PUBLIC_API_URL}/course-sections/course/${courseManagement?.id}`,
         );
-        const data = response.data || [];
+
+        console.log("response", response);
+        const data = response.data.data || [];
         setSections(
-          data.map((s) => ({
+          data?.map((s) => ({
             ...s,
             tempKey: uuid(),
             isNew: false, // fetched = not new
-          }))
+          })),
         );
 
         const maxId = Math.max(
           0,
-          ...data.map((s) => parseInt(s.id, 10)).filter((n) => !isNaN(n))
+          ...data?.map((s) => parseInt(s.id, 10)).filter((n) => !isNaN(n)),
         );
         nextIdCounter.current = maxId + 1;
       } catch (error) {
@@ -85,8 +87,8 @@ export default function CourseBuilder() {
       prev.map((sec) =>
         sec.tempKey === sectionId
           ? { ...sec, ...updatedSection, isNew: false }
-          : sec
-      )
+          : sec,
+      ),
     );
   };
 
@@ -99,15 +101,17 @@ export default function CourseBuilder() {
       prev.map((sec) =>
         sec.tempKey === sectionId
           ? { ...sec, items: [...(sec.items || []), item] }
-          : sec
-      )
+          : sec,
+      ),
     );
   };
 
   return (
     <div className="space-y-6">
       {isSectionsLoading &&
-        [1, 2, 3].map((index) => <CourseSectionSkeleton key={`section-skeleton-${index}`} />)}
+        [1, 2, 3].map((index) => (
+          <CourseSectionSkeleton key={`section-skeleton-${index}`} />
+        ))}
 
       {!isSectionsLoading &&
         sections.map((s) => (

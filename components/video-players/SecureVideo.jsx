@@ -1,24 +1,34 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { parseCookies } from "nookies";
+import { getAuthTokenFromCookieMap } from "@/lib/services/authToken";
 
 export default function SecureVideo({ lessonId, className = "w-full h-auto rounded" }) {
   const [blobUrl, setBlobUrl] = useState("");
   const [loading, setLoading] = useState(false);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const blobUrlRef = useRef("");
+  const videoRef = useRef(null);
 
   useEffect(() => {
     if (!lessonId) return;
 
     const cookies = parseCookies();
-    const token = cookies[process.env.NEXT_PUBLIC_TOKEN];
-    const streamUrl = `${process.env.NEXT_PUBLIC_API_URL}/stream.php?id=${lessonId}`;
+    const token = getAuthTokenFromCookieMap(cookies);
+    const streamUrl = `${process.env.NEXT_PUBLIC_API_URL}/stream.php?id=${encodeURIComponent(lessonId)}`;
     let localUrl = "";
     let mounted = true;
 
     async function loadVideo() {
       try {
+        if (!token) {
+          throw new Error("Unauthorized");
+        }
         setLoading(true);
+        setLoadFailed(false);
+        setBlobUrl("");
+
         const response = await fetch(streamUrl, {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -31,12 +41,14 @@ export default function SecureVideo({ lessonId, className = "w-full h-auto round
 
         const blob = await response.blob();
         localUrl = URL.createObjectURL(blob);
+        blobUrlRef.current = localUrl;
+
         if (mounted) {
           setBlobUrl(localUrl);
         }
-      } catch (error) {
-        console.error("Secure video load failed:", error);
+      } catch (_error) {
         if (mounted) {
+          setLoadFailed(true);
           setBlobUrl("");
         }
       } finally {
@@ -53,16 +65,49 @@ export default function SecureVideo({ lessonId, className = "w-full h-auto round
       if (localUrl) {
         URL.revokeObjectURL(localUrl);
       }
+      if (blobUrlRef.current === localUrl) {
+        blobUrlRef.current = "";
+      }
     };
   }, [lessonId]);
+
+  useEffect(() => {
+    if (!blobUrl || !videoRef.current) return;
+
+    const handleLoadedData = () => {
+      const activeUrl = blobUrlRef.current;
+      if (!activeUrl) return;
+      setTimeout(() => {
+        URL.revokeObjectURL(activeUrl);
+        if (blobUrlRef.current === activeUrl) {
+          blobUrlRef.current = "";
+        }
+      }, 1500);
+    };
+
+    videoRef.current.addEventListener("loadeddata", handleLoadedData, { once: true });
+    return () => {
+      videoRef.current?.removeEventListener("loadeddata", handleLoadedData);
+    };
+  }, [blobUrl]);
 
   if (loading) {
     return <div className="text-sm text-gray-500">Loading secure video...</div>;
   }
 
-  if (!blobUrl) {
+  if (!blobUrl || loadFailed) {
     return <div className="text-sm text-red-500">Unable to load video preview.</div>;
   }
 
-  return <video src={blobUrl} controls className={className} />;
+  return (
+    <video
+      ref={videoRef}
+      src={blobUrl}
+      controls
+      controlsList="nodownload noremoteplayback"
+      disablePictureInPicture
+      onContextMenu={(e) => e.preventDefault()}
+      className={className}
+    />
+  );
 }

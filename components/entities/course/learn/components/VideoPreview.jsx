@@ -11,6 +11,7 @@ import {
 import "@vidstack/react/player/styles/base.css";
 import "@vidstack/react/player/styles/plyr/theme.css";
 import BaseApi from "@/lib/api/_base.api";
+import { getAuthTokenFromCookieMap } from "@/lib/services/authToken";
 
 export default function VideoPreview({
   course,
@@ -24,20 +25,25 @@ export default function VideoPreview({
   const [countdown, setCountdown] = useState(null);
   const playerRef = useRef(null);
   const containerRef = useRef(null);
+  const blobUrlRef = useRef(null);
   const router = useRouter();
 
   useEffect(() => {
     if (!course || !lecture) return;
 
     const cookies = parseCookies();
-    const token = cookies[process.env.NEXT_PUBLIC_TOKEN];
-    const videoUrl = `${process.env.NEXT_PUBLIC_API_URL}/stream.php?id=${lecture.id}`;
+    const token = getAuthTokenFromCookieMap(cookies);
+    const videoUrl = `${process.env.NEXT_PUBLIC_API_URL}/stream.php?id=${encodeURIComponent(lecture.id)}`;
 
     let isMounted = true;
     let localUrl = null;
 
     async function loadVideo() {
       try {
+        if (!token) {
+          throw new Error("Unauthorized");
+        }
+
         setLoading(true);
         setMediaSrc(null);
 
@@ -46,19 +52,15 @@ export default function VideoPreview({
         });
 
         if (!res.ok) {
-          const bodyText = await res.text();
-          throw new Error(`Video request failed (${res.status}): ${bodyText}`);
+          throw new Error(`Video request failed (${res.status})`);
         }
 
         const blob = await res.blob();
         localUrl = URL.createObjectURL(blob);
-
-        // ✅ Always force video/mp4 — server returns application/octet-stream
-        // which Vidstack does not recognise as a video type
-        const mimeType = "video/mp4";
+        blobUrlRef.current = localUrl;
 
         if (isMounted) {
-          setMediaSrc([{ src: localUrl, type: mimeType }]);
+          setMediaSrc([{ src: localUrl, type: blob.type || "video/mp4" }]);
         }
       } catch (err) {
         console.error("Error loading video:", err);
@@ -71,9 +73,36 @@ export default function VideoPreview({
 
     return () => {
       isMounted = false;
-      if (localUrl) URL.revokeObjectURL(localUrl);
+      if (localUrl) {
+        URL.revokeObjectURL(localUrl);
+      }
+      if (blobUrlRef.current === localUrl) {
+        blobUrlRef.current = null;
+      }
     };
   }, [course?.id, lecture?.id]);
+
+  useEffect(() => {
+    if (!mediaSrc) return;
+    const videoEl = playerRef.current?.el?.querySelector("video");
+    if (!videoEl) return;
+
+    const handleLoadedData = () => {
+      const currentUrl = blobUrlRef.current;
+      if (!currentUrl) return;
+      setTimeout(() => {
+        URL.revokeObjectURL(currentUrl);
+        if (blobUrlRef.current === currentUrl) {
+          blobUrlRef.current = null;
+        }
+      }, 1500);
+    };
+
+    videoEl.addEventListener("loadeddata", handleLoadedData, { once: true });
+    return () => {
+      videoEl.removeEventListener("loadeddata", handleLoadedData);
+    };
+  }, [mediaSrc]);
 
   // Unmute after player mounts
   useEffect(() => {

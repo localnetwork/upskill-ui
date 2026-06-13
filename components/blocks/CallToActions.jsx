@@ -38,7 +38,7 @@ export default function CallToActions() {
           Everything you need to succeed
         </h2>
         <div className="grid grid-cols-3 gap-[30px]">
-          {data.map((item, index) => (
+          {data?.map((item, index) => (
             <div
               key={index}
               className="p-[30px] flex flex-col rounded-lg mb-6 overflow-hidden"
