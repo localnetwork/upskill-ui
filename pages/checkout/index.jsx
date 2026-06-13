@@ -62,6 +62,17 @@ export default function Checkout() {
         payload,
       );
 
+      if (response?.data?.data?.reusedCheckout) {
+        toast("You already have a checkout in progress. Opening transaction...");
+        const providerOrderId = response?.data?.data?.providerOrderId;
+        if (providerOrderId) {
+          router.push(
+            `/checkout/success?token=${encodeURIComponent(providerOrderId)}`,
+          );
+          return;
+        }
+      }
+
       if (response.data.redirect_url) {
         router.push(response.data.redirect_url);
         return;

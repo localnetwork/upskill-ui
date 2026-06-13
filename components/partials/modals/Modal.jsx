@@ -4,6 +4,7 @@ import { X } from "lucide-react";
 import modalState from "@/lib/store/modalState";
 import LoginFormModal from "./content/LoginFormModal";
 import CoursePromoVideo from "./content/CoursePromoVideo";
+import ShareSocial from "./content/ShareSocial";
 
 export default function Modal() {
   const modalInfo = modalState((state) => state.modalInfo);
@@ -38,6 +39,9 @@ export default function Modal() {
       break;
     case "COURSE_PROMO_VIDEO":
       Content = <CoursePromoVideo />;
+      break;
+    case "SHARE_SOCIAL":
+      Content = <ShareSocial />;
       break;
     default:
       return null;

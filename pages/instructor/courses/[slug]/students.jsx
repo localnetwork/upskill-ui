@@ -214,7 +214,7 @@ export default function Students({ course }) {
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
-            <thead className="bg-surface-container-low">
+            <thead className="bg-[#f4f4f4] border-[#e2e8f0] border-b">
               <tr>
                 <th className="px-6 py-4 text-[10px] font-extrabold uppercase tracking-widest text-on-surface-variant">
                   Student

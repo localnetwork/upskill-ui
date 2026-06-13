@@ -157,7 +157,13 @@ export default function CourseBasics({ course }) {
         const response = await BaseApi.get(
           `${process.env.NEXT_PUBLIC_API_URL}/course-levels`,
         );
-        setLevels(Array.isArray(response?.data) ? response.data : []);
+        setLevels(
+          Array.isArray(response?.data)
+            ? response.data
+            : Array.isArray(response?.data?.data)
+              ? response.data.data
+              : [],
+        );
       } catch (_error) {
         setLevels([]);
       }

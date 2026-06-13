@@ -50,9 +50,9 @@ export default function CourseOverview({ course }) {
 
     try {
       setIsCertificateLoading(true);
-      const response = await BaseApi.post(
-        `${process.env.NEXT_PUBLIC_API_URL}/certifications/courses/${course.slug}/generate`,
-      );
+      const response = await BaseApi.post("/api/certification", {
+        courseSlug: course.slug,
+      });
       const certificate = response?.data?.data;
       if (!certificate?.slug) {
         toast.error("Unable to generate certificate right now.");

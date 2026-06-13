@@ -12,7 +12,7 @@ export async function getServerSideProps(context) {
   let course = null;
   try {
     const response = await BaseApi.get(
-      `${process.env.NEXT_PUBLIC_API_URL}/courses/${slug}/manage`
+      `${process.env.NEXT_PUBLIC_API_URL}/courses/${slug}/manage`,
     );
     course = response?.data?.data;
   } catch (error) {

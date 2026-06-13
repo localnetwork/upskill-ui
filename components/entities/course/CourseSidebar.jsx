@@ -25,11 +25,11 @@ export default function CourseSidebar({ course }) {
   const workflowStatus = String(
     activeCourse?.workflowStatus || activeCourse?.workflow_status || "DRAFT",
   ).toUpperCase();
-  const isPublished = (
-    activeCourse?.isPublished !== undefined
+  const isPublished =
+    (activeCourse?.isPublished !== undefined
       ? activeCourse?.isPublished
-      : activeCourse?.published
-  ) === true || String(activeCourse?.published) === "1";
+      : activeCourse?.published) === true ||
+    String(activeCourse?.published) === "1";
 
   const editingLinks = [
     {
@@ -54,6 +54,10 @@ export default function CourseSidebar({ course }) {
     {
       name: "Students",
       link: `/instructor/courses/${course?.uuid}/students`,
+    },
+    {
+      name: "Course Messages",
+      link: `/instructor/courses/${course?.uuid}/course-messages`,
     },
   ];
 
@@ -126,7 +130,9 @@ export default function CourseSidebar({ course }) {
 
     setIsSubmitting(true);
     try {
-      const response = await CourseAPI.publish(activeCourse?.uuid || course?.uuid);
+      const response = await CourseAPI.publish(
+        activeCourse?.uuid || course?.uuid,
+      );
       const updatedCourse = response?.data?.data || {};
       toast.success("Course published successfully");
       courseStore.setState({

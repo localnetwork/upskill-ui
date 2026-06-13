@@ -2,7 +2,6 @@ import persistentStore from "@/lib/store/persistentStore";
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/router";
-import UserNotifications from "./UserNotifications";
 import { logout } from "@/lib/services/auth";
 import UserAvatar from "./UserAvatar";
 import { filteredLinks } from "@/lib/services/filteredLinks";

@@ -25,6 +25,11 @@ export async function getServerSideProps(context) {
     };
   } catch (error) {
     const status = error?.status;
+
+    console.log("Error fetching course data:", {
+      status,
+      message: error?.data?.message,
+    });
     const message = String(error?.data?.message || "").toLowerCase();
 
     if (
@@ -40,14 +45,14 @@ export async function getServerSideProps(context) {
       };
     }
 
-    if (status === 403 || status === 404) {
-      return {
-        redirect: {
-          destination: "/my-courses/learning",
-          permanent: false,
-        },
-      };
-    }
+    // if (status === 403 || status === 404) {
+    //   return {
+    //     redirect: {
+    //       destination: "/my-courses/learning",
+    //       permanent: false,
+    //     },
+    //   };
+    // }
 
     return { notFound: true };
   }

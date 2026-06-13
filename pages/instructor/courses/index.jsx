@@ -28,7 +28,12 @@ export default function Page() {
       const response = await BaseApi.get(
         `${process.env.NEXT_PUBLIC_API_URL}/course-levels`,
       );
-      const data = Array.isArray(response?.data) ? response.data : [];
+      const levelsPayload = Array.isArray(response?.data)
+        ? response.data
+        : Array.isArray(response?.data?.data)
+          ? response.data.data
+          : [];
+      const data = levelsPayload;
       setLevels(data);
     } catch (_error) {
       setLevels([]);
