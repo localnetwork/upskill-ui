@@ -103,7 +103,7 @@ export default function Login() {
           {/* RIGHT FORM */}
           <div className="py-[50px]">
             <h2 className="text-3xl font-bold mb-6">
-              Log in to continue your learning journey hahahah
+              Log in to continue your learning journey
             </h2>
 
             <form className="flex flex-col gap-y-[20px]" onSubmit={onLogin}>
