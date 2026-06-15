@@ -56,6 +56,10 @@ export default function CourseSidebar({ course }) {
       link: `/instructor/courses/${course?.uuid}/students`,
     },
     {
+      name: "Reviews",
+      link: `/instructor/courses/${course?.uuid}/reviews`,
+    },
+    {
       name: "Course Messages",
       link: `/instructor/courses/${course?.uuid}/course-messages`,
     },

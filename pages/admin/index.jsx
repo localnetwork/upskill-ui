@@ -11,6 +11,7 @@ import {
   User,
   UserPlus,
 } from "lucide-react";
+import Select from "@/components/forms/Select";
 
 const ADMIN_TABS = ["overview", "users", "courses"];
 
@@ -348,7 +349,7 @@ export default function AdminDashboard({ initialTab }) {
           {activeTab === "courses" && (
             <div>
               <div className="mb-4">
-                <select
+                <Select
                   value={courseStatus}
                   onChange={(e) => setCourseStatus(e.target.value)}
                   className="border rounded px-3 py-2"
@@ -359,7 +360,7 @@ export default function AdminDashboard({ initialTab }) {
                   <option value="REJECTED">Rejected</option>
                   <option value="PUBLISHED">Published</option>
                   <option value="DRAFT">Draft</option>
-                </select>
+                </Select>
               </div>
               <div className="border rounded overflow-x-auto">
                 <table className="w-full text-sm">

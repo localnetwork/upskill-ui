@@ -412,7 +412,7 @@ export default function Course() {
               <CourseFeedback courseId={course?.id} />
             </section>
 
-            <CourseReviews />
+            <CourseReviews courseId={course?.id} />
           </main>
           <aside className="relative lg:-mt-90 z-10">
             <div className="lg:sticky lg:top-24 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden">

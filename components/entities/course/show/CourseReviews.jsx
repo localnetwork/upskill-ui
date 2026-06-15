@@ -1,130 +1,407 @@
-import { Star } from "lucide-react";
-import Image from "next/image";
+import BaseApi from "@/lib/api/_base.api";
+import modalState from "@/lib/store/modalState";
+import { Star, ThumbsUp } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import toast from "react-hot-toast";
 
-export default function CourseReviews() {
+function formatDate(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+}
+
+function renderStars(value) {
+  const rating = Number(value || 0);
+  return Array.from({ length: 5 }, (_, index) => (
+    <Star
+      key={`review-star-${index}`}
+      size={14}
+      className={
+        index < rating ? "text-yellow-400 fill-yellow-400" : "text-slate-300"
+      }
+    />
+  ));
+}
+
+function getEligibilityMessage(eligibility) {
+  if (!eligibility) return "";
+  if (eligibility?.canReview) return "You can write a review for this course.";
+  if (eligibility?.reason === "ALREADY_REVIEWED") {
+    return "You already submitted a review for this course.";
+  }
+  if (eligibility?.reason === "COURSE_NOT_COMPLETED") {
+    return "Finish the course first to write a review.";
+  }
+  if (eligibility?.reason === "NOT_ENROLLED") {
+    return "Only enrolled learners can write reviews.";
+  }
+  if (eligibility?.reason === "AUTH_REQUIRED") {
+    return "Log in as a learner to write a review.";
+  }
+  return "";
+}
+
+export default function CourseReviews({ courseId }) {
+  const [sort, setSort] = useState("recent");
+  const [reviews, setReviews] = useState([]);
+  const [summary, setSummary] = useState({
+    totalReviews: 0,
+    averageRating: 0,
+    ratingDistribution: [],
+  });
+  const [eligibility, setEligibility] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [likingReviewIds, setLikingReviewIds] = useState([]);
+
+  const normalizeReview = (review) => ({
+    ...review,
+    likesCount: Number(review?.likesCount || 0),
+    likedByMe: Boolean(review?.likedByMe),
+    canLike: Boolean(review?.canLike),
+  });
+
+  const fetchReviews = async () => {
+    if (!courseId) return;
+    setLoading(true);
+    try {
+      const response = await BaseApi.get(
+        `${process.env.NEXT_PUBLIC_API_URL}/reviews/courses/${encodeURIComponent(courseId)}?page=1&limit=6&sort=${encodeURIComponent(sort)}`,
+      );
+      setReviews(
+        Array.isArray(response?.data?.data)
+          ? response.data.data.map(normalizeReview)
+          : [],
+      );
+      setSummary(
+        response?.data?.summary || {
+          totalReviews: 0,
+          averageRating: 0,
+          ratingDistribution: [],
+        },
+      );
+    } catch (error) {
+      toast.error(error?.data?.message || "Unable to load reviews.");
+      setReviews([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchEligibility = async () => {
+    if (!courseId) return;
+    try {
+      const response = await BaseApi.get(
+        `${process.env.NEXT_PUBLIC_API_URL}/reviews/courses/${encodeURIComponent(courseId)}/eligibility`,
+      );
+      setEligibility(response?.data?.data || null);
+    } catch (_error) {
+      setEligibility(null);
+    }
+  };
+
+  useEffect(() => {
+    fetchReviews();
+  }, [courseId, sort]);
+
+  useEffect(() => {
+    fetchEligibility();
+  }, [courseId]);
+
+  const displayedReviews = useMemo(() => reviews.slice(0, 3), [reviews]);
+  const canWriteReview = Boolean(eligibility?.canReview);
+  const eligibilityMessage = getEligibilityMessage(eligibility);
+
+  const openWriteReviewModal = () => {
+    if (!courseId) return;
+    if (!canWriteReview) {
+      if (eligibilityMessage) {
+        toast.error(eligibilityMessage);
+      }
+      return;
+    }
+    modalState.setState({
+      modalInfo: {
+        type: "COURSE_REVIEW",
+        title: "Write a review",
+        size: "md",
+        data: {
+          mode: "write",
+          courseId,
+          onSubmitted: () => {
+            fetchReviews();
+            fetchEligibility();
+          },
+        },
+      },
+    });
+  };
+
+  const openReviewsListModal = () => {
+    if (!courseId) return;
+    modalState.setState({
+      modalInfo: {
+        type: "COURSE_REVIEW",
+        title: "All reviews",
+        size: "lg",
+        data: {
+          mode: "list",
+          courseId,
+          sort,
+        },
+      },
+    });
+  };
+
+  const handleToggleLike = async (reviewId) => {
+    if (!reviewId) return;
+    if (likingReviewIds.includes(reviewId)) return;
+
+    let previous = null;
+    let canToggle = false;
+
+    setReviews((prev) =>
+      prev.map((review) => {
+        if (review.id !== reviewId) return review;
+        if (!review.canLike) return review;
+        canToggle = true;
+        previous = {
+          likedByMe: Boolean(review.likedByMe),
+          likesCount: Number(review.likesCount || 0),
+        };
+        const nextLiked = !Boolean(review.likedByMe);
+        return {
+          ...review,
+          likedByMe: nextLiked,
+          likesCount: Math.max(
+            0,
+            Number(review.likesCount || 0) + (nextLiked ? 1 : -1),
+          ),
+        };
+      }),
+    );
+
+    setLikingReviewIds((prev) => [...prev, reviewId]);
+    try {
+      const response = await BaseApi.post(
+        `${process.env.NEXT_PUBLIC_API_URL}/reviews/${encodeURIComponent(reviewId)}/like`,
+      );
+      const payload = response?.data?.data || {};
+      setReviews((prev) =>
+        prev.map((review) =>
+          review.id === reviewId
+            ? {
+                ...review,
+                likedByMe: Boolean(payload.liked),
+                likesCount: Math.max(0, Number(payload.likesCount || 0)),
+              }
+            : review,
+        ),
+      );
+    } catch (error) {
+      if (previous) {
+        setReviews((prev) =>
+          prev.map((review) =>
+            review.id === reviewId
+              ? {
+                  ...review,
+                  likedByMe: previous.likedByMe,
+                  likesCount: previous.likesCount,
+                }
+              : review,
+          ),
+        );
+      }
+      toast.error(error?.data?.message || "Unable to update review like.");
+    } finally {
+      setLikingReviewIds((prev) => prev.filter((id) => id !== reviewId));
+    }
+  };
+
+  const averageRating = Number(summary?.averageRating || 0);
+  const totalReviews = Number(summary?.totalReviews || 0);
+  const ratingDistribution = Array.isArray(summary?.ratingDistribution)
+    ? summary.ratingDistribution
+    : [];
+
   return (
-    <section className="space-y-8" id="reviews">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <h2 className="text-3xl font-black serif-heading">Reviews</h2>
-        <div className="flex flex-wrap gap-2">
-          <button className="px-4 py-2 rounded-full border border-slate-900 bg-slate-900 text-white text-xs font-bold transition-all">
-            Most Recent
-          </button>
-          <button className="px-4 py-2 rounded-full border border-slate-200 text-slate-600 text-xs font-bold hover:border-slate-400 transition-all">
-            Highest Rated
-          </button>
-          <button className="px-4 py-2 rounded-full border border-slate-200 text-slate-600 text-xs font-bold hover:border-slate-400 transition-all">
-            Lowest Rated
-          </button>
+    <section className="space-y-6">
+      <div className="rounded-xl border border-slate-200 p-6 bg-white">
+        <div className="flex flex-col md:flex-row gap-8 md:items-center">
+          <div className="text-center md:text-left">
+            <div className="text-5xl font-extrabold text-slate-900">
+              {averageRating ? averageRating.toFixed(1) : "0.0"}
+            </div>
+            <div className="flex items-center justify-center md:justify-start gap-1 my-2">
+              {renderStars(Math.round(averageRating))}
+            </div>
+            <p className="text-xs font-bold uppercase tracking-widest text-slate-500">
+              {totalReviews} review{totalReviews > 1 ? "s" : ""}
+            </p>
+          </div>
+
+          <div className="flex-1 space-y-2">
+            {[5, 4, 3, 2, 1].map((rating) => {
+              const row = ratingDistribution.find(
+                (item) => item.rating === rating,
+              );
+              const percentage = Number(row?.percentage || 0);
+              return (
+                <div
+                  key={`distribution-${rating}`}
+                  className="flex items-center gap-3"
+                >
+                  <span className="text-xs font-semibold text-slate-600 w-4">
+                    {rating}
+                  </span>
+                  <div className="h-2 flex-1 bg-slate-200 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-[#0056D2] rounded-full"
+                      style={{
+                        width: `${Math.min(100, Math.max(0, percentage))}%`,
+                      }}
+                    />
+                  </div>
+                  <span className="text-xs font-semibold text-slate-600 w-10">
+                    {Math.round(percentage)}%
+                  </span>
+                </div>
+              );
+            })}
+          </div>
         </div>
+
+        <button
+          onClick={openWriteReviewModal}
+          disabled={!canWriteReview}
+          className={`w-full mt-6 py-3 rounded-lg font-semibold transition ${
+            canWriteReview
+              ? "bg-[#0056D2] text-white hover:bg-[#1d6de0]"
+              : "bg-slate-200 text-slate-500 cursor-not-allowed"
+          }`}
+        >
+          Write a review
+        </button>
+        {eligibilityMessage ? (
+          <p className="text-xs text-slate-500 mt-2 text-center">
+            {eligibilityMessage}
+          </p>
+        ) : null}
       </div>
-      <div className="space-y-8">
-        <div className="p-6 border border-slate-100 rounded-2xl bg-white shadow-sm">
-          <div className="flex gap-4 items-start mb-4">
-            <Image
-              alt="Alex M."
-              className="w-12 h-12 rounded-full bg-slate-100"
-              src=""
-              width={48}
-              height={48}
-            />
-            <div>
-              <h4 className="font-bold text-slate-900">Alex Montgomery</h4>
-              <div className="flex items-center gap-2">
-                <div className="flex text-yellow-400">
-                  {Array(5)
-                    .fill()
-                    .map((_, i) => (
-                      <Star
-                        key={i}
-                        className="text-yellow-400 fill-1 text-xs"
-                      />
-                    ))}
-                </div>
-                <span className="text-xs font-bold text-slate-400">
-                  2 weeks ago
-                </span>
-              </div>
-            </div>
+
+      <div className="space-y-4" id="reviews">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-2xl font-black">Reviews</h2>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setSort("recent")}
+              className={`px-4 py-2 rounded-full text-xs font-bold border ${
+                sort === "recent"
+                  ? "bg-slate-900 text-white border-slate-900"
+                  : "border-slate-200 text-slate-600"
+              }`}
+            >
+              Most Recent
+            </button>
+            <button
+              onClick={() => setSort("highest")}
+              className={`px-4 py-2 rounded-full text-xs font-bold border ${
+                sort === "highest"
+                  ? "bg-slate-900 text-white border-slate-900"
+                  : "border-slate-200 text-slate-600"
+              }`}
+            >
+              Highest Rated
+            </button>
+            <button
+              onClick={() => setSort("lowest")}
+              className={`px-4 py-2 rounded-full text-xs font-bold border ${
+                sort === "lowest"
+                  ? "bg-slate-900 text-white border-slate-900"
+                  : "border-slate-200 text-slate-600"
+              }`}
+            >
+              Lowest Rated
+            </button>
           </div>
-          <p className="text-slate-600 leading-relaxed italic">
-            "One of the best courses I've ever taken. The instructor explains
-            complex concepts with such clarity. The hands-on projects were
-            exactly what I needed for my portfolio."
-          </p>
         </div>
-        <div className="p-6 border border-slate-100 rounded-2xl bg-white shadow-sm">
-          <div className="flex gap-4 items-start mb-4">
-            <Image
-              alt="Sarah J."
-              className="w-12 h-12 rounded-full bg-slate-100"
-              src=""
-              width={48}
-              height={48}
-            />
-            <div>
-              <h4 className="font-bold text-slate-900">Sarah Jenkins</h4>
-              <div className="flex items-center gap-2">
-                <div className="flex text-yellow-400">
-                  {Array(5)
-                    .fill()
-                    .map((_, i) => (
-                      <Star
-                        key={i}
-                        className="text-yellow-400 fill-1 text-xs"
-                      />
-                    ))}
+
+        {loading ? (
+          <p className="text-sm text-slate-500">Loading reviews...</p>
+        ) : null}
+
+        {!loading && displayedReviews.length === 0 ? (
+          <p className="text-sm text-slate-500">No reviews yet.</p>
+        ) : (
+          <div className="space-y-4">
+            {displayedReviews.map((review) => (
+              <div
+                key={review.id}
+                className="p-5 border border-slate-200 rounded-2xl bg-white"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="font-bold text-slate-900">
+                      {review?.author?.fullName}
+                    </p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <div className="flex items-center gap-1">
+                        {renderStars(review?.rating)}
+                      </div>
+                      <span className="text-xs text-slate-500">
+                        {formatDate(review?.createdAt)}
+                      </span>
+                    </div>
+                  </div>
                 </div>
-                <span className="text-xs font-bold text-slate-400">
-                  1 month ago
-                </span>
-              </div>
-            </div>
-          </div>
-          <p className="text-slate-600 leading-relaxed italic">
-            "The content is very up-to-date. I loved the section on Cloud
-            Architecture, it's something that is often missing from other
-            full-stack bootcamps."
-          </p>
-        </div>
-        <div className="p-6 border border-slate-100 rounded-2xl bg-white shadow-sm">
-          <div className="flex gap-4 items-start mb-4">
-            <Image
-              alt="David K."
-              className="w-12 h-12 rounded-full bg-slate-100"
-              src=""
-              width={48}
-              height={48}
-            />
-            <div>
-              <h4 className="font-bold text-slate-900">David Kwon</h4>
-              <div className="flex items-center gap-2">
-                <div className="flex text-yellow-400">
-                  {Array(5)
-                    .fill()
-                    .map((_, i) => (
-                      <Star
-                        key={i}
-                        className="text-yellow-400 fill-1 text-xs"
-                      />
-                    ))}
+                {review?.title ? (
+                  <p className="font-semibold text-slate-800 mt-3">
+                    {review.title}
+                  </p>
+                ) : null}
+                <p className="text-slate-600 mt-2 whitespace-pre-wrap">
+                  {review?.comment || "No written comment."}
+                </p>
+                <div className="mt-4">
+                  <button
+                    type="button"
+                    disabled={
+                      !review?.canLike || likingReviewIds.includes(review.id)
+                    }
+                    onClick={() => handleToggleLike(review.id)}
+                    className={`inline-flex items-center gap-2 text-xs font-semibold transition ${
+                      review?.canLike
+                        ? review?.likedByMe
+                          ? "text-[#0056D2]"
+                          : "text-slate-600 hover:text-[#0056D2]"
+                        : "text-slate-400 cursor-not-allowed"
+                    }`}
+                  >
+                    <ThumbsUp
+                      size={14}
+                      className={review?.likedByMe ? "fill-[#0056D2]" : ""}
+                    />
+                    Helpful ({Number(review?.likesCount || 0)})
+                  </button>
                 </div>
-                <span className="text-xs font-bold text-slate-400">
-                  1 month ago
-                </span>
               </div>
-            </div>
+            ))}
           </div>
-          <p className="text-slate-600 leading-relaxed italic">
-            "Great pace and depth. The only reason it's 4 stars for me is I wish
-            there were more exercises for the database section, but overall
-            fantastic."
-          </p>
-        </div>
+        )}
+
+        {totalReviews > displayedReviews.length ? (
+          <button
+            onClick={openReviewsListModal}
+            className="w-full py-3 border-2 border-slate-900 text-slate-900 font-bold rounded-xl hover:bg-slate-50 transition"
+          >
+            Show more reviews
+          </button>
+        ) : null}
       </div>
-      <button className="w-full py-4 bg-white border-2 border-slate-900 text-slate-900 font-black rounded-xl hover:bg-slate-50 active:scale-[0.98] transition-all">
-        Show More Reviews
-      </button>
     </section>
   );
 }

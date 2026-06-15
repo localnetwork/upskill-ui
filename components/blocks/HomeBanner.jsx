@@ -16,7 +16,6 @@ export default function HomeBanner() {
     [profile],
   );
 
-  console.log("isInstructor:", isInstructor, "isLearner:", isLearner);
   return (
     <section>
       <div className="container pt-[50px] pb-[80px]">

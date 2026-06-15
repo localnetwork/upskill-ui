@@ -1,5 +1,6 @@
 import InstructorCoursesList from "@/components/entities/instructor/InstructorCoursesList";
 import InstructorCoursesPagination from "@/components/entities/instructor/InstructorCoursesPagination";
+import Select from "@/components/forms/Select";
 import InstructorLayout from "@/components/partials/InstructorLayout";
 import BaseApi from "@/lib/api/_base.api";
 import Link from "next/link";
@@ -134,7 +135,7 @@ export default function Page() {
               placeholder="Search courses..."
             />
 
-            <select
+            <Select
               value={params.instructional_level}
               onChange={(e) =>
                 setParams({ ...params, instructional_level: e.target.value })
@@ -147,7 +148,7 @@ export default function Page() {
                   {level.title}
                 </option>
               ))}
-            </select>
+            </Select>
 
             <button
               type="submit"

@@ -1,4 +1,5 @@
 import CourseCard from "@/components/entities/course/CourseCard";
+import Select from "@/components/forms/Select";
 import BaseApi from "@/lib/api/_base.api";
 import { Search, SlidersHorizontal } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -118,11 +119,11 @@ export default function Browse() {
           </div>
           <div className="flex items-center gap-2">
             <span className="text-sm text-slate-500">Sort by:</span>
-            <select className="text-sm font-bold bg-transparent border-none focus:ring-0 cursor-pointer">
+            <Select className="text-sm font-bold bg-transparent border-none focus:ring-0 cursor-pointer">
               <option>Most Relevant</option>
               <option>Newest</option>
               <option>Highest Rated</option>
-            </select>
+            </Select>
           </div>
         </div>
         <div className="grid grid-cols-4 gap-[15px]">

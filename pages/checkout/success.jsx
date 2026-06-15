@@ -58,6 +58,7 @@ export async function getServerSideProps(context) {
 export default function Page({ data, statusState }) {
   const router = useRouter();
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isRedirectingToPayPal, setIsRedirectingToPayPal] = useState(false);
   const [checkoutData, setCheckoutData] = useState(data || null);
   const [checkoutState, setCheckoutState] = useState(statusState);
   const token = useMemo(
@@ -66,12 +67,29 @@ export default function Page({ data, statusState }) {
   );
 
   const order = checkoutData?.order;
+
   const orderLines = order?.items || [];
   const state = checkoutData?.state || checkoutState;
+  const approvalUrl = checkoutData?.approvalUrl || null;
+  const paypalStatus = String(checkoutData?.paypalStatus || "").toUpperCase();
   const isPaid = state === "PAID";
   const isInvalid = state === "INVALID";
   const isFailed = state === "FAILED";
   const isPending = !isPaid && !isInvalid && !isFailed;
+  const isUnpaidOrder = isPending && paypalStatus === "CREATED";
+  const canCompletePayment = Boolean(
+    (checkoutData?.canCompletePayment ?? isUnpaidOrder) && approvalUrl,
+  );
+  const getOrderItemCoverImage = (item) =>
+    item?.course?.media?.[0]?.storagePath || "/placeholder-cover.webp";
+  const getOrderItemTitle = (item) =>
+    item?.course?.title || item?.title || item?.courseId || "Course";
+  const getOrderItemAuthor = (item) => {
+    const educator = item?.course?.educator || {};
+    const fullName =
+      `${educator?.firstName || ""} ${educator?.lastName || ""}`.trim();
+    return fullName || educator?.username || "Instructor";
+  };
 
   const fetchStatus = async () => {
     if (!token) return;
@@ -99,6 +117,12 @@ export default function Page({ data, statusState }) {
     setIsRefreshing(true);
     await fetchStatus();
     setIsRefreshing(false);
+  };
+
+  const handleContinueToPayPal = () => {
+    if (!approvalUrl || typeof window === "undefined") return;
+    setIsRedirectingToPayPal(true);
+    window.location.assign(approvalUrl);
   };
 
   useEffect(() => {
@@ -134,6 +158,8 @@ export default function Page({ data, statusState }) {
     };
   }, [token]);
 
+  console.log("isPaid", isPaid);
+
   return (
     <div className="py-[50px] flex flex-col justify-center items-center bg-[#F6F6F6] min-h-[calc(100vh-100px)]">
       <div>
@@ -150,7 +176,9 @@ export default function Page({ data, statusState }) {
             ? "Invalid checkout token"
             : isFailed
               ? "Payment was not completed"
-              : "Payment received. Finalizing your order..."}
+              : isUnpaidOrder
+                ? "Payment not completed yet"
+                : "Finalizing your order..."}
       </h1>
       <p className="text-[20px] mt-2">
         {isInvalid
@@ -165,7 +193,9 @@ export default function Page({ data, statusState }) {
         {isPending ? (
           <>
             <p className="text-[15px] text-gray-600">
-              We are waiting for payment confirmation from PayPal.
+              {isUnpaidOrder
+                ? "Your order is created but still unpaid. Complete payment on PayPal to finish this order."
+                : "We are waiting for payment confirmation from PayPal."}
             </p>
             <div className="text-[14px] text-gray-700 mt-3">
               <div>
@@ -176,13 +206,17 @@ export default function Page({ data, statusState }) {
                 PayPal Status: {checkoutData?.paypalStatus || "UNKNOWN"}
               </div>
             </div>
-            {/* <button
-              onClick={handleRefresh}
-              disabled={isRefreshing}
-              className={`${isRefreshing ? "opacity-50 cursor-not-allowed" : "cursor-pointer"} mt-4 border border-[#0056D2] px-4 py-2 rounded-md text-[#0056D2] font-semibold hover:bg-[#0056D2] hover:text-white transition`}
-            >
-              {isRefreshing ? "Refreshing..." : "Refresh status"}
-            </button> */}
+            {canCompletePayment ? (
+              <button
+                onClick={handleContinueToPayPal}
+                disabled={isRedirectingToPayPal}
+                className={`${isRedirectingToPayPal ? "opacity-50 cursor-not-allowed" : "cursor-pointer"} mt-4 bg-[#0056D2] px-4 py-2 rounded-md text-white font-semibold hover:bg-[#1d6de0] transition`}
+              >
+                {isRedirectingToPayPal
+                  ? "Redirecting to PayPal..."
+                  : "Complete payment on PayPal"}
+              </button>
+            ) : null}
           </>
         ) : isPaid ? (
           <>
@@ -194,13 +228,18 @@ export default function Page({ data, statusState }) {
                 >
                   <div className="flex items-center">
                     <Image
-                      src={"/placeholder-cover.webp"}
+                      src={getOrderItemCoverImage(item)}
                       width={50}
                       height={30}
-                      alt={item?.courseId}
+                      alt={getOrderItemTitle(item)}
                       className="w-[70px] h-[50px] object-cover rounded-md border-[1px] border-[oklch(86.72%_0.0192_282.72deg)]"
                     />
-                    <span className="ml-2">{item?.courseId}</span>
+                    <div className="ml-2 flex flex-col">
+                      <span>{getOrderItemTitle(item)}</span>
+                      <span className="text-[12px] text-gray-500">
+                        By {getOrderItemAuthor(item)}
+                      </span>
+                    </div>
                   </div>
                   <span>₱{item.totalAmount}</span>
                 </div>
@@ -220,10 +259,10 @@ export default function Page({ data, statusState }) {
 
       <div className="flex justify-center mt-8">
         <Link
-          href={isInvalid ? "/cart" : "/my-courses/learning"}
+          href={isPaid ? "/my-courses/learning" : "/cart"}
           className="border-[#0056D2] border-2 px-[30px] rounded-md py-[10px] text-[#0056D2] font-semibold hover:bg-[#0056D2] hover:text-white transition"
         >
-          {isInvalid ? "Back to cart" : "Go to your learning"}
+          {isPaid ? "Go to your learning" : "Back to cart"}
         </Link>
       </div>
     </div>

@@ -1,4 +1,5 @@
 import CourseManagementLayout from "@/components/partials/CourseManagementLayout";
+import Select from "@/components/forms/Select";
 import InstructorLayout from "@/components/partials/InstructorLayout";
 import BaseApi from "@/lib/api/_base.api";
 import { useEffect, useState } from "react";
@@ -318,7 +319,7 @@ export default function CourseBasics({ course }) {
             Course Level
           </label>
           <div className="relative">
-            <select
+            <Select
               id="instructional_level"
               name="instructional_level"
               className="border border-[oklch(67.22%_0.0355_279.77deg)] rounded-[5px] p-[10px] w-full"
@@ -332,7 +333,7 @@ export default function CourseBasics({ course }) {
                 </option>
               ))}
               <option value="4">All Levels</option>
-            </select>
+            </Select>
           </div>
         </div>
 

@@ -1,5 +1,6 @@
 import CourseManagementLayout from "@/components/partials/CourseManagementLayout";
 import BaseApi from "@/lib/api/_base.api";
+import Select from "@/components/forms/Select";
 import priceTiers from "@/lib/preBuildScripts/static/price-tiers";
 import { setContext } from "@/lib/api/interceptor";
 import { useState } from "react";
@@ -80,7 +81,7 @@ export default function Pricing({ course }) {
             >
               Price Tier
             </label>
-            <select
+            <Select
               className={`border ${
                 errors && extractErrors(errors, "price_tier")
                   ? "border-red-500"
@@ -98,7 +99,7 @@ export default function Pricing({ course }) {
                   PHP {tier.price} ({tier.title})
                 </option>
               ))}
-            </select>
+            </Select>
 
             {extractErrors(errors, "price_tier") && (
               <div className="text-red-500 text-sm mt-1">

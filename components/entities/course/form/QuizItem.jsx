@@ -1,6 +1,7 @@
 "use client";
 import { useMemo, useState } from "react";
 import BaseApi from "@/lib/api/_base.api";
+import Select from "@/components/forms/Select";
 
 function createQuestion(type = "multiple_choice") {
   return {
@@ -120,7 +121,7 @@ export default function QuizItem({ quiz, onClose, onSave }) {
             </button>
           </div>
 
-          <select
+          <Select
             value={question.type}
             onChange={(e) => updateQuestion(question.id, createQuestion(e.target.value))}
             className="border rounded p-2 text-sm"
@@ -129,7 +130,7 @@ export default function QuizItem({ quiz, onClose, onSave }) {
             <option value="fill_in_the_blanks">Fill in the Blanks</option>
             <option value="true_false">True / False</option>
             <option value="short_answer">Short Answer</option>
-          </select>
+          </Select>
 
           <textarea
             value={question.prompt}

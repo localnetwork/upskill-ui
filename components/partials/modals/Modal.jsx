@@ -5,6 +5,7 @@ import modalState from "@/lib/store/modalState";
 import LoginFormModal from "./content/LoginFormModal";
 import CoursePromoVideo from "./content/CoursePromoVideo";
 import ShareSocial from "./content/ShareSocial";
+import CourseReviewModal from "./content/CourseReviewModal";
 
 export default function Modal() {
   const modalInfo = modalState((state) => state.modalInfo);
@@ -42,6 +43,9 @@ export default function Modal() {
       break;
     case "SHARE_SOCIAL":
       Content = <ShareSocial />;
+      break;
+    case "COURSE_REVIEW":
+      Content = <CourseReviewModal />;
       break;
     default:
       return null;

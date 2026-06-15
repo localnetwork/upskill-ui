@@ -16,7 +16,7 @@ export default function ArticlePreview({ lecture, course, setCourse }) {
         {
           course_id: course?.id,
           curriculum_id: lecture.id,
-        }
+        },
       );
       console.log("✅ Progress saved for", lecture.title);
     } catch (error) {
@@ -36,15 +36,13 @@ export default function ArticlePreview({ lecture, course, setCourse }) {
           sections: prev.sections.map((section) => ({
             ...section,
             curriculums: section.curriculums.map((c) =>
-              c.id === lecture.id ? { ...c, is_taken: true } : c
+              c.id === lecture.id ? { ...c, is_taken: true } : c,
             ),
           })),
         };
       });
     }
   }, [lecture]);
-
-  console.log("lecture", lecture);
 
   return (
     <div className="bg-white text-[25px] overflow-y-auto w-full h-[500px] shadow-md absolute top-0 left-0 p-6 prose prose-sm md:prose-base lg:prose-lg xl:prose-xl 2xl:prose-2xl">

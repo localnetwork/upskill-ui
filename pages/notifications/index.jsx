@@ -1,4 +1,5 @@
 import BaseApi from "@/lib/api/_base.api";
+import Select from "@/components/forms/Select";
 import { Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
@@ -148,7 +149,7 @@ export default function NotificationsPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
-        <select
+        <Select
           className="border border-[#e2e8f0] rounded-lg px-3 py-2"
           value={type}
           onChange={(e) => {
@@ -161,9 +162,9 @@ export default function NotificationsPage() {
               {option.label}
             </option>
           ))}
-        </select>
+        </Select>
 
-        <select
+        <Select
           className="border border-[#e2e8f0] rounded-lg px-3 py-2"
           value={kind}
           onChange={(e) => {
@@ -176,9 +177,9 @@ export default function NotificationsPage() {
               {option.label}
             </option>
           ))}
-        </select>
+        </Select>
 
-        <select
+        <Select
           className="border border-[#e2e8f0] rounded-lg px-3 py-2"
           value={status}
           onChange={(e) => {
@@ -191,7 +192,7 @@ export default function NotificationsPage() {
               {option.label}
             </option>
           ))}
-        </select>
+        </Select>
       </div>
 
       <div className="space-y-3">
