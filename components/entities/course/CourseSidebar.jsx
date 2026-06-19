@@ -52,6 +52,10 @@ export default function CourseSidebar({ course }) {
 
   const managementLinks = [
     {
+      name: "Statistics",
+      link: `/instructor/courses/${course?.uuid}/statistics`,
+    },
+    {
       name: "Students",
       link: `/instructor/courses/${course?.uuid}/students`,
     },

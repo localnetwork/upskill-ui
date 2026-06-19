@@ -2,6 +2,7 @@ import CallToActions from "@/components/blocks/CallToActions";
 import FAQsBlock from "@/components/blocks/FAQsBlock";
 import FeaturedTabs from "@/components/blocks/FeaturedTabs";
 import FeaturedCourses from "@/components/blocks/FeaturedTabs";
+import FinalCTA from "@/components/blocks/FinalCTA";
 import HomeBanner from "@/components/blocks/HomeBanner";
 import Testimonials from "@/components/blocks/Testimonials";
 import Meta from "@/components/partials/Meta";
@@ -23,6 +24,7 @@ export default function Home() {
 
       <Testimonials />
       <FAQsBlock />
+      <FinalCTA />
     </>
   );
 }

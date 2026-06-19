@@ -32,6 +32,7 @@ export async function getServerSideProps(context) {
     return {
       props: {
         course: response?.data?.data || null,
+        courseSlug: slug,
       },
     };
   } catch (_error) {
@@ -39,7 +40,7 @@ export async function getServerSideProps(context) {
   }
 }
 
-export default function CourseReviewsManagement({ course }) {
+export default function CourseReviewsManagement({ course, courseSlug }) {
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [rating, setRating] = useState("");
@@ -65,16 +66,15 @@ export default function CourseReviewsManagement({ course }) {
 
   useEffect(() => {
     const fetchReviews = async () => {
-      if (!course?.slug) return;
+      if (!courseSlug) return;
       setIsLoading(true);
       try {
         const response = await BaseApi.get(
-          `${process.env.NEXT_PUBLIC_API_URL}/reviews/instructor`,
+          `${process.env.NEXT_PUBLIC_API_URL}/reviews/instructor/courses/${encodeURIComponent(courseSlug)}`,
           {
             params: {
               page,
               limit: pagination.limit,
-              courseSlug: course.slug,
               sort,
               rating: rating || undefined,
               search: search || undefined,
@@ -103,7 +103,7 @@ export default function CourseReviewsManagement({ course }) {
     };
 
     fetchReviews();
-  }, [course?.slug, page, sort, rating, search]);
+  }, [courseSlug, page, sort, rating, search]);
 
   const totalPages = Math.max(1, Number(pagination.total_pages || 1));
   const currentPage = Math.min(Math.max(Number(pagination.page || 1), 1), totalPages);

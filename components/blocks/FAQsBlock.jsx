@@ -1,4 +1,4 @@
-import { Plus } from "lucide-react";
+import { ArrowDown, ChevronDown, Plus } from "lucide-react";
 
 export default function FAQsBlock() {
   const faqItems = [
@@ -20,31 +20,40 @@ export default function FAQsBlock() {
   ];
 
   return (
-    <section className="py-24 border-t border-slate-100">
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h2 className="text-4xl font-secondary font-bold text-slate-900 mb-12 text-center">
-          Frequently Asked Questions
-        </h2>
-        <div className="space-y-4">
+    <>
+      <section class="px-6 md:px-8 py-24 max-w-4xl mx-auto">
+        <div class="text-center mb-16">
+          <p class="text-primary font-black uppercase tracking-[0.2em] text-xs mb-4">
+            Questions
+          </p>
+          <h2 class="text-4xl md:text-5xl font-bold text-slate-900 mb-12 text-center font-secondary">
+            Common questions
+            <br />
+            you need to know.
+          </h2>
+          <p class="text-on-surface-variant mt-4">
+            Still have questions? Our team is here to help — reach out anytime.
+          </p>
+        </div>
+        <div class="space-y-4">
           {faqItems.map((item, index) => (
-            <details
-              className="group bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm"
-              open=""
-              key={index} 
+            <div
+              class="border border-[#e2e8f0] rounded-lg bg-surface overflow-hidden transition-all accordion-item duration-700 opacity-100 translate-y-0"
+              key={index}
             >
-              <summary className="flex items-center justify-between p-6 cursor-pointer list-none">
-                <span className="font-bold text-slate-900">
-                  {item.question}
-                </span>
-                <Plus className="transition-transform group-open:rotate-180 text-primary" />
-              </summary>
-              <div className="px-6 pb-6 text-slate-600 text-sm leading-relaxed border-t border-slate-50 pt-4">
-                {item.answer}
+              <button class="w-full px-6 py-5 text-left flex justify-between items-center font-bold text-[#0f111a]">
+                {item?.question}
+                <ChevronDown className="transition-transform" />
+              </button>
+              <div class="accordion-content">
+                <div class="px-6 pb-5 text-on-surface-variant leading-relaxed">
+                  {item?.answer}
+                </div>
               </div>
-            </details>
+            </div>
           ))}
         </div>
-      </div>
-    </section>
+      </section>
+    </>
   );
 }

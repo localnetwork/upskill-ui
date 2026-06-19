@@ -59,6 +59,7 @@ export default function Page({ data, statusState }) {
   const router = useRouter();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isRedirectingToPayPal, setIsRedirectingToPayPal] = useState(false);
+  const [isCancellingOrder, setIsCancellingOrder] = useState(false);
   const [checkoutData, setCheckoutData] = useState(data || null);
   const [checkoutState, setCheckoutState] = useState(statusState);
   const token = useMemo(
@@ -77,6 +78,9 @@ export default function Page({ data, statusState }) {
   const isFailed = state === "FAILED";
   const isPending = !isPaid && !isInvalid && !isFailed;
   const isUnpaidOrder = isPending && paypalStatus === "CREATED";
+  const canCancelCheckout = Boolean(
+    checkoutData?.canCancelCheckout ?? (isPending && !isPaid),
+  );
   const canCompletePayment = Boolean(
     (checkoutData?.canCompletePayment ?? isUnpaidOrder) && approvalUrl,
   );
@@ -125,6 +129,12 @@ export default function Page({ data, statusState }) {
     window.location.assign(approvalUrl);
   };
 
+  const handleCancelCheckoutOrder = async () => {
+    if (!token || !canCancelCheckout || isCancellingOrder) return;
+    setIsCancellingOrder(true);
+    router.push(`/checkout/cancel?token=${encodeURIComponent(token)}`);
+  };
+
   useEffect(() => {
     setCheckoutData(data || null);
     setCheckoutState(statusState);
@@ -157,8 +167,6 @@ export default function Page({ data, statusState }) {
       socket.disconnect();
     };
   }, [token]);
-
-  console.log("isPaid", isPaid);
 
   return (
     <div className="py-[50px] flex flex-col justify-center items-center bg-[#F6F6F6] min-h-[calc(100vh-100px)]">
@@ -215,6 +223,15 @@ export default function Page({ data, statusState }) {
                 {isRedirectingToPayPal
                   ? "Redirecting to PayPal..."
                   : "Complete payment on PayPal"}
+              </button>
+            ) : null}
+            {canCancelCheckout ? (
+              <button
+                onClick={handleCancelCheckoutOrder}
+                disabled={isCancellingOrder}
+                className={`${isCancellingOrder ? "opacity-50 cursor-not-allowed" : "cursor-pointer"} mt-3 ml-2 bg-white border border-[#d97706] text-[#d97706] px-4 py-2 rounded-md font-semibold hover:bg-[#fff7ed] transition`}
+              >
+                {isCancellingOrder ? "Cancelling order..." : "Cancel order and return items to cart"}
               </button>
             ) : null}
           </>

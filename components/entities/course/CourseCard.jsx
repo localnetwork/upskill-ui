@@ -8,6 +8,7 @@ import { mutate } from "swr";
 import modalState from "@/lib/store/modalState";
 import toast from "react-hot-toast";
 import persistentStore from "@/lib/store/persistentStore";
+import { trackAnalyticsEvent } from "@/lib/services/analytics";
 
 function toBoolean(value) {
   return value === true || value === "true" || value === 1 || value === "1";
@@ -15,6 +16,7 @@ function toBoolean(value) {
 
 export default function CourseCard({ course }) {
   const cardRef = useRef(null);
+  const hasTrackedImpressionRef = useRef(false);
   const [showTooltip, setShowTooltip] = useState(false);
   const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
   const [mounted, setMounted] = useState(false);
@@ -77,6 +79,45 @@ export default function CourseCard({ course }) {
       window.removeEventListener("resize", handleReposition);
     };
   }, [showTooltip]);
+
+  useEffect(() => {
+    if (!cardRef.current || !course?.id || hasTrackedImpressionRef.current)
+      return;
+
+    const storageKey = `analytics:impression:${course.id}`;
+    if (
+      typeof window !== "undefined" &&
+      window.sessionStorage.getItem(storageKey)
+    ) {
+      hasTrackedImpressionRef.current = true;
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting || hasTrackedImpressionRef.current)
+            continue;
+          hasTrackedImpressionRef.current = true;
+          if (typeof window !== "undefined") {
+            window.sessionStorage.setItem(storageKey, "1");
+          }
+          trackAnalyticsEvent({
+            eventType: "COURSE_IMPRESSION",
+            courseId: course.id,
+            courseSlug: course.slug,
+            dedupeWindowSeconds: 60,
+          });
+          observer.disconnect();
+          break;
+        }
+      },
+      { threshold: 0.4 },
+    );
+
+    observer.observe(cardRef.current);
+    return () => observer.disconnect();
+  }, [course?.id, course?.slug]);
 
   const handleCart = async (e) => {
     e.preventDefault();
@@ -228,41 +269,44 @@ export default function CourseCard({ course }) {
               </span>
             </div>
 
-            <div className="text-[14px] flex justify-end items-center max-w-[350px]">
-              {isEnrolled ? (
-                <Link
-                  href={`/courses/${course.slug}/learn`}
-                  className="border-[2px] hover:text-white text-[#0056D2] border-[#0056D2] flex items-center justify-center gap-[5px] text-center font-semibold px-[20px] py-[5px] rounded-[5px] hover:bg-[#1d6de0]"
-                >
-                  Continue Learning
-                </Link>
-              ) : isInCart ? (
-                <Link
-                  href="/cart"
-                  className="border-[2px] hover:text-white text-[#0056D2] border-[#0056D2] flex items-center justify-center gap-[5px] text-center font-semibold px-[20px] py-[5px] rounded-[5px] hover:bg-[#1d6de0]"
-                >
-                  Go to Cart
-                </Link>
-              ) : (
-                <>
-                  {isAddingToCart ? (
-                    <span
-                      disabled
-                      className="opacity-50 border-[2px] hover:text-white text-[#0056D2] border-[#0056D2] flex items-center justify-center gap-[5px] text-center font-semibold px-[20px] py-[5px] rounded-[5px] hover:bg-[#1d6de0]"
-                    >
-                      Adding to cart
-                    </span>
-                  ) : (
-                    <button
-                      onClick={handleCart}
-                      className="border-[2px] hover:text-white text-[#0056D2] border-[#0056D2] flex items-center justify-center gap-[5px] text-center font-semibold px-[20px] py-[5px] rounded-[5px] hover:bg-[#1d6de0]"
-                    >
-                      Add to Cart
-                    </button>
-                  )}
-                </>
-              )}
-            </div>
+            {profile?.permissions.includes("view-own-learnings") && (
+              <div className="text-[14px] flex justify-end items-center max-w-[350px]">
+                {console.log("isEnrolled", isEnrolled)}
+                {isEnrolled ? (
+                  <Link
+                    href={`/courses/${course.slug}/learn`}
+                    className="border-[2px] hover:text-white text-[#0056D2] border-[#0056D2] flex items-center justify-center gap-[5px] text-center font-semibold px-[20px] py-[5px] rounded-[5px] hover:bg-[#1d6de0]"
+                  >
+                    Continue Learning
+                  </Link>
+                ) : isInCart ? (
+                  <Link
+                    href="/cart"
+                    className="border-[2px] hover:text-white text-[#0056D2] border-[#0056D2] flex items-center justify-center gap-[5px] text-center font-semibold px-[20px] py-[5px] rounded-[5px] hover:bg-[#1d6de0]"
+                  >
+                    Go to Cart
+                  </Link>
+                ) : (
+                  <>
+                    {isAddingToCart ? (
+                      <span
+                        disabled
+                        className="opacity-50 border-[2px] hover:text-white text-[#0056D2] border-[#0056D2] flex items-center justify-center gap-[5px] text-center font-semibold px-[20px] py-[5px] rounded-[5px] hover:bg-[#1d6de0]"
+                      >
+                        Adding to cart
+                      </span>
+                    ) : (
+                      <button
+                        onClick={handleCart}
+                        className="border-[2px] hover:text-white text-[#0056D2] border-[#0056D2] flex items-center justify-center gap-[5px] text-center font-semibold px-[20px] py-[5px] rounded-[5px] hover:bg-[#1d6de0]"
+                      >
+                        Add to Cart
+                      </button>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>

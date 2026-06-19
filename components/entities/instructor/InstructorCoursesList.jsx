@@ -41,6 +41,8 @@ export default function InstructorCoursesList({ courses, isLoading }) {
     );
   }
 
+  const formatRating = (value) => Number(value || 0).toFixed(2);
+
   return (
     <div className="grid gap-4 relative">
       {courses.length ? (
@@ -90,14 +92,16 @@ export default function InstructorCoursesList({ courses, isLoading }) {
               <div className="relative col-span-1 group flex flex-col justify-between py-[15px] px-[20px] border-t md:border-t-0 md:border-l border-[oklch(90%_0.01_280deg)]">
                 <div className="group-hover:flex text-[20px] absolute top-0 left-0 w-full h-full hidden">
                   <Link
-                    href={"/instructor/courses/" + course.uuid + "/students"}
+                    href={"/instructor/courses/" + course.uuid + "/statistics"}
                     className="text-[#0056D2] flex items-center justify-center w-full h-full font-semibold px-[20px] py-[10px] rounded-[5px] hover:opacity-90 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
                   >
                     <span className="bg-white opacity-70 absolute top-0 left-0 w-full h-full z-[-1]" />
-                    See Students
+                    See Statistics
                   </Link>
                 </div>
-                <div className="font-semibold text-[25px]">0</div>
+                <div className="font-semibold text-[25px]">
+                  {Number(course?.stats?.enrollments_this_month || 0)}
+                </div>
                 <div className="text-[15px]">Enrollments this month</div>
               </div>
               <div className="relative col-span-1 group flex flex-col justify-between py-[15px] px-[20px] border-t md:border-t-0 md:border-l border-[oklch(90%_0.01_280deg)]">
@@ -110,7 +114,9 @@ export default function InstructorCoursesList({ courses, isLoading }) {
                     See Reviews
                   </Link>
                 </div>
-                <div className="font-semibold text-[25px]">0.00</div>
+                <div className="font-semibold text-[25px]">
+                  {formatRating(course?.stats?.average_rating)}
+                </div>
                 <div className="text-[15px]">Course Rating</div>
               </div>
             </div>

@@ -32,10 +32,14 @@ function normalizeChildrenOptions(children) {
     .map((child) => {
       if (!isValidElement(child) || child.type !== "option") return null;
       const optionValue = child.props?.value ?? "";
-      const optionLabel =
-        typeof child.props?.children === "string"
-          ? child.props.children
-          : String(child.props?.children ?? optionValue ?? "");
+      const optionChildren = Children.toArray(child.props?.children);
+      const flattenedLabel = optionChildren
+        .map((part) =>
+          typeof part === "string" || typeof part === "number" ? String(part) : "",
+        )
+        .join("")
+        .trim();
+      const optionLabel = flattenedLabel || String(optionValue ?? "");
       return {
         value: optionValue,
         label: optionLabel,
@@ -76,7 +80,7 @@ export default function Select({
   const resolvedPlaceholder =
     placeholder ??
     (resolvedIsSearchable
-      ? searchPlaceholder ?? mergedConfig.searchPlaceholder
+      ? (searchPlaceholder ?? mergedConfig.searchPlaceholder)
       : mergedConfig.placeholder);
   const resolvedNoOptionsLabel = noOptionsLabel ?? mergedConfig.noOptionsLabel;
   const resolvedWrapperClassName =

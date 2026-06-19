@@ -14,7 +14,7 @@ export async function getServerSideProps(context) {
   let course = null;
   try {
     const response = await BaseApi.get(
-      `${process.env.NEXT_PUBLIC_API_URL}/courses/${slug}/manage`
+      `${process.env.NEXT_PUBLIC_API_URL}/courses/${slug}/manage`,
     );
     course = response?.data?.data;
   } catch (error) {
@@ -46,7 +46,7 @@ export default function Pricing({ course }) {
     try {
       const response = await BaseApi.put(
         `${process.env.NEXT_PUBLIC_API_URL}/courses/${course.uuid}/pricing`,
-        newPayload
+        newPayload,
       );
       console.log("Pricing saved successfully:", response.data);
       toast.success("Pricing saved successfully");
@@ -96,7 +96,7 @@ export default function Pricing({ course }) {
               </option>
               {priceTiers.map((tier) => (
                 <option key={tier.id} value={tier.id}>
-                  PHP {tier.price} ({tier.title})
+                  {`PHP ${tier.price} (${tier.title})`}
                 </option>
               ))}
             </Select>

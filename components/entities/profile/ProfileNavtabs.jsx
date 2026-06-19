@@ -5,6 +5,7 @@ export default function ProfileNavTabs() {
   const links = [
     { name: "Upskill Profile", href: "/profile/basic-information" },
     { name: "Profile Picture", href: "/profile/photo" },
+    { name: "Activity", href: "/profile/activity" },
   ];
   return (
     <div className="flex mt-[30px] mb-[20px] items-center space-x-4 shadow-[inset_0_-1px_0_0_#d1d2e0]">

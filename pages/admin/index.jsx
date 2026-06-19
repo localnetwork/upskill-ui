@@ -67,6 +67,7 @@ export default function AdminDashboard({ initialTab }) {
   const [users, setUsers] = useState([]);
   const [courses, setCourses] = useState([]);
   const [revenue, setRevenue] = useState(null);
+  const [activity, setActivity] = useState(null);
   const [loading, setLoading] = useState(false);
 
   const [courseStatus, setCourseStatus] = useState("");
@@ -84,9 +85,13 @@ export default function AdminDashboard({ initialTab }) {
       const revenueRes = await BaseApi.get(
         `${process.env.NEXT_PUBLIC_API_URL}/admin/reports/revenue`,
       );
+      const activityRes = await BaseApi.get(
+        `${process.env.NEXT_PUBLIC_API_URL}/admin/reports/activity`,
+      );
       setUsers(usersRes?.data?.data || []);
       setCourses(coursesRes?.data?.data || []);
       setRevenue(revenueRes?.data?.data || null);
+      setActivity(activityRes?.data?.data || null);
     } catch (error) {
       toast.error(error?.data?.message || "Failed to load admin data");
     } finally {
@@ -109,8 +114,10 @@ export default function AdminDashboard({ initialTab }) {
       courses: courses.length,
       paidOrders: revenue?.paidOrders || 0,
       revenue: paidTotal.toFixed(2),
+      impressions: Number(activity?.overview?.total_impressions || 0),
+      views: Number(activity?.overview?.total_page_views || 0),
     };
-  }, [users, courses, revenue]);
+  }, [users, courses, revenue, activity]);
 
   const reviewCourse = async (courseId, action) => {
     const note = window.prompt(
@@ -183,7 +190,7 @@ export default function AdminDashboard({ initialTab }) {
           {activeTab === "overview" && (
             <>
               <div className="cards mb-12">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-6 gap-4">
                   <Card
                     iconBg="#f0f7ff"
                     icon={<User />}
@@ -215,6 +222,22 @@ export default function AdminDashboard({ initialTab }) {
                     title={`<span className="text-green-500">MTD</span>`}
                     description={`Payout cycle: 15th of month.`}
                     value={`₱${overview.revenue}`}
+                  />
+                  <Card
+                    iconBg="#dbeafe"
+                    icon={<UserPlus />}
+                    label="Impressions"
+                    title={`<span className="text-green-500">last ${activity?.rangeDays || 30}d</span>`}
+                    description="Course card impressions"
+                    value={overview.impressions}
+                  />
+                  <Card
+                    iconBg="#e0f2fe"
+                    icon={<DollarSign />}
+                    label="Page Views"
+                    title={`<span className="text-green-500">last ${activity?.rangeDays || 30}d</span>`}
+                    description="Course detail page views"
+                    value={overview.views}
                   />
                 </div>
               </div>

@@ -45,7 +45,8 @@ import modalState from "@/lib/store/modalState";
 import { isLoggedIn } from "@/lib/services/auth";
 import CourseFeedback from "@/components/entities/course/show/CourseFeedback";
 import CourseReviews from "@/components/entities/course/show/CourseReviews";
-
+import persistentStore from "@/lib/store/persistentStore";
+import { trackAnalyticsEvent } from "@/lib/services/analytics";
 const shimmer =
   "animate-pulse bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 rounded";
 
@@ -135,6 +136,8 @@ export default function Course() {
   const [notFound, setNotFound] = useState(false);
 
   const updateCart = cartStore((state) => state.setCartCount);
+
+  const profile = persistentStore((state) => state.profile);
 
   const handleCart = async (e) => {
     e.preventDefault();
@@ -277,7 +280,29 @@ export default function Course() {
 
     window.addEventListener("scroll", scrollTest);
     window.addEventListener("load", scrollTest);
+
+    return () => {
+      window.removeEventListener("scroll", scrollTest);
+      window.removeEventListener("load", scrollTest);
+    };
   }, [slug]);
+
+  useEffect(() => {
+    if (!course?.id) return;
+    const storageKey = `analytics:course-page-view:${course.id}`;
+    if (typeof window !== "undefined" && window.sessionStorage.getItem(storageKey)) {
+      return;
+    }
+    if (typeof window !== "undefined") {
+      window.sessionStorage.setItem(storageKey, "1");
+    }
+    trackAnalyticsEvent({
+      eventType: "COURSE_PAGE_VIEW",
+      courseId: course.id,
+      courseSlug: course.slug,
+      dedupeWindowSeconds: 90,
+    });
+  }, [course?.id, course?.slug]);
 
   if (isCourseLoading) {
     return <CoursePageSkeleton />;
@@ -405,12 +430,12 @@ export default function Course() {
               <CourseAuthor author={course?.author?.data} />
             </section>
 
-            <section id="ratings">
+            {/* <section id="ratings">
               <h2 className="text-3xl font-black mb-6 font-secondary">
                 Student Feedback
               </h2>
               <CourseFeedback courseId={course?.id} />
-            </section>
+            </section> */}
 
             <CourseReviews courseId={course?.id} />
           </main>
@@ -460,61 +485,63 @@ export default function Course() {
                       ? "Free"
                       : course?.price_tier?.price}
                   </span>
-                  {/* <span className="text-lg text-slate-400 line-through">
-                    $129.99
-                  </span>
-                  <span className="text-accent font-bold text-sm">31% off</span> */}
                 </div>
-                <div className="space-y-3 mb-8">
-                  {course?.is_enrolled ? (
-                    <Link
-                      href={`/courses/${course.slug}/learn`}
-                      className="block px-4 text-center w-full py-4 bg-primary text-white font-black text-lg rounded-xl hover:brightness-110 active:scale-95 transition-all"
-                    >
-                      Continue Learning
-                    </Link>
-                  ) : (
-                    <>
-                      {course?.is_in_cart ? (
-                        <Link
-                          href="/cart"
-                          className="block px-4 text-center w-full py-4 bg-primary text-white font-black text-lg rounded-xl hover:brightness-110 active:scale-95 transition-all"
-                        >
-                          Go to Cart
-                        </Link>
-                      ) : (
-                        <button
-                          onClick={(e) => handleCart(e)}
-                          className="block px-4 text-center w-full py-4 bg-primary text-white font-black text-lg rounded-xl hover:brightness-110 active:scale-95 transition-all"
-                        >
-                          Add to Cart
-                        </button>
-                      )}
-                    </>
-                  )}
-                  <div className="flex gap-2">
-                    <button
-                      onClick={handleBuyNow}
-                      className="flex-1 py-3 border border-slate-900 text-slate-900 font-bold rounded-xl hover:bg-slate-50 transition-colors"
-                    >
-                      Buy Now
-                    </button>
-                    <button
-                      onClick={handleWishlist}
-                      disabled={isWishlistSubmitting}
-                      className={`w-12 h-12 flex items-center justify-center border rounded-xl transition-all ${
-                        course?.is_in_wishlist
-                          ? "border-red-200 bg-red-50 text-red-500"
-                          : "border-slate-200 hover:bg-red-50 hover:border-red-200 hover:text-red-500"
-                      } ${isWishlistSubmitting ? "opacity-70 cursor-not-allowed" : ""}`}
-                    >
-                      <Heart
-                        size={20}
-                        fill={course?.is_in_wishlist ? "currentColor" : "none"}
-                      />
-                    </button>
+
+                {profile?.permissions?.includes("view-own-learnings") && (
+                  <div className="space-y-3 mb-8">
+                    {course?.is_enrolled ? (
+                      <Link
+                        href={`/courses/${course.slug}/learn`}
+                        className="block px-4 text-center w-full py-4 bg-primary text-white font-black text-lg rounded-xl hover:brightness-110 active:scale-95 transition-all"
+                      >
+                        Continue Learning
+                      </Link>
+                    ) : (
+                      <>
+                        {course?.is_in_cart ? (
+                          <Link
+                            href="/cart"
+                            className="block px-4 text-center w-full py-4 bg-primary text-white font-black text-lg rounded-xl hover:brightness-110 active:scale-95 transition-all"
+                          >
+                            Go to Cart
+                          </Link>
+                        ) : (
+                          <button
+                            onClick={(e) => handleCart(e)}
+                            className="block px-4 text-center w-full py-4 bg-primary text-white font-black text-lg rounded-xl hover:brightness-110 active:scale-95 transition-all"
+                          >
+                            Add to Cart
+                          </button>
+                        )}
+                      </>
+                    )}
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleBuyNow}
+                        className="flex-1 py-3 border border-slate-900 text-slate-900 font-bold rounded-xl hover:bg-slate-50 transition-colors"
+                      >
+                        Buy Now
+                      </button>
+                      <button
+                        onClick={handleWishlist}
+                        disabled={isWishlistSubmitting}
+                        className={`w-12 h-12 flex items-center justify-center border rounded-xl transition-all ${
+                          course?.is_in_wishlist
+                            ? "border-red-200 bg-red-50 text-red-500"
+                            : "border-slate-200 hover:bg-red-50 hover:border-red-200 hover:text-red-500"
+                        } ${isWishlistSubmitting ? "opacity-70 cursor-not-allowed" : ""}`}
+                      >
+                        <Heart
+                          size={20}
+                          fill={
+                            course?.is_in_wishlist ? "currentColor" : "none"
+                          }
+                        />
+                      </button>
+                    </div>
                   </div>
-                </div>
+                )}
+
                 <div>
                   <h4 className="font-bold mb-4">This course includes:</h4>
                   <ul className="space-y-3 text-sm text-slate-700">
