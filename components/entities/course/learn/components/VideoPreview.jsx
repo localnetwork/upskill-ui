@@ -25,7 +25,7 @@ export default function VideoPreview({
   const [countdown, setCountdown] = useState(null);
   const playerRef = useRef(null);
   const containerRef = useRef(null);
-  const blobUrlRef = useRef(null);
+  const completedLectureRef = useRef("");
   const router = useRouter();
 
   useEffect(() => {
@@ -33,10 +33,9 @@ export default function VideoPreview({
 
     const cookies = parseCookies();
     const token = getAuthTokenFromCookieMap(cookies);
-    const videoUrl = `${process.env.NEXT_PUBLIC_API_URL}/stream.php?id=${encodeURIComponent(lecture.id)}`;
+    const streamTokenUrl = `${process.env.NEXT_PUBLIC_API_URL}/stream-token.php?id=${encodeURIComponent(lecture.id)}`;
 
     let isMounted = true;
-    let localUrl = null;
 
     async function loadVideo() {
       try {
@@ -47,20 +46,28 @@ export default function VideoPreview({
         setLoading(true);
         setMediaSrc(null);
 
-        const res = await fetch(videoUrl, {
-          headers: { Authorization: `Bearer ${token}` },
+        const res = await fetch(streamTokenUrl, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "x-upskill-stream-intent": "playback",
+          },
         });
 
         if (!res.ok) {
           throw new Error(`Video request failed (${res.status})`);
         }
 
-        const blob = await res.blob();
-        localUrl = URL.createObjectURL(blob);
-        blobUrlRef.current = localUrl;
+        const payload = await res.json();
+        const playbackToken = payload?.data?.token;
+        if (!playbackToken) {
+          throw new Error("Missing playback token");
+        }
+        const directStreamUrl =
+          `${process.env.NEXT_PUBLIC_API_URL}/stream.php?id=${encodeURIComponent(lecture.id)}` +
+          `&st=${encodeURIComponent(playbackToken)}`;
 
         if (isMounted) {
-          setMediaSrc([{ src: localUrl, type: blob.type || "video/mp4" }]);
+          setMediaSrc([{ src: directStreamUrl, type: "video/mp4" }]);
         }
       } catch (err) {
         console.error("Error loading video:", err);
@@ -73,48 +80,13 @@ export default function VideoPreview({
 
     return () => {
       isMounted = false;
-      if (localUrl) {
-        URL.revokeObjectURL(localUrl);
-      }
-      if (blobUrlRef.current === localUrl) {
-        blobUrlRef.current = null;
-      }
     };
   }, [course?.id, lecture?.id]);
 
   useEffect(() => {
-    if (!mediaSrc) return;
-    const videoEl = playerRef.current?.el?.querySelector("video");
-    if (!videoEl) return;
-
-    const handleLoadedData = () => {
-      const currentUrl = blobUrlRef.current;
-      if (!currentUrl) return;
-      setTimeout(() => {
-        URL.revokeObjectURL(currentUrl);
-        if (blobUrlRef.current === currentUrl) {
-          blobUrlRef.current = null;
-        }
-      }, 1500);
-    };
-
-    videoEl.addEventListener("loadeddata", handleLoadedData, { once: true });
-    return () => {
-      videoEl.removeEventListener("loadeddata", handleLoadedData);
-    };
-  }, [mediaSrc]);
-
-  // Unmute after player mounts
-  useEffect(() => {
-    if (!playerRef.current || !mediaSrc) return;
-
-    const timer = setTimeout(() => {
-      const videoEl = playerRef.current?.el?.querySelector("video");
-      if (videoEl) videoEl.muted = false;
-    }, 300);
-
-    return () => clearTimeout(timer);
-  }, [mediaSrc]);
+    setCountdown(null);
+    completedLectureRef.current = "";
+  }, [lecture?.id]);
 
   // Picture-in-Picture when scrolled out of view
   useEffect(() => {
@@ -164,6 +136,22 @@ export default function VideoPreview({
   };
 
   const handleEnded = async () => {
+    if (completedLectureRef.current === lecture?.id) {
+      return;
+    }
+
+    const videoEl = playerRef.current?.el?.querySelector("video");
+    if (videoEl) {
+      const duration = Number(videoEl.duration);
+      const currentTime = Number(videoEl.currentTime || 0);
+      const hasKnownDuration = Number.isFinite(duration) && duration > 0;
+      const reachedEndByTime = hasKnownDuration && currentTime >= duration - 0.35;
+      if (!videoEl.ended && !reachedEndByTime) {
+        return;
+      }
+    }
+
+    completedLectureRef.current = lecture?.id || "";
     await addProgress();
 
     setCourse((prev) => {
@@ -220,7 +208,6 @@ export default function VideoPreview({
             className="h-full w-full"
             onContextMenu={(e) => e.preventDefault()}
             autoPlay
-            muted
             onEnded={handleEnded}
           >
             {/* ✅ Custom <video> element so controlsList reaches the DOM node */}

@@ -1,23 +1,20 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { parseCookies } from "nookies";
 import { getAuthTokenFromCookieMap } from "@/lib/services/authToken";
 
 export default function SecureVideo({ lessonId, className = "w-full h-auto rounded" }) {
-  const [blobUrl, setBlobUrl] = useState("");
+  const [streamUrl, setStreamUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [loadFailed, setLoadFailed] = useState(false);
-  const blobUrlRef = useRef("");
-  const videoRef = useRef(null);
 
   useEffect(() => {
     if (!lessonId) return;
 
     const cookies = parseCookies();
     const token = getAuthTokenFromCookieMap(cookies);
-    const streamUrl = `${process.env.NEXT_PUBLIC_API_URL}/stream.php?id=${encodeURIComponent(lessonId)}`;
-    let localUrl = "";
+    const streamTokenUrl = `${process.env.NEXT_PUBLIC_API_URL}/stream-token.php?id=${encodeURIComponent(lessonId)}`;
     let mounted = true;
 
     async function loadVideo() {
@@ -27,11 +24,12 @@ export default function SecureVideo({ lessonId, className = "w-full h-auto round
         }
         setLoading(true);
         setLoadFailed(false);
-        setBlobUrl("");
+        setStreamUrl("");
 
-        const response = await fetch(streamUrl, {
+        const response = await fetch(streamTokenUrl, {
           headers: {
             Authorization: `Bearer ${token}`,
+            "x-upskill-stream-intent": "playback",
           },
         });
 
@@ -39,17 +37,22 @@ export default function SecureVideo({ lessonId, className = "w-full h-auto round
           throw new Error("Unable to load secure video");
         }
 
-        const blob = await response.blob();
-        localUrl = URL.createObjectURL(blob);
-        blobUrlRef.current = localUrl;
+        const payload = await response.json();
+        const playbackToken = payload?.data?.token;
+        if (!playbackToken) {
+          throw new Error("Missing playback token");
+        }
+        const nextStreamUrl =
+          `${process.env.NEXT_PUBLIC_API_URL}/stream.php?id=${encodeURIComponent(lessonId)}` +
+          `&st=${encodeURIComponent(playbackToken)}`;
 
         if (mounted) {
-          setBlobUrl(localUrl);
+          setStreamUrl(nextStreamUrl);
         }
       } catch (_error) {
         if (mounted) {
           setLoadFailed(true);
-          setBlobUrl("");
+          setStreamUrl("");
         }
       } finally {
         if (mounted) {
@@ -62,47 +65,20 @@ export default function SecureVideo({ lessonId, className = "w-full h-auto round
 
     return () => {
       mounted = false;
-      if (localUrl) {
-        URL.revokeObjectURL(localUrl);
-      }
-      if (blobUrlRef.current === localUrl) {
-        blobUrlRef.current = "";
-      }
     };
   }, [lessonId]);
-
-  useEffect(() => {
-    if (!blobUrl || !videoRef.current) return;
-
-    const handleLoadedData = () => {
-      const activeUrl = blobUrlRef.current;
-      if (!activeUrl) return;
-      setTimeout(() => {
-        URL.revokeObjectURL(activeUrl);
-        if (blobUrlRef.current === activeUrl) {
-          blobUrlRef.current = "";
-        }
-      }, 1500);
-    };
-
-    videoRef.current.addEventListener("loadeddata", handleLoadedData, { once: true });
-    return () => {
-      videoRef.current?.removeEventListener("loadeddata", handleLoadedData);
-    };
-  }, [blobUrl]);
 
   if (loading) {
     return <div className="text-sm text-gray-500">Loading secure video...</div>;
   }
 
-  if (!blobUrl || loadFailed) {
+  if (!streamUrl || loadFailed) {
     return <div className="text-sm text-red-500">Unable to load video preview.</div>;
   }
 
   return (
     <video
-      ref={videoRef}
-      src={blobUrl}
+      src={streamUrl}
       controls
       controlsList="nodownload noremoteplayback"
       disablePictureInPicture

@@ -290,7 +290,10 @@ export default function Course() {
   useEffect(() => {
     if (!course?.id) return;
     const storageKey = `analytics:course-page-view:${course.id}`;
-    if (typeof window !== "undefined" && window.sessionStorage.getItem(storageKey)) {
+    if (
+      typeof window !== "undefined" &&
+      window.sessionStorage.getItem(storageKey)
+    ) {
       return;
     }
     if (typeof window !== "undefined") {
@@ -515,30 +518,33 @@ export default function Course() {
                         )}
                       </>
                     )}
-                    <div className="flex gap-2">
-                      <button
-                        onClick={handleBuyNow}
-                        className="flex-1 py-3 border border-slate-900 text-slate-900 font-bold rounded-xl hover:bg-slate-50 transition-colors"
-                      >
-                        Buy Now
-                      </button>
-                      <button
-                        onClick={handleWishlist}
-                        disabled={isWishlistSubmitting}
-                        className={`w-12 h-12 flex items-center justify-center border rounded-xl transition-all ${
-                          course?.is_in_wishlist
-                            ? "border-red-200 bg-red-50 text-red-500"
-                            : "border-slate-200 hover:bg-red-50 hover:border-red-200 hover:text-red-500"
-                        } ${isWishlistSubmitting ? "opacity-70 cursor-not-allowed" : ""}`}
-                      >
-                        <Heart
-                          size={20}
-                          fill={
-                            course?.is_in_wishlist ? "currentColor" : "none"
-                          }
-                        />
-                      </button>
-                    </div>
+
+                    {!course?.is_enrolled && (
+                      <div className="flex gap-2">
+                        <button
+                          onClick={handleBuyNow}
+                          className="flex-1 py-3 border border-slate-900 text-slate-900 font-bold rounded-xl hover:bg-slate-50 transition-colors"
+                        >
+                          Buy Now
+                        </button>
+                        <button
+                          onClick={handleWishlist}
+                          disabled={isWishlistSubmitting}
+                          className={`w-12 h-12 flex items-center justify-center border rounded-xl transition-all ${
+                            course?.is_in_wishlist
+                              ? "border-red-200 bg-red-50 text-red-500"
+                              : "border-slate-200 hover:bg-red-50 hover:border-red-200 hover:text-red-500"
+                          } ${isWishlistSubmitting ? "opacity-70 cursor-not-allowed" : ""}`}
+                        >
+                          <Heart
+                            size={20}
+                            fill={
+                              course?.is_in_wishlist ? "currentColor" : "none"
+                            }
+                          />
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
 
