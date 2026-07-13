@@ -66,6 +66,8 @@ export default function Login() {
         });
 
         toast.success("Login successful!");
+
+        window.location.href = "/"; // Use window.location.href to force a full page reload
         router.push("/");
         return;
       }

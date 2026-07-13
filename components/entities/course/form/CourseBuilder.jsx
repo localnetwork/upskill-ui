@@ -22,22 +22,26 @@ function CourseSectionSkeleton() {
   );
 }
 
-export default function CourseBuilder() {
+export default function CourseBuilder({ courseId }) {
   const [sections, setSections] = useState([]);
   const [isSectionsLoading, setIsSectionsLoading] = useState(false);
   const courseManagement = courseStore((state) => state.courseManagement);
+  const activeCourseId = courseId || courseManagement?.id;
 
   const nextIdCounter = useRef(1);
+  const latestFetchId = useRef(0);
 
   useEffect(() => {
     const getSections = async () => {
+      const fetchId = ++latestFetchId.current;
       try {
         setIsSectionsLoading(true);
         const response = await BaseApi.get(
-          `${process.env.NEXT_PUBLIC_API_URL}/course-sections/course/${courseManagement?.id}`,
+          `${process.env.NEXT_PUBLIC_API_URL}/course-sections/course/${activeCourseId}`,
         );
 
-        console.log("response", response);
+        if (latestFetchId.current !== fetchId) return;
+
         const data = response.data.data || [];
         setSections(
           data?.map((s) => ({
@@ -53,19 +57,22 @@ export default function CourseBuilder() {
         );
         nextIdCounter.current = maxId + 1;
       } catch (error) {
+        if (latestFetchId.current !== fetchId) return;
         console.error("Error fetching sections:", error);
       } finally {
+        if (latestFetchId.current !== fetchId) return;
         setIsSectionsLoading(false);
       }
     };
 
-    if (courseManagement?.id) {
+    if (activeCourseId) {
+      setSections([]);
       getSections();
     } else {
       setSections([]);
       setIsSectionsLoading(false);
     }
-  }, [courseManagement?.id]);
+  }, [activeCourseId]);
 
   const addSection = () => {
     const newId = nextIdCounter.current++;

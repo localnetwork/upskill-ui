@@ -37,7 +37,7 @@ export default function CurriculumPage({ course }) {
         practice (quizzes, coding exercises and assignments).
       </p>
 
-      <CourseBuilder />
+      <CourseBuilder courseId={course?.id} />
     </CourseManagementLayout>
   );
 }
