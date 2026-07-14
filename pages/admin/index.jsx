@@ -12,6 +12,8 @@ import {
   UserPlus,
 } from "lucide-react";
 import Select from "@/components/forms/Select";
+import AdminUsersManagement from "@/components/entities/admin/AdminUsersManagement";
+import AdminCoursesManagement from "@/components/entities/admin/AdminCoursesManagement";
 
 const ADMIN_TABS = ["overview", "users", "courses"];
 
@@ -75,9 +77,6 @@ export default function AdminDashboard({ initialTab }) {
   const fetchDashboardData = async () => {
     setLoading(true);
     try {
-      const usersRes = await BaseApi.get(
-        `${process.env.NEXT_PUBLIC_API_URL}/users?page=1&limit=10`,
-      );
       const statusQuery = courseStatus ? `&status=${courseStatus}` : "";
       const coursesRes = await BaseApi.get(
         `${process.env.NEXT_PUBLIC_API_URL}/admin/courses?page=1&limit=10${statusQuery}`,
@@ -346,94 +345,9 @@ export default function AdminDashboard({ initialTab }) {
             </>
           )}
 
-          {activeTab === "users" && (
-            <div className="border rounded overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="text-left p-3">Username</th>
-                    <th className="text-left p-3">Email</th>
-                    <th className="text-left p-3">Roles</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {users.map((user) => (
-                    <tr key={user.id} className="border-t">
-                      <td className="p-3">{user.username}</td>
-                      <td className="p-3">{user.email}</td>
-                      <td className="p-3">{(user.roles || []).join(", ")}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+          {activeTab === "users" && <AdminUsersManagement />}
 
-          {activeTab === "courses" && (
-            <div>
-              <div className="mb-4">
-                <Select
-                  value={courseStatus}
-                  onChange={(e) => setCourseStatus(e.target.value)}
-                  className="border rounded px-3 py-2"
-                >
-                  <option value="">All statuses</option>
-                  <option value="PENDING_APPROVAL">Pending approval</option>
-                  <option value="APPROVED">Approved</option>
-                  <option value="REJECTED">Rejected</option>
-                  <option value="PUBLISHED">Published</option>
-                  <option value="DRAFT">Draft</option>
-                </Select>
-              </div>
-              <div className="border rounded overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="text-left p-3">Title</th>
-                      <th className="text-left p-3">Educator</th>
-                      <th className="text-left p-3">Status</th>
-                      <th className="text-left p-3">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {courses.map((course) => (
-                      <tr key={course.id} className="border-t">
-                        <td className="p-3">{course.title}</td>
-                        <td className="p-3">
-                          {course.educator?.username || "-"}
-                        </td>
-                        <td className="p-3">{course.workflowStatus}</td>
-                        <td className="p-3">
-                          {course.workflowStatus === "PENDING_APPROVAL" ? (
-                            <div className="flex gap-2">
-                              <button
-                                onClick={() =>
-                                  reviewCourse(course.id, "approve")
-                                }
-                                className="px-3 py-1 rounded bg-green-600 text-white"
-                              >
-                                Approve
-                              </button>
-                              <button
-                                onClick={() =>
-                                  reviewCourse(course.id, "reject")
-                                }
-                                className="px-3 py-1 rounded bg-red-600 text-white"
-                              >
-                                Reject
-                              </button>
-                            </div>
-                          ) : (
-                            <span className="text-gray-500">No action</span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
+          {activeTab === "courses" && <AdminCoursesManagement />}
         </>
       )}
     </div>

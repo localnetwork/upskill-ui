@@ -1,48 +1,76 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
 import courseStore from "@/lib/store/courseStore";
+
 export default function CourseStripBar({ course }) {
   const courseManagement = courseStore((state) => state.courseManagement);
 
+  const [showPreviewMenu, setShowPreviewMenu] = useState(false);
+
+  const menuRef = useRef(null);
+
+  const previewSlug = courseManagement?.uuid || course?.uuid;
+
+  const courseTitle =
+    courseManagement?.title || course?.title || "Course Title";
+
+  const isPublished =
+    Number(courseManagement?.published ?? course?.published) === 1;
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setShowPreviewMenu(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
   return (
-    <div className="bg-[#16161D] z-10 sticky top-[85px] py-[20px] text-white text-[18px] divider-top">
-      <div className="px-[50px] flex items-center gap-[20px] justify-between">
+    <div className="bg-[#16161D] z-10 sticky top-[85px] py-[20px] text-white text-[18px] border-t border-white/10">
+      <div className="px-[50px] flex items-center justify-between gap-[20px]">
         <div className="flex items-center gap-[10px]">
-          <span>
-            <Link
-              href="/instructor/courses"
-              className="flex gap-[5px] hover:bg-[#3588FC] px-[10px] py-[5px] rounded-[5px] items-center"
+          <Link
+            href="/instructor/courses"
+            className="flex items-center gap-[5px] hover:bg-[#3588FC] px-[10px] py-[5px] rounded-[5px]"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={1.5}
+              stroke="currentColor"
+              className="size-6"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={1.5}
-                stroke="currentColor"
-                className="size-6"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M15.75 19.5 8.25 12l7.5-7.5"
-                />
-              </svg>
-              Back to courses
-            </Link>
-          </span>
-          <span className="font-bold">
-            {courseManagement?.title || course?.title || "Course Title"}
-          </span>
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M15.75 19.5 8.25 12l7.5-7.5"
+              />
+            </svg>
+            Back to courses
+          </Link>
+
+          <span className="font-bold">{courseTitle}</span>
 
           <span className="bg-[#F0F6FF] text-[#16161D] px-[10px] py-[5px] rounded-md text-[14px]">
-            {parseInt(courseManagement?.published) ? (
-              <>Published</>
-            ) : (
-              <>Unpublished</>
-            )}
+            {isPublished ? "Published" : "Unpublished"}
           </span>
         </div>
-        <div className="pr-[30px]">
-          <div className="border flex items-center border-white p-[5px] px-[20px] pr-[5px] rounded-md cursor-pointer">
+
+        <div ref={menuRef} className="relative pr-[30px]">
+          <button
+            type="button"
+            className="border flex items-center border-white p-[5px] px-[20px] pr-[8px] rounded-md cursor-pointer"
+            onClick={() => setShowPreviewMenu((prev) => !prev)}
+          >
             Preview
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -50,7 +78,9 @@ export default function CourseStripBar({ course }) {
               viewBox="0 0 24 24"
               strokeWidth={1.5}
               stroke="currentColor"
-              className="size-6 ml-1"
+              className={`size-6 ml-1 transition-transform ${
+                showPreviewMenu ? "rotate-180" : ""
+              }`}
             >
               <path
                 strokeLinecap="round"
@@ -58,7 +88,27 @@ export default function CourseStripBar({ course }) {
                 d="m19.5 8.25-7.5 7.5-7.5-7.5"
               />
             </svg>
-          </div>
+          </button>
+
+          {showPreviewMenu && previewSlug && (
+            <div className="absolute right-0 mt-2 min-w-[220px] rounded-md border border-slate-300 bg-white text-slate-800 shadow-lg overflow-hidden z-20">
+              <Link
+                href={`/instructor/courses/${previewSlug}/course-details`}
+                className="block px-4 py-2 text-sm hover:bg-slate-100"
+                onClick={() => setShowPreviewMenu(false)}
+              >
+                Course details preview
+              </Link>
+
+              <Link
+                href={`/instructor/courses/${previewSlug}/preview`}
+                className="block px-4 py-2 text-sm hover:bg-slate-100 border-t border-slate-200"
+                onClick={() => setShowPreviewMenu(false)}
+              >
+                Curriculum preview
+              </Link>
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -121,15 +121,25 @@ export default function VideoUpload({
               id={idRef.current}
               name={name}
               type="file"
-              accept="image/*"
+              accept="video/*"
               ref={inputRef}
               onChange={handleUpload}
               className="sr-only"
             />
 
             <label htmlFor={idRef.current} className="flex gap-[15px]">
-              <span className="border rounded-[5px] p-[10px] w-full text-center line-clamp-1">
-                {isUploading ? `Uploading... ${progress}%` : displayName}
+              <span className="border rounded-[5px] p-[10px] w-full text-center">
+                <span className="line-clamp-1 block">
+                  {isUploading ? `Uploading... ${progress}%` : displayName}
+                </span>
+                {isUploading && (
+                  <span className="mt-2 block h-2 w-full overflow-hidden rounded-full bg-gray-200">
+                    <span
+                      className="block h-full rounded-full bg-[#3588FC] transition-all duration-200"
+                      style={{ width: `${progress}%` }}
+                    />
+                  </span>
+                )}
               </span>
 
               <span className="cursor-pointer min-w-[150px] flex justify-center border border-[#3588FC] text-[#3588FC] font-semibold rounded-[5px] px-[20px] py-[10px] hover:bg-[#3588FC] hover:text-white">

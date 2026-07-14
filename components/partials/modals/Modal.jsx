@@ -6,11 +6,11 @@ import LoginFormModal from "./content/LoginFormModal";
 import CoursePromoVideo from "./content/CoursePromoVideo";
 import ShareSocial from "./content/ShareSocial";
 import CourseReviewModal from "./content/CourseReviewModal";
+import AdminCourseReviewActionModal from "./content/AdminCourseReviewActionModal";
 
 export default function Modal() {
   const modalInfo = modalState((state) => state.modalInfo);
 
-  console.log("modalInfo", modalInfo);
   const size = modalInfo?.size || "md";
   const handleClose = () => {
     modalState.setState({ modalInfo: null });
@@ -47,6 +47,9 @@ export default function Modal() {
     case "COURSE_REVIEW":
       Content = <CourseReviewModal />;
       break;
+    case "ADMIN_COURSE_REVIEW_ACTION":
+      Content = <AdminCourseReviewActionModal />;
+      break;
     default:
       return null;
   }
@@ -71,7 +74,7 @@ export default function Modal() {
     } else {
       document.body.style.overflow = "auto";
     }
-  }, []);
+  }, [modalInfo]);
 
   return (
     <div className="fixed inset-0 p-[50px] z-[100] flex items-center justify-center p-[50px]">

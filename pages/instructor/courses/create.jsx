@@ -30,18 +30,17 @@ export default function Page() {
     try {
       const response = await BaseApi.post(
         `${process.env.NEXT_PUBLIC_API_URL}/courses`,
-        payload
+        payload,
       );
       router.push(`/instructor/courses/${response.data.data.slug}/curriculum`);
       setIsLoading(false);
     } catch (error) {
-      console.log("error", error);
       toast.error(
         error?.data?.message ||
-          "An error occured creating the course. Please try again later."
+          "An error occured creating the course. Please try again later.",
       );
       setIsLoading(false);
-      setErrors(error?.data?.errors);
+      setErrors(error?.data?.details?.issues);
     }
   };
 
@@ -64,7 +63,9 @@ export default function Page() {
                 type="text"
                 name="title"
                 className={`${
-                  errors?.title ? "border-red-500" : "border-gray-300"
+                  extractErrors(errors, "title")
+                    ? "border-red-500"
+                    : "border-gray-300"
                 } w-full border  rounded-md p-3 pr-[50px]`}
                 placeholder="E.g, Learn PHP Programming from Scratch"
                 maxLength={maxLength}
@@ -72,7 +73,7 @@ export default function Page() {
                 onChange={handleOnChange}
               />
 
-              {errors?.title && (
+              {extractErrors(errors, "title") && (
                 <p className="text-red-500 text-left text-[12px] mt-1">
                   {extractErrors(errors, "title")}
                 </p>

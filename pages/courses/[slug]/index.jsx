@@ -126,7 +126,8 @@ function CoursePageSkeleton() {
 
 export default function Course() {
   const router = useRouter();
-  const { slug } = router.query;
+  const rawSlug = router.query.slug;
+  const slug = Array.isArray(rawSlug) ? rawSlug[0] : rawSlug;
   const [course, setCourse] = useState(null);
   const [isCourseLoading, setIsCourseLoading] = useState(true);
   const [isWishlistSubmitting, setIsWishlistSubmitting] = useState(false);
@@ -250,21 +251,19 @@ export default function Course() {
       try {
         setIsCourseLoading(true);
         setNotFound(false);
-        const response = await BaseApi.get(
-          process.env.NEXT_PUBLIC_API_URL + "/courses/route/" + slug,
-        );
+        const response = await BaseApi.get(`${process.env.NEXT_PUBLIC_API_URL}/courses/route/${encodeURIComponent(slug)}`);
 
         setCourse(response?.data);
       } catch (error) {
         console.error("Error fetching course data:", error);
-        if (error.status === 404) {
+        if (error?.status === 404) {
           setNotFound(true);
         }
       } finally {
         setIsCourseLoading(false);
       }
     };
-    if (slug) {
+    if (router.isReady && slug) {
       fetchData();
     }
 
@@ -285,7 +284,7 @@ export default function Course() {
       window.removeEventListener("scroll", scrollTest);
       window.removeEventListener("load", scrollTest);
     };
-  }, [slug]);
+  }, [router.isReady, slug]);
 
   useEffect(() => {
     if (!course?.id) return;
@@ -325,7 +324,6 @@ export default function Course() {
         <div className="container mx-auto grid lg:grid-cols-[1fr_400px] gap-12">
           <div className="space-y-6">
             <nav className="flex items-center gap-2 text-sm font-bold text-[#9dc4ff]">
-              {console.log("course.categories", course?.categories)}
               {[...(course?.categories || [])]
                 .sort((a, b) => (a.parent_id === null ? -1 : 1))
                 .map((cat, index) => (
@@ -447,7 +445,6 @@ export default function Course() {
               <div
                 className={`relative group cursor-pointer transition-all ${isScrolled ? "mt-[-225px]" : ""}`}
                 onClick={() => {
-                  console.log("course", course);
                   modalState.setState({
                     modalInfo: {
                       type: "COURSE_PROMO_VIDEO",

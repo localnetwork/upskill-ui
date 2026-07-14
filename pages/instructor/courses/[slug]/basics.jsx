@@ -146,7 +146,8 @@ export default function CourseBasics({ course }) {
       toast.error(
         error?.data?.message || "An error occured. Please try again later.",
       );
-      setErrors(error?.data?.errors || null);
+
+      setErrors(error?.data?.details?.issues || null);
     } finally {
       setIsLoading(false);
     }
@@ -221,7 +222,7 @@ export default function CourseBasics({ course }) {
               type="text"
               maxLength={60}
               className={`${
-                errors?.title
+                extractErrors(errors, "title")
                   ? "border-red-500"
                   : "border-[oklch(67.22%_0.0355_279.77deg)]"
               } border rounded-[5px] p-[10px] w-full`}
@@ -230,7 +231,7 @@ export default function CourseBasics({ course }) {
               {payload.title.length}/60
             </span>
 
-            {errors?.title && (
+            {extractErrors(errors, "title") && (
               <p className="text-red-500 text-[12px] mt-1 errrr">
                 {extractErrors(errors, "title")}
               </p>
@@ -257,12 +258,12 @@ export default function CourseBasics({ course }) {
               type="text"
               maxLength={120}
               className={`${
-                errors?.subtitle
+                extractErrors(errors, "subtitle")
                   ? "border-red-500"
                   : "border-[oklch(67.22%_0.0355_279.77deg)]"
               } border rounded-[5px] p-[10px] w-full`}
             />
-            {errors?.subtitle && (
+            {extractErrors(errors, "subtitle") && (
               <p className="text-red-500 text-[12px] mt-1 errrr">
                 {extractErrors(errors, "subtitle")}
               </p>
@@ -285,7 +286,9 @@ export default function CourseBasics({ course }) {
 
           <div
             className={`relative z-1 rounded-md ${
-              errors?.description ? "border border-red-500" : ""
+              extractErrors(errors, "description")
+                ? "border border-red-500"
+                : ""
             }`}
           >
             <TextEditor
@@ -297,7 +300,7 @@ export default function CourseBasics({ course }) {
               }
             />
           </div>
-          {errors?.description && (
+          {extractErrors(errors, "description") && (
             <p className="text-red-500 text-[12px] mt-1 errrr">
               {extractErrors(errors, "description")}
             </p>

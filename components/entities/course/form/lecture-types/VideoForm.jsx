@@ -10,6 +10,8 @@ export default function VideoForm({ onSave, onCancel, lecture }) {
   const [preview, setPreview] = useState(null); // 👈 local preview URL
   const [videoUploaded, setVideoUploaded] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
@@ -17,6 +19,8 @@ export default function VideoForm({ onSave, onCancel, lecture }) {
 
     setFile(selectedFile);
     setVideoUploaded(false);
+    setProgress(0);
+    setIsProcessing(false);
 
     const previewUrl = URL.createObjectURL(selectedFile);
     setPreview(previewUrl);
@@ -53,12 +57,28 @@ export default function VideoForm({ onSave, onCancel, lecture }) {
 
     try {
       setLoading(true);
+      setProgress(0);
+      setIsProcessing(false);
       const response = await BaseApi.post(
         process.env.NEXT_PUBLIC_API_URL + "/course-resources/videos",
         formData,
         {
           headers: {
             "Content-Type": "multipart/form-data",
+          },
+          onUploadProgress: (evt) => {
+            if (evt.total) {
+              const nextProgress = Math.round((evt.loaded / evt.total) * 100);
+
+              if (nextProgress >= 100) {
+                // Upload bytes are sent; API request can still be processing.
+                setProgress(95);
+                setIsProcessing(true);
+                return;
+              }
+
+              setProgress(Math.min(nextProgress, 95));
+            }
           },
         },
       );
@@ -80,6 +100,8 @@ export default function VideoForm({ onSave, onCancel, lecture }) {
       console.error("Error uploading file:", error);
     } finally {
       setLoading(false);
+      setProgress(0);
+      setIsProcessing(false);
     }
   };
 
@@ -89,7 +111,10 @@ export default function VideoForm({ onSave, onCancel, lecture }) {
       <div className="grid grid-cols-2 gap-4">
         <div className="bg-[#F8FAFB] flex items-center justify-center">
           {videoUploaded ? (
-            <SecureVideo lessonId={lecture.id} className="w-full h-[200px] object-cover" />
+            <SecureVideo
+              lessonId={lecture.id}
+              className="w-full h-[200px] object-cover"
+            />
           ) : preview ? (
             <video
               src={preview}
@@ -122,8 +147,24 @@ export default function VideoForm({ onSave, onCancel, lecture }) {
               onChange={handleFileChange}
               className="hidden"
             />
-            <span className="border rounded-[5px] p-[10px] w-full text-center max-w-[calc(100%-48px)] line-clamp-1">
-              {file ? file.name : "No file chosen"}
+            <span className="border rounded-[5px] p-[10px] w-full text-center max-w-[calc(100%-48px)]">
+              <span className="line-clamp-1 block">
+                {loading
+                  ? isProcessing
+                    ? "Processing video..."
+                    : `Uploading... ${progress}%`
+                  : file
+                    ? file.name
+                    : "No file chosen"}
+              </span>
+              {loading && (
+                <span className="mt-2 block h-2 w-full overflow-hidden rounded-full bg-gray-200">
+                  <span
+                    className="block h-full rounded-full bg-[#3588FC] transition-all duration-200"
+                    style={{ width: `${progress}%` }}
+                  />
+                </span>
+              )}
             </span>
 
             <span className="cursor-pointer min-w-[150px] flex justify-center border border-[#3588FC] text-[#3588FC] font-semibold rounded-[5px] px-[20px] py-[10px] hover:bg-[#3588FC] hover:text-white">
