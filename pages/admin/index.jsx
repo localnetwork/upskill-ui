@@ -3,19 +3,11 @@ import BaseApi from "@/lib/api/_base.api";
 import { setContext } from "@/lib/api/interceptor";
 import toast from "react-hot-toast";
 import Link from "next/link";
-import {
-  Banknote,
-  DollarSign,
-  GraduationCap,
-  ShoppingCart,
-  User,
-  UserPlus,
-} from "lucide-react";
-import Select from "@/components/forms/Select";
+import { Banknote, GraduationCap, ShoppingCart, User } from "lucide-react";
 import AdminUsersManagement from "@/components/entities/admin/AdminUsersManagement";
 import AdminCoursesManagement from "@/components/entities/admin/AdminCoursesManagement";
 
-const ADMIN_TABS = ["overview", "users", "courses"];
+const ADMIN_TABS = ["overview", "users", "courses", "payouts"];
 
 const normalizeRoleNames = (roles) => {
   if (!Array.isArray(roles)) return [];
@@ -32,6 +24,35 @@ const normalizeRoleNames = (roles) => {
     })
     .filter(Boolean);
 };
+
+function formatCurrency(value) {
+  return new Intl.NumberFormat("en-PH", {
+    style: "currency",
+    currency: "PHP",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(Number(value || 0));
+}
+
+function formatDate(value) {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+  return new Intl.DateTimeFormat("en-PH", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  }).format(date);
+}
+
+function getPayoutStatusClass(status) {
+  const normalized = String(status || "").toUpperCase();
+  if (normalized === "EXECUTED") return "bg-emerald-100 text-emerald-700";
+  if (normalized === "APPROVED") return "bg-sky-100 text-sky-700";
+  if (normalized === "REJECTED") return "bg-rose-100 text-rose-700";
+  if (normalized === "FAILED") return "bg-orange-100 text-orange-700";
+  return "bg-amber-100 text-amber-700";
+}
 
 export async function getServerSideProps(context) {
   setContext(context);
@@ -50,9 +71,7 @@ export async function getServerSideProps(context) {
       };
     }
     const incomingTab = String(context.query?.tab || "overview");
-    const initialTab = ADMIN_TABS.includes(incomingTab)
-      ? incomingTab
-      : "overview";
+    const initialTab = ADMIN_TABS.includes(incomingTab) ? incomingTab : "overview";
     return { props: { initialTab } };
   } catch (_error) {
     return {
@@ -66,35 +85,181 @@ export async function getServerSideProps(context) {
 
 export default function AdminDashboard({ initialTab }) {
   const [activeTab, setActiveTab] = useState(initialTab || "overview");
-  const [users, setUsers] = useState([]);
-  const [courses, setCourses] = useState([]);
-  const [revenue, setRevenue] = useState(null);
-  const [activity, setActivity] = useState(null);
-  const [loading, setLoading] = useState(false);
 
-  const [courseStatus, setCourseStatus] = useState("");
+  const [overviewLoading, setOverviewLoading] = useState(false);
+  const [overviewData, setOverviewData] = useState({
+    usersCount: 0,
+    coursesCount: 0,
+    paidOrders: 0,
+    totalRevenue: 0,
+    pendingPayouts: 0,
+    totalPayouts: 0,
+  });
 
-  const fetchDashboardData = async () => {
-    setLoading(true);
+  const [payoutRows, setPayoutRows] = useState([]);
+  const [payoutMeta, setPayoutMeta] = useState({ page: 1, totalPages: 1, total: 0 });
+  const [payoutStatus, setPayoutStatus] = useState("");
+  const [payoutPage, setPayoutPage] = useState(1);
+  const [payoutLoading, setPayoutLoading] = useState(false);
+  const [isRunningAutoProcess, setIsRunningAutoProcess] = useState(false);
+  const [settingsLoading, setSettingsLoading] = useState(false);
+  const [settingsSaving, setSettingsSaving] = useState(false);
+  const [platformSettings, setPlatformSettings] = useState({
+    platformFeePercent: 20,
+    taxPercent: 0,
+    payoutCycle: "ANYTIME",
+    defaultCurrency: "PHP",
+  });
+
+  const loadOverview = async () => {
+    setOverviewLoading(true);
     try {
-      const statusQuery = courseStatus ? `&status=${courseStatus}` : "";
-      const coursesRes = await BaseApi.get(
-        `${process.env.NEXT_PUBLIC_API_URL}/admin/courses?page=1&limit=10${statusQuery}`,
-      );
-      const revenueRes = await BaseApi.get(
-        `${process.env.NEXT_PUBLIC_API_URL}/admin/reports/revenue`,
-      );
-      const activityRes = await BaseApi.get(
-        `${process.env.NEXT_PUBLIC_API_URL}/admin/reports/activity`,
-      );
-      setUsers(usersRes?.data?.data || []);
-      setCourses(coursesRes?.data?.data || []);
-      setRevenue(revenueRes?.data?.data || null);
-      setActivity(activityRes?.data?.data || null);
+      const [usersRes, coursesRes, revenueRes, pendingPayoutsRes, totalPayoutsRes] =
+        await Promise.all([
+          BaseApi.get(`${process.env.NEXT_PUBLIC_API_URL}/users?page=1&limit=1`),
+          BaseApi.get(
+            `${process.env.NEXT_PUBLIC_API_URL}/admin/courses?page=1&limit=1`,
+          ),
+          BaseApi.get(`${process.env.NEXT_PUBLIC_API_URL}/admin/reports/revenue`),
+          BaseApi.get(
+            `${process.env.NEXT_PUBLIC_API_URL}/payouts/admin?page=1&limit=1&status=REQUESTED`,
+          ),
+          BaseApi.get(`${process.env.NEXT_PUBLIC_API_URL}/payouts/admin?page=1&limit=1`),
+        ]);
+
+      setOverviewData({
+        usersCount: Number(usersRes?.data?.meta?.total || 0),
+        coursesCount: Number(coursesRes?.data?.meta?.total || 0),
+        paidOrders: Number(revenueRes?.data?.data?.paidOrders || 0),
+        totalRevenue: Number(revenueRes?.data?.data?.totals?.totalAmount || 0),
+        pendingPayouts: Number(pendingPayoutsRes?.data?.meta?.total || 0),
+        totalPayouts: Number(totalPayoutsRes?.data?.meta?.total || 0),
+      });
     } catch (error) {
-      toast.error(error?.data?.message || "Failed to load admin data");
+      toast.error(error?.data?.message || "Failed to load admin overview.");
     } finally {
-      setLoading(false);
+      setOverviewLoading(false);
+    }
+  };
+
+  const loadPayoutRequests = async ({
+    status = payoutStatus,
+    page = payoutPage,
+    limit = 20,
+  } = {}) => {
+    setPayoutLoading(true);
+    try {
+      const query = new URLSearchParams({
+        page: String(page),
+        limit: String(limit),
+      });
+      if (status) {
+        query.set("status", status);
+      }
+
+      const res = await BaseApi.get(
+        `${process.env.NEXT_PUBLIC_API_URL}/payouts/admin?${query.toString()}`,
+      );
+      setPayoutRows(res?.data?.data || []);
+      setPayoutMeta(res?.data?.meta || { page: 1, totalPages: 1, total: 0 });
+    } catch (error) {
+      toast.error(error?.data?.message || "Failed to load payout requests.");
+    } finally {
+      setPayoutLoading(false);
+    }
+  };
+
+  const runAutoProcess = async () => {
+    setIsRunningAutoProcess(true);
+    try {
+      const res = await BaseApi.post(
+        `${process.env.NEXT_PUBLIC_API_URL}/payouts/admin/auto-process`,
+      );
+      const result = res?.data?.data;
+      toast.success(
+        `Auto process done: ${Number(result?.createdRequests || 0)} created, ${Number(result?.skippedEducators || 0)} skipped.`,
+      );
+      await Promise.all([loadOverview(), loadPayoutRequests()]);
+    } catch (error) {
+      toast.error(error?.data?.message || "Failed to run auto payout process.");
+    } finally {
+      setIsRunningAutoProcess(false);
+    }
+  };
+
+  const loadPlatformSettings = async () => {
+    setSettingsLoading(true);
+    try {
+      const res = await BaseApi.get(
+        `${process.env.NEXT_PUBLIC_API_URL}/admin/platform-settings`,
+      );
+      const data = res?.data?.data || {};
+      setPlatformSettings({
+        platformFeePercent: Number(data.platformFeePercent ?? 20),
+        taxPercent: Number(data.taxPercent ?? 0),
+        payoutCycle: String(data.payoutCycle || "ANYTIME"),
+        defaultCurrency: String(data.defaultCurrency || "PHP"),
+      });
+    } catch (error) {
+      toast.error(error?.data?.message || "Failed to load platform settings.");
+    } finally {
+      setSettingsLoading(false);
+    }
+  };
+
+  const savePlatformSettings = async () => {
+    setSettingsSaving(true);
+    try {
+      const payload = {
+        platformFeePercent: Number(platformSettings.platformFeePercent || 0),
+        taxPercent: Number(platformSettings.taxPercent || 0),
+        payoutCycle: String(platformSettings.payoutCycle || "ANYTIME").toUpperCase(),
+        defaultCurrency: String(platformSettings.defaultCurrency || "PHP")
+          .trim()
+          .toUpperCase(),
+      };
+      await BaseApi.put(
+        `${process.env.NEXT_PUBLIC_API_URL}/admin/platform-settings`,
+        payload,
+      );
+      toast.success("Platform settings updated.");
+      await Promise.all([loadPlatformSettings(), loadOverview(), loadPayoutRequests()]);
+    } catch (error) {
+      toast.error(error?.data?.message || "Failed to update platform settings.");
+    } finally {
+      setSettingsSaving(false);
+    }
+  };
+
+  const handlePayoutAction = async (action, payoutId) => {
+    const normalizedAction = String(action || "").toLowerCase();
+    let payload = {};
+
+    if (normalizedAction === "reject") {
+      const reviewNote = window.prompt("Rejection note (required):", "") || "";
+      if (!reviewNote.trim()) {
+        toast.error("Rejection note is required.");
+        return;
+      }
+      payload = { reviewNote: reviewNote.trim() };
+    }
+
+    if (normalizedAction === "approve") {
+      const reviewNote = window.prompt("Approval note (optional):", "") || "";
+      if (reviewNote.trim()) {
+        payload = { reviewNote: reviewNote.trim() };
+      }
+    }
+
+    try {
+      await BaseApi.post(
+        `${process.env.NEXT_PUBLIC_API_URL}/payouts/admin/${payoutId}/${normalizedAction}`,
+        payload,
+      );
+      toast.success(`Payout ${normalizedAction}d.`);
+      await Promise.all([loadOverview(), loadPayoutRequests()]);
+    } catch (error) {
+      toast.error(error?.data?.message || `Failed to ${normalizedAction} payout.`);
     }
   };
 
@@ -103,342 +268,381 @@ export default function AdminDashboard({ initialTab }) {
   }, [initialTab]);
 
   useEffect(() => {
-    fetchDashboardData();
-  }, [courseStatus]);
+    loadOverview();
+  }, []);
 
-  const overview = useMemo(() => {
-    const paidTotal = Number(revenue?.totals?.totalAmount || 0);
-    return {
-      users: users.length,
-      courses: courses.length,
-      paidOrders: revenue?.paidOrders || 0,
-      revenue: paidTotal.toFixed(2),
-      impressions: Number(activity?.overview?.total_impressions || 0),
-      views: Number(activity?.overview?.total_page_views || 0),
-    };
-  }, [users, courses, revenue, activity]);
-
-  const reviewCourse = async (courseId, action) => {
-    const note = window.prompt(
-      action === "approve"
-        ? "Approval note (optional):"
-        : "Rejection note (required):",
-      "",
-    );
-    if (action === "reject" && !note) {
-      toast.error("Rejection note is required");
-      return;
+  useEffect(() => {
+    if (activeTab === "payouts") {
+      loadPayoutRequests();
+      loadPlatformSettings();
     }
+  }, [activeTab, payoutStatus, payoutPage]);
 
-    try {
-      await BaseApi.post(
-        `${process.env.NEXT_PUBLIC_API_URL}/admin/courses/${courseId}/${action}`,
-        {
-          note: note || undefined,
-        },
-      );
-      toast.success(
-        action === "approve" ? "Course approved" : "Course rejected",
-      );
-      fetchDashboardData();
-    } catch (error) {
-      toast.error(error?.data?.message || `Failed to ${action} course`);
-    }
-  };
+  const overviewCards = useMemo(
+    () => [
+      {
+        label: "Users",
+        value: overviewData.usersCount,
+        icon: <User className="h-5 w-5" />,
+      },
+      {
+        label: "Courses",
+        value: overviewData.coursesCount,
+        icon: <GraduationCap className="h-5 w-5" />,
+      },
+      {
+        label: "Paid Orders",
+        value: overviewData.paidOrders,
+        icon: <ShoppingCart className="h-5 w-5" />,
+      },
+      {
+        label: "Revenue",
+        value: formatCurrency(overviewData.totalRevenue),
+        icon: <Banknote className="h-5 w-5" />,
+      },
+      {
+        label: "Pending Payouts",
+        value: overviewData.pendingPayouts,
+        icon: <Banknote className="h-5 w-5" />,
+      },
+      {
+        label: "Total Payout Requests",
+        value: overviewData.totalPayouts,
+        icon: <Banknote className="h-5 w-5" />,
+      },
+    ],
+    [overviewData],
+  );
 
   return (
     <div className="container py-8">
-      <div>
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
-          <div>
-            <h1 className="text-[2.25rem] font-extrabold tracking-tight text-on-surface mb-2">
-              Admin Dashboard
-            </h1>
-            <p className="text-on-surface-variant max-w-2xl">
-              Welcome back, Administrator. Here's a snapshot of the academic
-              progress and platform growth across your assigned modules.
-            </p>
-          </div>
-          <div className="flex p-1.5 bg-surface-container-low rounded-full gap-1">
+      <div className="mb-10 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
+        <div>
+          <h1 className="text-[2.25rem] font-extrabold tracking-tight text-on-surface">
+            Admin Dashboard
+          </h1>
+          <p className="mt-2 max-w-2xl text-on-surface-variant">
+            Manage courses, users, and instructor payout requests.
+          </p>
+        </div>
+
+        <div className="flex rounded-full bg-slate-100 p-1.5">
+          {ADMIN_TABS.map((tab) => (
             <Link
-              href="/admin?tab=overview"
-              className={`px-6 py-2 rounded-full font-bold text-sm transition-all scale-100 ${activeTab === "overview" ? "bg-[#0056d2] text-white" : "text-slate-500"}`}
+              key={tab}
+              href={`/admin?tab=${tab}`}
+              className={`rounded-full px-5 py-2 text-sm font-semibold capitalize ${activeTab === tab ? "bg-[#0056d2] text-white" : "text-slate-600"}`}
             >
-              Overview
+              {tab}
             </Link>
-            <Link
-              href="/admin?tab=users"
-              className={`px-6 py-2 rounded-full font-bold text-sm transition-all scale-100 ${activeTab === "users" ? "bg-[#0056d2] text-white" : "text-slate-500"}`}
-            >
-              Users
-            </Link>
-            <Link
-              href="/admin?tab=courses"
-              className={`px-6 py-2 rounded-full font-bold text-sm transition-all scale-100 ${activeTab === "courses" ? "bg-[#0056d2] text-white" : "text-slate-500"}`}
-            >
-              Courses
-            </Link>
-          </div>
+          ))}
         </div>
       </div>
 
-      {loading ? (
-        <p>Loading admin data...</p>
-      ) : (
-        <>
-          {activeTab === "overview" && (
-            <>
-              <div className="cards mb-12">
-                <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-6 gap-4">
-                  <Card
-                    iconBg="#f0f7ff"
-                    icon={<User />}
-                    label="Users"
-                    value={overview.users}
-                    title={`<span className="text-green-500">+12%</span>`}
-                    description="Active users this month"
-                  />
-                  <Card
-                    iconBg="#FCE4D2"
-                    icon={<GraduationCap />}
-                    label="Courses"
-                    value={overview.courses}
-                    title={`<span className="text-green-500">stable</span>`}
-                    description={`4 courses in draft mode.`}
-                  />
-                  <Card
-                    iconBg="#E4E9ED"
-                    icon={<ShoppingCart />}
-                    label="Paid Orders"
-                    title={`<span className="text-green-500">0%</span>`}
-                    description="No new transaction today"
-                    value={overview.paidOrders}
-                  />
-                  <Card
-                    iconBg="#BCD4F5"
-                    icon={<Banknote />}
-                    label="Revenue"
-                    title={`<span className="text-green-500">MTD</span>`}
-                    description={`Payout cycle: 15th of month.`}
-                    value={`₱${overview.revenue}`}
-                  />
-                  <Card
-                    iconBg="#dbeafe"
-                    icon={<UserPlus />}
-                    label="Impressions"
-                    title={`<span className="text-green-500">last ${activity?.rangeDays || 30}d</span>`}
-                    description="Course card impressions"
-                    value={overview.impressions}
-                  />
-                  <Card
-                    iconBg="#e0f2fe"
-                    icon={<DollarSign />}
-                    label="Page Views"
-                    title={`<span className="text-green-500">last ${activity?.rangeDays || 30}d</span>`}
-                    description="Course detail page views"
-                    value={overview.views}
-                  />
+      {activeTab === "overview" && (
+        <div className="space-y-6">
+          {overviewLoading ? (
+            <p>Loading admin overview...</p>
+          ) : (
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {overviewCards.map((card) => (
+                <div
+                  key={card.label}
+                  className="rounded-lg border border-[#e2e8f0] bg-white p-5"
+                >
+                  <div className="mb-2 flex items-center justify-between text-slate-500">
+                    <p className="text-xs font-semibold uppercase tracking-wide">
+                      {card.label}
+                    </p>
+                    {card.icon}
+                  </div>
+                  <p className="text-2xl font-bold text-[#0056d2]">{card.value}</p>
                 </div>
-              </div>
-
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2 bg-surface border border-[#e2e8f0] rounded-lg overflow-hidden flex flex-col">
-                  <div className="px-8 py-6 border-b border-[#e2e8f0] flex justify-between items-center">
-                    <h3 className="text-lg font-bold">Platform Engagement</h3>
-                    <div className="flex gap-2">
-                      <button className="px-3 py-1 text-xs font-bold text-primary bg-[#0056d2]-container rounded-md">
-                        Weekly
-                      </button>
-                      <button className="px-3 py-1 text-xs font-bold text-slate-500 hover:bg-slate-50 rounded-md">
-                        Monthly
-                      </button>
-                    </div>
-                  </div>
-                  <div className="flex-grow p-8 min-h-[300px] relative bg-surface-container-low/30 overflow-hidden">
-                    <div className="absolute inset-0 flex items-end px-8 pb-8 gap-4">
-                      <div className="flex-1 bg-[#0056d2]/20 h-[40%] rounded-t-md transition-all hover:bg-[#0056d2]/40"></div>
-                      <div className="flex-1 bg-[#0056d2]/20 h-[60%] rounded-t-md transition-all hover:bg-[#0056d2]/40"></div>
-                      <div className="flex-1 bg-[#0056d2]/20 h-[35%] rounded-t-md transition-all hover:bg-[#0056d2]/40"></div>
-                      <div className="flex-1 bg-[#0056d2]/20 h-[80%] rounded-t-md transition-all hover:bg-[#0056d2]/40"></div>
-                      <div className="flex-1 bg-[#0056d2]/20 h-[55%] rounded-t-md transition-all hover:bg-[#0056d2]/40"></div>
-                      <div className="flex-1 bg-[#0056d2]/20 h-[90%] rounded-t-md transition-all hover:bg-[#0056d2]/40"></div>
-                      <div className="flex-1 bg-[#0056d2]/20 h-[70%] rounded-t-md transition-all hover:bg-[#0056d2]/40"></div>
-                    </div>
-                    <div className="absolute inset-0 flex flex-col justify-between pointer-events-none p-8 opacity-10">
-                      <div className="border-b border-on-surface w-full"></div>
-                      <div className="border-b border-on-surface w-full"></div>
-                      <div className="border-b border-on-surface w-full"></div>
-                      <div className="border-b border-on-surface w-full"></div>
-                    </div>
-                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                      <p className="text-xs font-bold uppercase tracking-widest text-slate-400">
-                        Activity Trend (Draft)
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <div className="bg-surface border border-[#e2e8f0] rounded-lg flex flex-col">
-                  <div className="px-8 py-6 border-b border-[#e2e8f0]">
-                    <h3 className="text-lg font-bold">Recent Activity</h3>
-                  </div>
-                  <div className="flex-grow divide-y divide-outline">
-                    <div className="px-8 py-4 flex items-start gap-4 hover:bg-surface-container-low transition-colors group cursor-pointer">
-                      <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center flex-shrink-0">
-                        <UserPlus className="text-green-500 text-xl" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold text-on-surface">
-                          New User Registered
-                        </p>
-                        <p className="text-xs text-on-surface-variant">
-                          Elena Vance joined Sapphire Scholar.
-                        </p>
-                        <span className="text-[10px] font-bold text-slate-400 uppercase mt-1 inline-block">
-                          2 hours ago
-                        </span>
-                      </div>
-                    </div>
-                    <div className="px-8 py-4 flex items-start gap-4 hover:bg-surface-container-low transition-colors group cursor-pointer">
-                      <div className="w-10 h-10 rounded-full bg-[#0056d2]-container flex items-center justify-center flex-shrink-0">
-                        <span className="material-symbols-outlined text-primary text-xl">
-                          fact_check
-                        </span>
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold text-on-surface">
-                          Review Pending
-                        </p>
-                        <p className="text-xs text-on-surface-variant">
-                          Course "Advanced UI Architecture" needs review.
-                        </p>
-                        <span className="text-[10px] font-bold text-slate-400 uppercase mt-1 inline-block">
-                          5 hours ago
-                        </span>
-                      </div>
-                    </div>
-                    <div className="px-8 py-4 flex items-start gap-4 hover:bg-surface-container-low transition-colors group cursor-pointer">
-                      <div className="w-10 h-10 rounded-full bg-tertiary-container flex items-center justify-center flex-shrink-0">
-                        <span className="material-symbols-outlined text-tertiary text-xl">
-                          update
-                        </span>
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold text-on-surface">
-                          System Update
-                        </p>
-                        <p className="text-xs text-on-surface-variant">
-                          Analytics engine successfully re-indexed.
-                        </p>
-                        <span className="text-[10px] font-bold text-slate-400 uppercase mt-1 inline-block">
-                          Yesterday
-                        </span>
-                      </div>
-                    </div>
-                    <div className="px-8 py-4 text-center">
-                      <button className="text-sm font-bold text-primary hover:underline">
-                        View All Log History
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </>
+              ))}
+            </div>
           )}
-
-          {activeTab === "users" && <AdminUsersManagement />}
-
-          {activeTab === "courses" && <AdminCoursesManagement />}
-        </>
-      )}
-    </div>
-  );
-}
-
-function Card({ icon, label, value, description, title, iconBg }) {
-  const darkenColor = (hex, amount = 40) => {
-    let r = parseInt(hex.slice(1, 3), 16) / 255;
-    let g = parseInt(hex.slice(3, 5), 16) / 255;
-    let b = parseInt(hex.slice(5, 7), 16) / 255;
-
-    const max = Math.max(r, g, b);
-    const min = Math.min(r, g, b);
-
-    let h, s;
-    let l = (max + min) / 2;
-
-    if (max === min) {
-      h = s = 0;
-    } else {
-      const d = max - min;
-      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-
-      switch (max) {
-        case r:
-          h = (g - b) / d + (g < b ? 6 : 0);
-          break;
-        case g:
-          h = (b - r) / d + 2;
-          break;
-        default:
-          h = (r - g) / d + 4;
-      }
-
-      h /= 6;
-    }
-
-    // Reduce lightness while preserving hue
-    l = Math.max(0, l - amount / 100);
-
-    const hue2rgb = (p, q, t) => {
-      if (t < 0) t += 1;
-      if (t > 1) t -= 1;
-      if (t < 1 / 6) return p + (q - p) * 6 * t;
-      if (t < 1 / 2) return q;
-      if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
-      return p;
-    };
-
-    let r2, g2, b2;
-
-    if (s === 0) {
-      r2 = g2 = b2 = l;
-    } else {
-      const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-      const p = 2 * l - q;
-
-      r2 = hue2rgb(p, q, h + 1 / 3);
-      g2 = hue2rgb(p, q, h);
-      b2 = hue2rgb(p, q, h - 1 / 3);
-    }
-
-    return `rgb(${Math.round(r2 * 255)}, ${Math.round(g2 * 255)}, ${Math.round(
-      b2 * 255,
-    )})`;
-  };
-  return (
-    <div className="bg-surface border border-[#e2e8f0] rounded-lg p-6 hover:shadow-xl transition-all duration-300 group">
-      <div className="flex justify-between items-start mb-4">
-        <div
-          style={{ backgroundColor: iconBg, color: darkenColor(iconBg, 40) }}
-          class={`p-2 rounded-lg group-hover:scale-110 transition-transform`}
-        >
-          {icon}
         </div>
-        <span className="text-xs font-bold uppercase tracking-widest text-on-surface-variant opacity-60">
-          {label}
-        </span>
-      </div>
-      <div className="flex items-baseline gap-2">
-        <span className="text-4xl font-extrabold text-on-surface">{value}</span>
-        <span
-          className="text-xs font-bold text-tertiary"
-          dangerouslySetInnerHTML={{ __html: title }}
-        />
-      </div>
-      <p
-        className="text-xs text-slate-400 mt-2"
-        dangerouslySetInnerHTML={{ __html: description }}
-      ></p>
+      )}
+
+      {activeTab === "users" && <AdminUsersManagement />}
+
+      {activeTab === "courses" && <AdminCoursesManagement />}
+
+      {activeTab === "payouts" && (
+        <div className="space-y-5">
+          <div className="rounded-lg border border-[#e2e8f0] bg-white p-5">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-slate-900">
+                Platform commerce settings
+              </h3>
+              <button
+                type="button"
+                onClick={savePlatformSettings}
+                disabled={settingsSaving || settingsLoading}
+                className="rounded-full bg-[#0056d2] px-5 py-2 text-sm font-semibold text-white disabled:opacity-60"
+              >
+                {settingsSaving ? "Saving..." : "Save settings"}
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+              <div>
+                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Platform fee %
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.01"
+                  value={platformSettings.platformFeePercent}
+                  onChange={(event) =>
+                    setPlatformSettings((prev) => ({
+                      ...prev,
+                      platformFeePercent: event.target.value,
+                    }))
+                  }
+                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Tax %
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.01"
+                  value={platformSettings.taxPercent}
+                  onChange={(event) =>
+                    setPlatformSettings((prev) => ({
+                      ...prev,
+                      taxPercent: event.target.value,
+                    }))
+                  }
+                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Payout cycle
+                </label>
+                <select
+                  value={platformSettings.payoutCycle}
+                  onChange={(event) =>
+                    setPlatformSettings((prev) => ({
+                      ...prev,
+                      payoutCycle: event.target.value,
+                    }))
+                  }
+                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none"
+                >
+                  <option value="ANYTIME">Anytime</option>
+                  <option value="DAILY">Daily</option>
+                  <option value="WEEKLY">Weekly</option>
+                  <option value="MONTHLY">Monthly</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Default currency
+                </label>
+                <input
+                  type="text"
+                  maxLength={3}
+                  value={platformSettings.defaultCurrency}
+                  onChange={(event) =>
+                    setPlatformSettings((prev) => ({
+                      ...prev,
+                      defaultCurrency: event.target.value.toUpperCase(),
+                    }))
+                  }
+                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm uppercase outline-none"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-3 rounded-lg border border-[#e2e8f0] bg-white p-5 md:flex-row md:items-center md:justify-between">
+            <div className="flex flex-wrap items-center gap-3">
+              <select
+                value={payoutStatus}
+                onChange={(event) => {
+                  setPayoutStatus(event.target.value);
+                  setPayoutPage(1);
+                }}
+                className="rounded-md border border-slate-300 px-3 py-2 text-sm outline-none"
+              >
+                <option value="">All statuses</option>
+                <option value="REQUESTED">Requested</option>
+                <option value="APPROVED">Approved</option>
+                <option value="EXECUTED">Executed</option>
+                <option value="REJECTED">Rejected</option>
+                <option value="FAILED">Failed</option>
+              </select>
+
+              <button
+                type="button"
+                onClick={() => loadPayoutRequests({ page: payoutPage })}
+                className="rounded-md border border-[#0056d2] px-4 py-2 text-sm font-semibold text-[#0056d2]"
+              >
+                Refresh
+              </button>
+            </div>
+
+            <button
+              type="button"
+              onClick={runAutoProcess}
+              disabled={isRunningAutoProcess}
+              className="rounded-full bg-[#0056d2] px-5 py-2 text-sm font-semibold text-white disabled:opacity-60"
+            >
+              {isRunningAutoProcess ? "Processing..." : "Run auto payout process"}
+            </button>
+          </div>
+
+          <div className="overflow-hidden rounded-lg border border-[#e2e8f0] bg-white">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[980px] text-left">
+                <thead className="bg-slate-50">
+                  <tr>
+                    <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      Instructor
+                    </th>
+                    <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      Amount
+                    </th>
+                    <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      Status
+                    </th>
+                    <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      Requested
+                    </th>
+                    <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      Reviewed
+                    </th>
+                    <th className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {payoutLoading ? (
+                    <tr>
+                      <td colSpan={6} className="px-5 py-8 text-sm text-slate-500">
+                        Loading payout requests...
+                      </td>
+                    </tr>
+                  ) : payoutRows.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="px-5 py-8 text-sm text-slate-500">
+                        No payout requests found.
+                      </td>
+                    </tr>
+                  ) : (
+                    payoutRows.map((row) => {
+                      const status = String(row?.status || "").toUpperCase();
+                      return (
+                        <tr key={row.id} className="border-t border-[#e2e8f0]">
+                          <td className="px-5 py-4 text-sm">
+                            <p className="font-semibold text-slate-900">
+                              {row?.educator?.username || "Unknown"}
+                            </p>
+                            <p className="text-slate-500">{row?.educator?.email || "-"}</p>
+                          </td>
+                          <td className="px-5 py-4 text-sm font-semibold text-[#0056d2]">
+                            {formatCurrency(row?.amount)}
+                          </td>
+                          <td className="px-5 py-4">
+                            <span
+                              className={`rounded-full px-3 py-1 text-xs font-semibold ${getPayoutStatusClass(status)}`}
+                            >
+                              {status}
+                            </span>
+                          </td>
+                          <td className="px-5 py-4 text-sm text-slate-700">
+                            {formatDate(row?.requestedAt || row?.createdAt)}
+                          </td>
+                          <td className="px-5 py-4 text-sm text-slate-700">
+                            {formatDate(row?.reviewedAt)}
+                          </td>
+                          <td className="px-5 py-4 text-right">
+                            <div className="inline-flex gap-2">
+                              {status === "REQUESTED" && (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={() => handlePayoutAction("approve", row.id)}
+                                    className="rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white"
+                                  >
+                                    Approve
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handlePayoutAction("reject", row.id)}
+                                    className="rounded-md bg-rose-600 px-3 py-1.5 text-xs font-semibold text-white"
+                                  >
+                                    Reject
+                                  </button>
+                                </>
+                              )}
+                              {["APPROVED", "FAILED"].includes(status) && (
+                                <button
+                                  type="button"
+                                  onClick={() => handlePayoutAction("execute", row.id)}
+                                  className="rounded-md bg-[#0056d2] px-3 py-1.5 text-xs font-semibold text-white"
+                                >
+                                  Execute
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between rounded-lg border border-[#e2e8f0] bg-white px-5 py-3">
+            <p className="text-sm text-slate-500">
+              Total: {Number(payoutMeta?.total || 0)} payout requests
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                disabled={Number(payoutMeta?.page || 1) <= 1}
+                onClick={() => setPayoutPage((prev) => Math.max(1, prev - 1))}
+                className="rounded-md border border-slate-300 px-3 py-1.5 text-sm disabled:opacity-50"
+              >
+                Prev
+              </button>
+              <span className="text-sm text-slate-700">
+                Page {Number(payoutMeta?.page || 1)} /{" "}
+                {Math.max(Number(payoutMeta?.totalPages || 1), 1)}
+              </span>
+              <button
+                type="button"
+                disabled={Number(payoutMeta?.page || 1) >= Number(payoutMeta?.totalPages || 1)}
+                onClick={() =>
+                  setPayoutPage((prev) =>
+                    Math.min(Number(payoutMeta?.totalPages || 1), prev + 1),
+                  )
+                }
+                className="rounded-md border border-slate-300 px-3 py-1.5 text-sm disabled:opacity-50"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -3,7 +3,7 @@ import AUTHAPI from "@/lib/api/auth/request";
 import Image from "next/image";
 import persistentStore from "@/lib/store/persistentStore";
 import { useRouter } from "next/router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Spinner from "@/components/icons/Spinner";
 import { extractErrors } from "@/lib/services/errorsExtractor";
 import toast from "react-hot-toast";
@@ -12,8 +12,9 @@ import Check from "@/components/icons/Check";
 import Input from "@/components/forms/Input";
 import Password from "@/components/forms/Password";
 import Link from "next/link";
+import GoogleAuthButton from "@/components/auth/GoogleAuthButton";
 
-export default function Register() {
+export default function Register({ googleClientId }) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState(null);
@@ -74,6 +75,43 @@ export default function Register() {
       router.replace("/register?mode=student");
     }
   }, [router.isReady, router.query.mode]);
+
+  const onGoogleCredential = useCallback(
+    async (idToken) => {
+      toast.dismiss();
+      setIsLoading(true);
+
+      const mode =
+        router?.query?.mode === "instructor" ? "instructor" : "student";
+
+      try {
+        const response = await AUTHAPI.googleAuth({
+          idToken,
+          intent: "register",
+          mode,
+        });
+
+        if (response?.data?.token && response?.data?.user) {
+          persistentStore.setState({
+            profile: response?.data?.user,
+            token: response?.data?.token,
+          });
+
+          toast.success("Registration successful!");
+          window.location.href = "/";
+          return;
+        }
+
+        toast.error("Unexpected response from server");
+      } catch (error) {
+        if (error?.data?.message) toast.error(error.data.message);
+        else toast.error("Google registration failed. Please try again.");
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [router?.query?.mode, setIsLoading],
+  );
 
   return (
     <div className="min-h-[calc(100vh-92px)] py-[30px]">
@@ -197,6 +235,20 @@ export default function Register() {
 
             <div className="divider border-b border-[2px] border-[#f5f5f5] my-[40px]" />
 
+            <GoogleAuthButton
+              clientId={googleClientId}
+              onCredential={onGoogleCredential}
+              disabled={isLoading}
+              label={
+                router.query.mode === "instructor"
+                  ? "Sign up with Google as Instructor"
+                  : "Sign up with Google as Student"
+              }
+              buttonText="signup_with"
+            />
+
+            <div className="divider border-b border-[2px] border-[#f5f5f5] my-[40px]" />
+
             <p className="text-[14px] text-center">
               By signing up, you agree to our{" "}
               <Link href="/terms" className="text-[#0056D2] underline">
@@ -223,4 +275,15 @@ export default function Register() {
       </div>
     </div>
   );
+}
+
+export async function getServerSideProps() {
+  return {
+    props: {
+      googleClientId:
+        process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ||
+        process.env.GOOGLE_CLIENT_ID ||
+        "",
+    },
+  };
 }

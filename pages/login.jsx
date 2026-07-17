@@ -3,7 +3,7 @@ import AUTHAPI from "@/lib/api/auth/request";
 import Image from "next/image";
 import persistentStore from "@/lib/store/persistentStore";
 import { useRouter } from "next/router";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import Spinner from "@/components/icons/Spinner";
 import { extractErrors } from "@/lib/services/errorsExtractor";
 import toast from "react-hot-toast";
@@ -11,8 +11,9 @@ import { EyeIcon, EyeOffIcon } from "lucide-react";
 import Link from "next/link";
 import Input from "@/components/forms/Input";
 import Password from "@/components/forms/Password";
+import GoogleAuthButton from "@/components/auth/GoogleAuthButton";
 
-export default function Login() {
+export default function Login({ googleClientId }) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState(null);
@@ -88,6 +89,42 @@ export default function Login() {
     }
   };
 
+  const onGoogleCredential = useCallback(
+    async (idToken) => {
+      toast.dismiss();
+      setIsLoading(true);
+
+      try {
+        const response = await AUTHAPI.googleAuth({
+          idToken,
+          intent: "login",
+        });
+
+        if (response?.data?.token && response?.data?.user) {
+          persistentStore.setState({
+            profile: response?.data?.user,
+            token: response?.data?.token,
+          });
+
+          toast.success("Login successful!");
+          window.location.href = "/";
+          return;
+        }
+
+        toast.error("Unexpected response from server");
+      } catch (error) {
+        if (error?.data?.message) {
+          toast.error(error.data.message);
+        } else {
+          toast.error("Google login failed. Please try again.");
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [setIsLoading],
+  );
+
   return (
     <div className="min-h-[calc(100vh-92px)]">
       <div className="container py-[50px]">
@@ -148,6 +185,16 @@ export default function Login() {
 
             <div className="divider border-b border-[2px] border-[#f5f5f5] my-[40px]" />
 
+            <GoogleAuthButton
+              clientId={googleClientId}
+              onCredential={onGoogleCredential}
+              disabled={isLoading}
+              label="Continue with Google"
+              buttonText="signin_with"
+            />
+
+            <div className="divider border-b border-[2px] border-[#f5f5f5] my-[40px]" />
+
             <div className="bg-[#F6F7F9] font-light text-[18px] px-[30px] py-[20px] mt-[20px] text-center border-b border-[#ddd]">
               Don't have an account?{" "}
               <Link
@@ -170,4 +217,15 @@ export default function Login() {
       </div>
     </div>
   );
+}
+
+export async function getServerSideProps() {
+  return {
+    props: {
+      googleClientId:
+        process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ||
+        process.env.GOOGLE_CLIENT_ID ||
+        "",
+    },
+  };
 }

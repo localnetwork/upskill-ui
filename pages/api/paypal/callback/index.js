@@ -1,168 +1,133 @@
-const PAYPAL_API_BASE = "https://api-m.sandbox.paypal.com";
+import { getAuthTokenFromCookieHeader } from "../../../../lib/services/authToken";
+
+const PAYPAL_BASE_BY_ENV = {
+  sandbox: "https://api-m.sandbox.paypal.com",
+  live: "https://api-m.paypal.com",
+};
+
+function resolveFrontendBaseUrl(req) {
+  if (process.env.NEXT_PUBLIC_BASE_URL) {
+    return process.env.NEXT_PUBLIC_BASE_URL.replace(/\/$/, "");
+  }
+  const host = req?.headers?.host || "127.0.0.1:3000";
+  const protocol = host.includes("localhost") || host.startsWith("127.0.0.1") ? "http" : "https";
+  return `${protocol}://${host}`;
+}
+
+function resolveApiUrl() {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
+  return apiUrl.replace(/\/$/, "");
+}
+
+function parseState(state) {
+  if (!state) return {};
+  try {
+    const decoded = Buffer.from(String(state), "base64url").toString("utf8");
+    return JSON.parse(decoded);
+  } catch {
+    return {};
+  }
+}
+
+function buildRedirectUrl(frontendBaseUrl, returnTo, paypalStatus) {
+  const safePath = String(returnTo || "/instructor/settings/payout").startsWith("/")
+    ? String(returnTo || "/instructor/settings/payout")
+    : "/instructor/settings/payout";
+  const separator = safePath.includes("?") ? "&" : "?";
+  return `${frontendBaseUrl}${safePath}${separator}paypal=${paypalStatus}`;
+}
 
 export default async function handler(req, res) {
+  if (req.method !== "GET") {
+    return res.status(405).json({ error: "Method not allowed" });
+  }
+
+  const frontendBaseUrl = resolveFrontendBaseUrl(req);
+  const statePayload = parseState(req.query?.state);
+  const returnTo = statePayload?.returnTo || "/instructor/settings/payout";
+  const redirectWithStatus = (paypalStatus) =>
+    res.redirect(buildRedirectUrl(frontendBaseUrl, returnTo, paypalStatus));
+
   try {
-    const { code, error } = req.query;
-
-    if (error) {
-      return res.redirect("http://127.0.0.1:3000/settings/payout?paypal=error");
+    if (req.query?.error) {
+      return redirectWithStatus("error");
     }
 
+    const code = req.query?.code;
     if (!code) {
-      return res.status(400).json({ error: "Missing code" });
+      return redirectWithStatus("error");
     }
 
-    const redirectUri = "http://127.0.0.1:3000/api/paypal/callback";
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL;
-    const tokenCookieName = process.env.NEXT_PUBLIC_TOKEN; // your auth cookie name
+    const paypalEnv = String(process.env.PAYPAL_ENV || "sandbox").toLowerCase();
+    const paypalBaseUrl = PAYPAL_BASE_BY_ENV[paypalEnv] || PAYPAL_BASE_BY_ENV.sandbox;
+    const apiUrl = resolveApiUrl();
+    const clientId = process.env.PAYPAL_CLIENT_ID;
+    const clientSecret = process.env.PAYPAL_CLIENT_SECRET;
 
-    console.log("🔹 PayPal Callback Start");
-    console.log("baseUrl:", baseUrl);
-    console.log("code:", code);
-
-    if (!baseUrl) {
-      return res.status(500).json({ error: "Missing API_URL env var" });
+    if (!apiUrl || !clientId || !clientSecret) {
+      return redirectWithStatus("error");
     }
 
-    // =========================
-    // 1. Exchange code → access token
-    // =========================
-    const tokenRes = await fetch(`${PAYPAL_API_BASE}/v1/oauth2/token`, {
+    const redirectUri = `${frontendBaseUrl}/api/paypal/callback`;
+    const basicAuth = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
+
+    const tokenRes = await fetch(`${paypalBaseUrl}/v1/oauth2/token`, {
       method: "POST",
       headers: {
-        Authorization:
-          "Basic " +
-          Buffer.from(
-            `${process.env.PAYPAL_CLIENT_ID}:${process.env.PAYPAL_CLIENT_SECRET}`,
-          ).toString("base64"),
+        Authorization: `Basic ${basicAuth}`,
         "Content-Type": "application/x-www-form-urlencoded",
       },
       body: new URLSearchParams({
         grant_type: "authorization_code",
-        code,
+        code: String(code),
         redirect_uri: redirectUri,
       }),
     });
 
-    const tokenData = await tokenRes.json();
-
-    if (!tokenRes.ok) {
-      console.error("❌ TOKEN ERROR:", tokenData);
-      return res.status(400).json({
-        error: "Token exchange failed",
-        details: tokenData,
-      });
+    const tokenData = await tokenRes.json().catch(() => ({}));
+    if (!tokenRes.ok || !tokenData?.access_token) {
+      return redirectWithStatus("error");
     }
 
-    const accessToken = tokenData.access_token;
-    console.log("✅ Access Token received");
-
-    // =========================
-    // 2. Get PayPal user info
-    // =========================
     const userRes = await fetch(
-      `${PAYPAL_API_BASE}/v1/identity/openidconnect/userinfo?schema=openid`,
+      `${paypalBaseUrl}/v1/identity/openidconnect/userinfo?schema=openid`,
       {
         headers: {
-          Authorization: `Bearer ${accessToken}`,
+          Authorization: `Bearer ${tokenData.access_token}`,
         },
       },
     );
+    const userInfo = await userRes.json().catch(() => ({}));
+    const paypalEmail = userInfo?.email || null;
+    const paypalMerchantId = userInfo?.payer_id || userInfo?.user_id || null;
 
-    const userInfo = await userRes.json();
-
-    if (!userRes.ok) {
-      console.error("❌ USER INFO ERROR:", userInfo);
-      return res.status(400).json({
-        error: "Userinfo failed",
-        details: userInfo,
-      });
+    if (!userRes.ok || !paypalEmail) {
+      return redirectWithStatus("error");
     }
 
-    const paypalEmail = userInfo.email;
-    const paypalAccountId = userInfo.payer_id || userInfo.user_id || null;
-
-    console.log("✅ PayPal User:", { paypalEmail, paypalAccountId });
-
-    if (!paypalEmail) {
-      return res.status(400).json({
-        error: "No email returned",
-        details: userInfo,
-      });
-    }
-
-    // =========================
-    // 3. Extract your user token from cookie
-    // =========================
-    const cookieHeader = req.headers.cookie || "";
-
-    console.log("req.headers.cookie", req.headers.cookie);
-    let userToken = null;
-
-    if (cookieHeader) {
-      const cookies = Object.fromEntries(
-        cookieHeader.split("; ").map((c) => {
-          const [key, ...v] = c.split("=");
-          return [key, decodeURIComponent(v.join("="))];
-        }),
-      );
-      userToken = cookies[tokenCookieName];
-    }
-
-    console.log("🔐 Extracted Token:", userToken ? "FOUND" : "NOT FOUND");
-
+    const userToken = getAuthTokenFromCookieHeader(req.headers?.cookie || "");
     if (!userToken) {
-      return res.status(401).json({
-        error: "Unauthorized",
-        message: "User token cookie not found",
-      });
+      return redirectWithStatus("error");
     }
 
-    // =========================
-    // 4. Save to backend
-    // =========================
-    console.log("🔹 Saving to backend...");
-
-    const saveRes = await fetch(`${baseUrl}/payout-accounts`, {
+    const saveRes = await fetch(`${apiUrl}/payouts/account`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${userToken}`,
       },
       body: JSON.stringify({
-        provider: "paypal",
-        email: paypalEmail,
-        accountId: paypalAccountId,
+        paypalEmail,
+        paypalMerchantId,
       }),
     });
 
-    const saveData = await saveRes.json().catch(() => ({}));
-
-    console.log("➡️ POST:", `${baseUrl}/payout-accounts`);
-    console.log("📦 RESPONSE STATUS:", saveRes.status);
-    console.log("📦 RESPONSE DATA:", saveData);
-
     if (!saveRes.ok) {
-      return res.status(500).json({
-        error: "Save failed",
-        details: saveData,
-      });
+      return redirectWithStatus("error");
     }
 
-    console.log("✅ Saved successfully");
-
-    // =========================
-    // 5. Redirect back to FE
-    // =========================
-    return res.redirect(
-      "http://127.0.0.1:3000/settings/payout?paypal=connected",
-    );
-  } catch (e) {
-    console.error("❌ CALLBACK CRASH:", e);
-
-    return res.status(500).json({
-      error: "Callback handler crashed",
-      details: e?.message || JSON.stringify(e, null, 2),
-    });
+    return redirectWithStatus("connected");
+  } catch (_error) {
+    return redirectWithStatus("error");
   }
 }
