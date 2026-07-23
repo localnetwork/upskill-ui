@@ -131,7 +131,7 @@ function TOTPForm() {
         code,
       });
 
-      if (res?.data?.status === "success" && res?.data?.token) {
+      if (res?.data?.token) {
         persistentStore.setState({
           token: res.data.token,
           profile: res.data.user,
@@ -235,6 +235,9 @@ function BackupCodeForm() {
       }
 
       const res = await AUTHAPI.redeemBackupCode(preAuthToken, trimmed);
+      if (!res?.data?.token) {
+        throw new Error("Unexpected response");
+      }
       persistentStore.setState({
         token: res.data.token,
         profile: res.data.user,

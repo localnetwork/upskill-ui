@@ -11,7 +11,9 @@ import { getAuthTokenFromCookieMap } from "@/lib/services/authToken";
 
 export async function getServerSideProps(context) {
   const { query } = context;
-  const { token } = query;
+  const token = String(
+    query?.token || query?.orderId || query?.order_id || "",
+  ).trim();
   setContext(context);
 
   if (!token) {
@@ -55,7 +57,7 @@ export async function getServerSideProps(context) {
   }
 }
 
-export default function Page({ data, statusState }) {
+export default function Page({ data = null, statusState = "PENDING" }) {
   const router = useRouter();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isRedirectingToPayPal, setIsRedirectingToPayPal] = useState(false);
@@ -63,8 +65,14 @@ export default function Page({ data, statusState }) {
   const [checkoutData, setCheckoutData] = useState(data || null);
   const [checkoutState, setCheckoutState] = useState(statusState);
   const token = useMemo(
-    () => String(router?.query?.token || ""),
-    [router?.query?.token],
+    () =>
+      String(
+        router?.query?.token ||
+          router?.query?.orderId ||
+          router?.query?.order_id ||
+          "",
+      ),
+    [router?.query?.token, router?.query?.orderId, router?.query?.order_id],
   );
 
   const order = checkoutData?.order;
@@ -141,7 +149,17 @@ export default function Page({ data, statusState }) {
   }, [data, statusState]);
 
   useEffect(() => {
-    if (!token) return;
+    if (!router.isReady) return;
+    if (!token) {
+      setCheckoutData(null);
+      setCheckoutState("INVALID");
+      return;
+    }
+    if (router.pathname === "/checkout/success") {
+      router.replace(`/checkout/payments/${encodeURIComponent(token)}`);
+      return;
+    }
+    fetchStatus();
     const cookies = parseCookies();
     const authToken = getAuthTokenFromCookieMap(cookies);
     if (!authToken) return;
@@ -156,7 +174,9 @@ export default function Page({ data, statusState }) {
     });
 
     const onCheckoutStatus = (payload = {}) => {
-      if (String(payload?.providerOrderId || "") !== token) return;
+      const matchesProviderOrderId = String(payload?.providerOrderId || "") === token;
+      const matchesOrderId = String(payload?.orderId || "") === token;
+      if (!matchesProviderOrderId && !matchesOrderId) return;
       fetchStatus();
     };
 
@@ -166,7 +186,7 @@ export default function Page({ data, statusState }) {
       socket.off("checkout:status", onCheckoutStatus);
       socket.disconnect();
     };
-  }, [token]);
+  }, [router, router.isReady, token]);
 
   return (
     <div className="py-[50px] flex flex-col justify-center items-center bg-[#F6F6F6] min-h-[calc(100vh-100px)]">
@@ -190,7 +210,7 @@ export default function Page({ data, statusState }) {
       </h1>
       <p className="text-[20px] mt-2">
         {isInvalid
-          ? `Token: ${router?.query?.token || "N/A"}`
+          ? `Token: ${token || "N/A"}`
           : `Your order ID is: #${order?.id || router?.query?.order_id || "processing"}`}
       </p>
 
@@ -231,7 +251,9 @@ export default function Page({ data, statusState }) {
                 disabled={isCancellingOrder}
                 className={`${isCancellingOrder ? "opacity-50 cursor-not-allowed" : "cursor-pointer"} mt-3 ml-2 bg-white border border-[#d97706] text-[#d97706] px-4 py-2 rounded-md font-semibold hover:bg-[#fff7ed] transition`}
               >
-                {isCancellingOrder ? "Cancelling order..." : "Cancel order and return items to cart"}
+                {isCancellingOrder
+                  ? "Cancelling order..."
+                  : "Cancel order and return items to cart"}
               </button>
             ) : null}
           </>

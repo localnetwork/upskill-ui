@@ -35,16 +35,11 @@ export default function Login({ googleClientId }) {
     toast.dismiss();
     e.preventDefault();
     setIsLoading(true);
-    console.log("bla bla");
     try {
-      console.log("attempt login");
       const response = await AUTHAPI.login(payload);
-
-      console.log("hhhhh", response);
 
       // ✅ CASE 1: Requires 2FA
       if (
-        response?.data?.status === "requires_2fa" ||
         response?.data?.requires_2fa
       ) {
         toast.success("Enter your 2FA code");
@@ -64,6 +59,7 @@ export default function Login({ googleClientId }) {
         persistentStore.setState({
           profile: response?.data?.user,
           token: response?.data?.token,
+          preAuthToken: null,
         });
 
         toast.success("Login successful!");
@@ -100,10 +96,20 @@ export default function Login({ googleClientId }) {
           intent: "login",
         });
 
+        if (response?.data?.requires_2fa) {
+          toast.success("Enter your 2FA code");
+          persistentStore.setState({
+            preAuthToken: response?.data?.pre_auth_token,
+          });
+          router.push("/verify-2fa");
+          return;
+        }
+
         if (response?.data?.token && response?.data?.user) {
           persistentStore.setState({
             profile: response?.data?.user,
             token: response?.data?.token,
+            preAuthToken: null,
           });
 
           toast.success("Login successful!");

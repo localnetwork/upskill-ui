@@ -23,6 +23,9 @@ export default function CurriculumItem({ item, onSave, onUpdate, onDelete }) {
   const [description, setDescription] = useState(
     item.curriculum_description || ""
   );
+  const [isPublicPreview, setIsPublicPreview] = useState(
+    Boolean(item.is_public_preview || item.is_preview)
+  );
   const [error, setError] = useState("");
   const [currentItem, setCurrentItem] = useState(item);
   const [deleting, setDeleting] = useState(false);
@@ -43,6 +46,7 @@ export default function CurriculumItem({ item, onSave, onUpdate, onDelete }) {
     setMode(shouldAutoOpenContent ? "content" : item.isNew ? "edit" : null);
     setTitle(item.title || "");
     setDescription(item.curriculum_description || "");
+    setIsPublicPreview(Boolean(item.is_public_preview || item.is_preview));
     setCurrentItem(item);
     setError("");
     if (shouldAutoOpenContent) {
@@ -63,6 +67,7 @@ export default function CurriculumItem({ item, onSave, onUpdate, onDelete }) {
       description: description.trim(),
       curriculum_type: currentItem.curriculum_type,
       course_section_id: currentItem.section_id,
+      is_public_preview: isPublicPreview,
     };
 
     try {
@@ -111,6 +116,7 @@ export default function CurriculumItem({ item, onSave, onUpdate, onDelete }) {
       title: title.trim(),
       description: description.trim(),
       curriculum_type: currentItem.curriculum_type,
+      is_public_preview: isPublicPreview,
     };
 
     try {
@@ -286,6 +292,16 @@ export default function CurriculumItem({ item, onSave, onUpdate, onDelete }) {
               }}
             />
           </div>
+
+          <label className="inline-flex items-center gap-2 text-sm font-medium text-slate-700">
+            <input
+              type="checkbox"
+              checked={isPublicPreview}
+              onChange={(e) => setIsPublicPreview(e.target.checked)}
+              className="h-4 w-4 cursor-pointer rounded border-slate-300"
+            />
+            Make this curriculum public preview
+          </label>
 
           {error && <p className="text-sm text-red-600">{error}</p>}
 

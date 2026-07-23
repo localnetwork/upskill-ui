@@ -4,6 +4,7 @@ import cartStore from "@/lib/store/cartStore";
 import globalStore from "@/lib/store/globalStore";
 import persistentStore from "@/lib/store/persistentStore";
 import { ShoppingCart } from "lucide-react";
+import { useEffect } from "react";
 import { mutate } from "swr";
 export default function UserCartCount() {
   const count = cartStore((s) => s.cartCount);
@@ -13,6 +14,8 @@ export default function UserCartCount() {
 
   const roleList = Array.isArray(profile?.roles) ? profile.roles : [];
   const isLearner = roleList.includes("LEARNER");
+
+  const isCartLoading = cartStore((s) => s.isCartLoading);
 
   // ✅ Call the hook returned by the static method
   const { data: cartCount } = CARTAPI.getCartCount({
@@ -25,22 +28,36 @@ export default function UserCartCount() {
     },
   })();
 
-  const { data: cartItems, mutate: mutateCartItems } = CARTAPI.getCartInfo({
+  const {
+    data: cartItems,
+    mutate: mutateCartItems,
+    isLoading,
+    isValidating,
+  } = CARTAPI.getCartInfo({
     render: !!profile && isLearner,
     onSuccess: (data) => {
       const nextCartTotal =
-        data?.data?.cartTotal === undefined || data?.data?.cartTotal === null
-          ? null
-          : Number(data.data.cartTotal);
+        data?.data?.cartTotal == null ? null : Number(data.data.cartTotal);
+
       cartStore.setState({
         cart: data?.data.cartItems || [],
         cartTotal: nextCartTotal,
       });
     },
-    onError: (error) => {
-      cartStore.setState({ cartCount: 0, cart: null, cartTotal: null });
+    onError: () => {
+      cartStore.setState({
+        cartCount: 0,
+        cart: null,
+        cartTotal: null,
+      });
     },
   })();
+
+  useEffect(() => {
+    cartStore.setState({
+      isCartLoading: isLoading || isValidating,
+    });
+  }, [isLoading, isValidating]);
 
   const handleCartDrawer = () => {
     if (!isLearner) return;

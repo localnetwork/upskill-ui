@@ -67,7 +67,7 @@ export default function Checkout() {
         const providerOrderId = response?.data?.data?.providerOrderId;
         if (providerOrderId) {
           router.push(
-            `/checkout/success?token=${encodeURIComponent(providerOrderId)}`,
+            `/checkout/payments/${encodeURIComponent(providerOrderId)}`,
           );
           return;
         }
