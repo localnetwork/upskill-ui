@@ -13,6 +13,8 @@
   "dependencies": {
     "@diomenike/react-cookie-consent": "file:../d-cookie-consent",
     "@monaco-editor/react": "^4.7.0",
+    "@react-three/drei": "^10.7.7",
+    "@react-three/fiber": "^9.6.1",
     "@tinymce/tinymce-react": "^6.3.0",
     "@vercel/og": "^0.11.1",
     "@videojs/themes": "^1.0.1",
@@ -20,6 +22,7 @@
     "axios": "^1.12.2",
     "dotenv": "^17.2.3",
     "fs": "^0.0.1-security",
+    "gsap": "^3.15.0",
     "hls.js": "^1.6.15",
     "https": "^1.0.0",
     "jose": "^6.1.0",
@@ -40,6 +43,7 @@
     "recharts": "^3.8.1",
     "socket.io-client": "^4.8.3",
     "swr": "^2.3.6",
+    "three": "^0.185.1",
     "uuid": "^13.0.0",
     "video.js": "^8.23.4",
     "zustand": "^5.0.8"

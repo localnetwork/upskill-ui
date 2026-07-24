@@ -1,53 +1,72 @@
+import Link from "next/link";
+import { useRef } from "react";
+import useSectionReveal from "@/components/home/useSectionReveal";
+
 export default function FinalCTA() {
+  const sectionRef = useRef(null);
+  useSectionReveal(sectionRef, { stagger: 0.08 });
+
   return (
-    <section class="bg-[#F9FAFB] px-6 md:px-8 py-24">
-      <div className="container max-w-7xl mx-auto">
-        <div class="relative bg-[#0F111A] text-white rounded-[3rem] p-12 md:p-24 overflow-hidden text-center">
-          <div class="relative z-10 space-y-8 max-w-3xl mx-auto">
-            <p class="text-primary font-black uppercase tracking-[0.2em] text-xs">
-              Start Today
-            </p>
-            <h2 class="text-5xl md:text-7xl font-extrabold leading-[1] tracking-tighter">
-              Your next chapter starts{" "}
-              <span class="text-primary italic">now.</span>
+    <section
+      id="cta"
+      ref={sectionRef}
+      data-home-section=""
+      className="bg-slate-50 px-6 py-20 md:px-8 md:py-24"
+    >
+      <div className="container">
+        <div
+          data-reveal=""
+          className="relative overflow-hidden rounded-[32px] bg-slate-950 px-6 py-14 text-center text-white md:px-12 md:py-20"
+        >
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_25%,rgba(0,82,204,0.35),transparent_45%),radial-gradient(circle_at_80%_90%,rgba(56,189,248,0.24),transparent_40%)]" />
+          <div className="relative z-10 mx-auto max-w-3xl">
+            <h2 className="text-4xl font-bold tracking-tight md:text-6xl">
+              Ready to move faster in your career?
             </h2>
-            <p class="text-xl text-white/60">
-              Join 2.4 million learners building skills that matter. First 7
-              days completely free.
+            <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-white/75 md:text-lg">
+              Start with a guided path today and ship practical work from your
+              first week.
             </p>
-            <div class="flex flex-col md:flex-row justify-center gap-6 pt-4">
-              <button class="px-10 py-5 bg-primary text-on-primary rounded-full font-bold text-lg hover:scale-105 transition-transform shadow-[0_0_40px_rgba(0,86,210,0.4)]">
-                Start learning free —&gt;
-              </button>
-              <button class="px-10 py-5 bg-white/10 border border-white/20 rounded-full font-bold text-lg hover:bg-white/20 transition-all">
-                Explore courses
-              </button>
+            <div className="mt-8 flex flex-col justify-center gap-4 sm:flex-row">
+              <Link
+                href="/courses"
+                className="rounded-xl bg-primary px-8 py-3.5 text-base font-semibold text-white transition-transform duration-300 hover:-translate-y-0.5 active:translate-y-0"
+              >
+                Browse courses
+              </Link>
+              <Link
+                href="/register?mode=student"
+                className="rounded-xl border border-white/25 bg-white/10 px-8 py-3.5 text-base font-semibold text-white transition-colors duration-300 hover:bg-white/20"
+              >
+                Create account
+              </Link>
             </div>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-12 pt-16 border-t border-white/10">
-              <div>
-                <p class="text-3xl font-black">2.4M+</p>
-                <p class="text-xs uppercase tracking-widest text-white/40 mt-2">
-                  Active learners
-                </p>
-              </div>
-              <div>
-                <p class="text-3xl font-black">$0</p>
-                <p class="text-xs uppercase tracking-widest text-white/40 mt-2">
-                  To start, 7 days free
-                </p>
-              </div>
-              <div>
-                <p class="text-3xl font-black">30-day</p>
-                <p class="text-xs uppercase tracking-widest text-white/40 mt-2">
-                  Money-back guarantee
-                </p>
-              </div>
-              <div>
-                <p class="text-3xl font-black">800+</p>
-                <p class="text-xs uppercase tracking-widest text-white/40 mt-2">
-                  Hiring partners
-                </p>
-              </div>
+          </div>
+
+          <div className="relative z-10 mt-10 grid grid-cols-2 gap-4 border-t border-white/10 pt-8 md:grid-cols-4">
+            <div className="rounded-xl bg-white/5 p-4">
+              <p className="text-2xl font-semibold">7 days</p>
+              <p className="mt-1 text-xs uppercase tracking-wide text-white/60">
+                Free access
+              </p>
+            </div>
+            <div className="rounded-xl bg-white/5 p-4">
+              <p className="text-2xl font-semibold">24/7</p>
+              <p className="mt-1 text-xs uppercase tracking-wide text-white/60">
+                Self-paced learning
+              </p>
+            </div>
+            <div className="rounded-xl bg-white/5 p-4">
+              <p className="text-2xl font-semibold">30 days</p>
+              <p className="mt-1 text-xs uppercase tracking-wide text-white/60">
+                Money back
+              </p>
+            </div>
+            <div className="rounded-xl bg-white/5 p-4">
+              <p className="text-2xl font-semibold">800+</p>
+              <p className="mt-1 text-xs uppercase tracking-wide text-white/60">
+                Hiring partners
+              </p>
             </div>
           </div>
         </div>

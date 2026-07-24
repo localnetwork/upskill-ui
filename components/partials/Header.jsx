@@ -9,12 +9,13 @@ import UserNav from "../entities/user/UserNav";
 import UserResendNotif from "../entities/user/UserResendNotif";
 import UserNotifications from "../entities/user/UserNotifications";
 import Image from "next/image";
-import { Bell, ChevronDown, Search, ShoppingCart } from "lucide-react";
+import { Bell, ChevronDown, ShoppingCart } from "lucide-react";
 import ExploreDropdown from "../dropdowns/ExploreDropdown";
 import BaseApi from "@/lib/api/_base.api";
 import { io } from "socket.io-client";
 import { parseCookies } from "nookies";
 import { getAuthTokenFromCookieMap } from "@/lib/services/authToken";
+import HeaderSearchAutocomplete from "./HeaderSearchAutocomplete";
 
 const UserCartCount = dynamic(() => import("../entities/user/UserCartCount"), {
   ssr: false,
@@ -177,16 +178,8 @@ export default function Header() {
             </div>
 
             <div className="flex font-light items-center space-x-6 w-full justify-end">
-              <div className="hidden md:flex relative w-48 lg:w-64">
-                <Search
-                  className="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 text-lg"
-                  size={15}
-                />
-                <input
-                  className="w-full pl-9 pr-4 py-2 bg-slate-100 border-transparent rounded-full text-sm focus:bg-white focus:border-primary focus:ring-1 focus:ring-primary transition-all"
-                  placeholder="Search..."
-                  type="text"
-                />
+              <div className="hidden md:flex">
+                <HeaderSearchAutocomplete />
               </div>
 
               {profile && (

@@ -1,6 +1,11 @@
-import { ArrowDown, ChevronDown, Plus } from "lucide-react";
+import { ChevronDown } from "lucide-react";
+import { useRef } from "react";
+import useSectionReveal from "@/components/home/useSectionReveal";
 
 export default function FAQsBlock() {
+  const sectionRef = useRef(null);
+  useSectionReveal(sectionRef, { stagger: 0.08 });
+
   const faqItems = [
     {
       question: "Can I get a refund if I'm not satisfied?",
@@ -20,40 +25,41 @@ export default function FAQsBlock() {
   ];
 
   return (
-    <>
-      <section class="px-6 md:px-8 py-24 max-w-4xl mx-auto">
-        <div class="text-center mb-16">
-          <p class="text-primary font-black uppercase tracking-[0.2em] text-xs mb-4">
-            Questions
-          </p>
-          <h2 class="text-4xl md:text-5xl font-bold text-slate-900 mb-12 text-center font-secondary">
-            Common questions
-            <br />
-            you need to know.
+    <section
+      id="faq"
+      ref={sectionRef}
+      data-home-section=""
+      className="bg-white py-20 md:py-24"
+    >
+      <div className="container max-w-5xl">
+        <div data-reveal="" className="mb-12 text-center">
+          <h2 className="text-3xl font-bold tracking-tight text-slate-950 md:text-5xl">
+            Common questions from new learners.
           </h2>
-          <p class="text-on-surface-variant mt-4">
-            Still have questions? Our team is here to help — reach out anytime.
+          <p className="mt-4 text-base leading-relaxed text-slate-600">
+            Get clear answers about access, certificates, and support before
+            starting your first track.
           </p>
         </div>
-        <div class="space-y-4">
+
+        <div className="space-y-4">
           {faqItems.map((item, index) => (
-            <div
-              class="border border-[#e2e8f0] rounded-lg bg-surface overflow-hidden transition-all accordion-item duration-700 opacity-100 translate-y-0"
+            <details
               key={index}
+              data-reveal=""
+              className="group overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 px-6 transition-colors duration-300 open:bg-white"
             >
-              <button class="w-full px-6 py-5 text-left flex justify-between items-center font-bold text-[#0f111a]">
-                {item?.question}
-                <ChevronDown className="transition-transform" />
-              </button>
-              <div class="accordion-content">
-                <div class="px-6 pb-5 text-on-surface-variant leading-relaxed">
-                  {item?.answer}
-                </div>
-              </div>
-            </div>
+              <summary className="flex cursor-pointer list-none items-center justify-between py-5 text-left font-semibold text-slate-900">
+                {item.question}
+                <ChevronDown className="h-5 w-5 text-slate-500 transition-transform duration-300 group-open:rotate-180" />
+              </summary>
+              <p className="pb-5 pr-6 leading-relaxed text-slate-600">
+                {item.answer}
+              </p>
+            </details>
           ))}
         </div>
-      </section>
-    </>
+      </div>
+    </section>
   );
 }

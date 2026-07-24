@@ -1,10 +1,15 @@
 import BaseApi from "@/lib/api/_base.api";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import useSectionReveal from "@/components/home/useSectionReveal";
 
 export default function FeaturedCategories() {
+  const sectionRef = useRef(null);
   const [categories, setCategories] = useState([]);
+
+  useSectionReveal(sectionRef, { stagger: 0.08 });
+
   const fetchCategories = async () => {
     try {
       const response = await BaseApi.get(
@@ -25,32 +30,45 @@ export default function FeaturedCategories() {
     fetchCategories();
   }, []);
 
+  if (!categories.length) {
+    return (
+      <div className="rounded-3xl border border-slate-200 bg-slate-50 p-8 text-slate-700">
+        Categories are being updated. Please refresh in a moment.
+      </div>
+    );
+  }
+
   return (
-    <div>
-      <div className="grid grid-cols-2 gap-6">
+    <div ref={sectionRef}>
+      <div className="grid gap-5 md:grid-cols-2">
         {categories.map((category) => (
-          <div className="category-card group relative h-64 rounded-2xl overflow-hidden cursor-pointer shadow-sm hover:shadow-xl transition-all duration-500">
+          <article
+            key={category.id || category.slug}
+            data-reveal=""
+            className="group relative h-64 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+          >
             <Link
               href={`/categories/${category.slug}`}
-              className="absolute inset-0 z-10 top-0 left-0 w-full h-full"
+              className="absolute inset-0 z-10 h-full w-full"
+              aria-label={`Explore ${category.title} courses`}
             />
             <Image
-              alt="Web Development"
-              className="absolute inset-0 w-full h-full object-cover transition-transform duration-500"
-              src="/cta-1.jpg"
-              width={400}
-              height={300}
+              alt={category.title || "Course category"}
+              className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+              src={`/cta-${((category.id || 1) % 3) + 1}.jpg`}
+              width={900}
+              height={600}
             />
-            <div className="category-overlay absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/40 to-transparent transition-colors duration-500"></div>
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/55 to-slate-900/10" />
             <div className="absolute inset-0 p-6 flex flex-col justify-end">
-              <h3 className="text-white text-xl font-bold mb-1">
+              <h3 className="mb-1 text-2xl font-semibold text-white">
                 {category.title}
               </h3>
-              <p className="text-blue-100/80 text-sm font-medium">
-                1,200+ courses
+              <p className="text-sm font-medium text-blue-100/90">
+                Discover curated learning tracks
               </p>
             </div>
-          </div>
+          </article>
         ))}
       </div>
     </div>

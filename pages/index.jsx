@@ -1,30 +1,15 @@
-import CallToActions from "@/components/blocks/CallToActions";
-import FAQsBlock from "@/components/blocks/FAQsBlock";
-import FeaturedTabs from "@/components/blocks/FeaturedTabs";
-import FeaturedCourses from "@/components/blocks/FeaturedTabs";
-import FinalCTA from "@/components/blocks/FinalCTA";
-import HomeBanner from "@/components/blocks/HomeBanner";
-import Testimonials from "@/components/blocks/Testimonials";
+import HomePageExperience from "@/components/home/HomePageExperience";
 import Meta from "@/components/partials/Meta";
-import Image from "next/image";
 
 export default function Home() {
   return (
     <>
       <Meta
-        title="Upskill UI"
-        description="A modern and responsive UI library for building web applications."
+        title="Upskill Learning"
+        description="Premium online learning with project-based paths, expert mentorship, and career-focused courses."
+        keywords="online learning, career upskilling, tech courses, project based learning, certification"
       />
-
-      <HomeBanner />
-
-      <CallToActions />
-
-      <FeaturedTabs />
-
-      <Testimonials />
-      <FAQsBlock />
-      <FinalCTA />
+      <HomePageExperience />
     </>
   );
 }
