@@ -106,7 +106,7 @@ function AttemptBar({ attempts, max }) {
 
 // ─── TOTP Form ────────────────────────────────────────────────────────────────
 
-function TOTPForm() {
+function TOTPForm({ rememberDevice, setRememberDevice }) {
   const router = useRouter();
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
@@ -129,6 +129,7 @@ function TOTPForm() {
       const res = await AUTHAPI.verify2FA({
         pre_auth_token: preAuthToken,
         code,
+        rememberDevice,
       });
 
       if (res?.data?.token) {
@@ -186,6 +187,16 @@ function TOTPForm() {
 
       <AttemptBar attempts={attempts} max={MAX_ATTEMPTS} />
 
+      <label className="flex items-center gap-2 text-xs text-slate-600">
+        <input
+          type="checkbox"
+          checked={rememberDevice}
+          onChange={(e) => setRememberDevice(e.target.checked)}
+          className="rounded border-slate-300"
+        />
+        Remember this device for future logins
+      </label>
+
       <button
         type="button"
         onClick={handleSubmit}
@@ -215,7 +226,7 @@ function TOTPForm() {
 
 // ─── Backup Code Form ─────────────────────────────────────────────────────────
 
-function BackupCodeForm() {
+function BackupCodeForm({ rememberDevice, setRememberDevice }) {
   const router = useRouter();
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
@@ -234,7 +245,9 @@ function BackupCodeForm() {
         return;
       }
 
-      const res = await AUTHAPI.redeemBackupCode(preAuthToken, trimmed);
+      const res = await AUTHAPI.redeemBackupCode(preAuthToken, trimmed, {
+        rememberDevice,
+      });
       if (!res?.data?.token) {
         throw new Error("Unexpected response");
       }
@@ -287,6 +300,16 @@ function BackupCodeForm() {
         </p>
       </div>
 
+      <label className="flex items-center gap-2 text-xs text-slate-600">
+        <input
+          type="checkbox"
+          checked={rememberDevice}
+          onChange={(e) => setRememberDevice(e.target.checked)}
+          className="rounded border-slate-300"
+        />
+        Remember this device for future logins
+      </label>
+
       <button
         type="button"
         onClick={handleSubmit}
@@ -316,6 +339,7 @@ function BackupCodeForm() {
 
 export default function Verify2FA() {
   const [mode, setMode] = useState("totp");
+  const [rememberDevice, setRememberDevice] = useState(true);
 
   return (
     <div
@@ -406,7 +430,17 @@ export default function Verify2FA() {
 
           {/* Form */}
           <div className="px-6 pb-8 pt-6">
-            {mode === "totp" ? <TOTPForm /> : <BackupCodeForm />}
+            {mode === "totp" ? (
+              <TOTPForm
+                rememberDevice={rememberDevice}
+                setRememberDevice={setRememberDevice}
+              />
+            ) : (
+              <BackupCodeForm
+                rememberDevice={rememberDevice}
+                setRememberDevice={setRememberDevice}
+              />
+            )}
           </div>
         </div>
 

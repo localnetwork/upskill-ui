@@ -5,6 +5,7 @@ import PAYOUTAPI from "@/lib/api/payouts/request";
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { useRouter } from "next/router";
+import Link from "next/link";
 import { X } from "lucide-react";
 import {
   Area,
@@ -582,6 +583,21 @@ export default function PayoutSettingsPage() {
   return (
     <InstructorLayout>
       <div className="mx-auto w-full max-w-6xl space-y-8">
+        <div className="flex flex-wrap gap-2 border-b border-[#e2e8f0] pb-3">
+          <Link
+            href="/instructor/settings"
+            className="rounded-full border border-[#cbd5e1] px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+          >
+            General
+          </Link>
+          <Link
+            href="/instructor/settings/payout"
+            className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white"
+          >
+            Payout
+          </Link>
+        </div>
+
         <section className="rounded-lg border border-[#e2e8f0] bg-white p-6 sm:p-8">
           <h1 className="text-3xl font-bold text-on-surface">
             Payout settings

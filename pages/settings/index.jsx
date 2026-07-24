@@ -1,4 +1,4 @@
-import { Shield, User, Bell, Lock, ChevronRight, Wallet } from "lucide-react";
+import { Shield, User, Bell, Lock, ChevronRight, Wallet, History, Laptop } from "lucide-react";
 
 export default function Page() {
   const links = [
@@ -31,6 +31,18 @@ export default function Page() {
       href: "/settings/payout",
       icon: Wallet,
       description: "Bank info, tax forms, earnings",
+    },
+    {
+      name: "Activity Log",
+      href: "/settings/activity-log",
+      icon: History,
+      description: "See your recent account and instructor activity",
+    },
+    {
+      name: "Devices",
+      href: "/settings/devices",
+      icon: Laptop,
+      description: "Manage devices trusted for sign-in",
     },
   ];
 

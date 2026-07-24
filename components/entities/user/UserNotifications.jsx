@@ -44,8 +44,9 @@ export default function UserNotifications({
         <p className="text-[12px] text-gray-500 mt-3">No notifications yet.</p>
       ) : (
         notifications.map((notification) => (
-          <div
+          <Link
             key={notification.id}
+            href={`/notifications/${notification.id}`}
             className={`flex items-center gap-2 py-2 px-1 hover:bg-[#f5f5f5] rounded cursor-pointer ${
               notification?.readAt ? "" : "bg-blue-50/60"
             }`}
@@ -68,7 +69,7 @@ export default function UserNotifications({
                 </p>
               </div>
             </div>
-          </div>
+          </Link>
         ))
       )}
 

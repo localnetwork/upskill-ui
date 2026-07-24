@@ -194,8 +194,11 @@ const isLoggedInBlock = (req, token) => {
 const isAnonymous = (req, token) => {
   const pathname = req.nextUrl.pathname;
   const isRestrictedPath =
+    pathname === "/my-orders" ||
     pathname === "/profile" ||
     pathname.startsWith("/profile/") ||
+    pathname === "/settings" ||
+    pathname.startsWith("/settings/") ||
     pathname === "/checkout" ||
     pathname.startsWith("/checkout/") ||
     pathname === "/cart";
@@ -254,6 +257,9 @@ export const config = {
     "/forgot",
     "/profile",
     "/profile/:path*",
+    "/my-orders",
+    "/settings",
+    "/settings/:path*",
     "/checkout",
     "/checkout/:path*",
     "/cart",

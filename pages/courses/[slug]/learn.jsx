@@ -69,7 +69,8 @@ export async function getServerSideProps(context) {
           if (refreshResponse.ok) {
             const refreshJson = await refreshResponse.json();
             const payload = refreshJson?.data || refreshJson || {};
-            const nextAccessToken = payload?.accessToken || payload?.token || null;
+            const nextAccessToken =
+              payload?.accessToken || payload?.token || null;
             const nextRefreshToken =
               payload?.refreshToken || payload?.refresh_token || refreshToken;
 

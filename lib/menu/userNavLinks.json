@@ -5,6 +5,11 @@
     "access": "view-own-learnings"
   },
   {
+    "name": "My Orders",
+    "link": "/my-orders",
+    "access": "view-own-learnings"
+  },
+  {
     "name": "Edit Profile",
     "link": "/profile/basic-information",
     "access": ["*"]

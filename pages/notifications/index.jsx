@@ -2,6 +2,7 @@ import BaseApi from "@/lib/api/_base.api";
 import Select from "@/components/forms/Select";
 import { Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/router";
 
 const TYPE_OPTIONS = [
   { label: "All Types", value: "ALL" },
@@ -54,6 +55,7 @@ function notificationTypeLabel(notification) {
 }
 
 export default function NotificationsPage() {
+  const router = useRouter();
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [type, setType] = useState("ALL");
@@ -130,6 +132,26 @@ export default function NotificationsPage() {
     for (let i = start; i <= end; i += 1) pages.push(i);
     return pages;
   }, [currentPage, totalPages]);
+
+  const handleNotificationOpen = async (notification) => {
+    if (!notification?.id) return;
+    if (!notification?.readAt) {
+      try {
+        await BaseApi.post(
+          `${process.env.NEXT_PUBLIC_API_URL}/notifications/${notification.id}/read`,
+        );
+        setNotifications((prev) =>
+          prev.map((item) =>
+            item.id === notification.id
+              ? { ...item, readAt: new Date().toISOString() }
+              : item,
+          ),
+        );
+      } catch (_error) {}
+    }
+
+    router.push(`/notifications/${notification.id}`);
+  };
 
   return (
     <main className="mt-16 px-4 pt-4 max-w-4xl mx-auto">
@@ -215,11 +237,12 @@ export default function NotificationsPage() {
           notifications.map((notification) => (
             <article
               key={notification.id}
+              onClick={() => handleNotificationOpen(notification)}
               className={`relative border rounded-lg p-4 transition-colors ${
                 notification?.readAt
                   ? "border-[#e2e8f0] bg-white"
                   : "border-blue-100 bg-blue-50/50"
-              }`}
+              } cursor-pointer`}
             >
               {!notification?.readAt ? (
                 <span className="absolute top-4 right-4 w-2.5 h-2.5 rounded-full bg-primary" />

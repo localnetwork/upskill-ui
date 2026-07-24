@@ -9,12 +9,7 @@ import UserNav from "../entities/user/UserNav";
 import UserResendNotif from "../entities/user/UserResendNotif";
 import UserNotifications from "../entities/user/UserNotifications";
 import Image from "next/image";
-import {
-  Bell,
-  ChevronDown,
-  Search,
-  ShoppingCart,
-} from "lucide-react";
+import { Bell, ChevronDown, Search, ShoppingCart } from "lucide-react";
 import ExploreDropdown from "../dropdowns/ExploreDropdown";
 import BaseApi from "@/lib/api/_base.api";
 import { io } from "socket.io-client";
@@ -56,7 +51,9 @@ export default function Header() {
       const response = await BaseApi.get(
         `${process.env.NEXT_PUBLIC_API_URL}/notifications?limit=8&page=1`,
       );
-      const rows = Array.isArray(response?.data?.data) ? response.data.data : [];
+      const rows = Array.isArray(response?.data?.data)
+        ? response.data.data
+        : [];
       setNotifications(rows);
       setUnreadCount(rows.filter((item) => !item.readAt).length);
     } catch (_error) {}
@@ -138,6 +135,7 @@ export default function Header() {
         );
       } catch (_error) {}
     }
+    setIsNotificationOpen(false);
     refreshNotifications();
   };
 
@@ -200,13 +198,13 @@ export default function Header() {
                   >
                     <Bell />
                     {unreadCount > 0 ? (
-                      <span className="absolute -top-2 -right-2 min-w-[18px] h-[18px] px-1 rounded-full bg-red-600 text-white text-[10px] font-bold flex items-center justify-center">
+                      <span className="absolute border-[2px] border-white -top-2 -right-2 w-[20px] h-[20px] px-1 rounded-full bg-red-600 text-white text-[10px] font-bold flex items-center justify-center">
                         {unreadCount > 9 ? "9+" : unreadCount}
                       </span>
                     ) : null}
                   </button>
                   {isNotificationOpen && (
-                    <div className="absolute right-0 mt-4 w-[330px] bg-white rounded shadow-lg z-50 p-3 max-h-[420px] overflow-y-auto">
+                    <div className="absolute border border-[#f3f3f3] right-0 mt-4 w-[330px] bg-white rounded-lg shadow-[0rem_0.125rem_1rem_rgba(0,0,0,0.15)] z-50 p-3 max-h-[420px] overflow-y-auto">
                       <UserNotifications
                         notifications={notifications}
                         unreadCount={unreadCount}

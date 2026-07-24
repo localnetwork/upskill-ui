@@ -129,11 +129,7 @@ export default function CourseOverview({ lecture, course }) {
 
       {/*  */}
 
-      <div
-        hidden
-        ref={containerRef}
-        className="py-[50px] px-[100px] overflow-hidden"
-      >
+      <div ref={containerRef} hidden className="py-[50px] overflow-hidden">
         <h2 className="text-[25px]">{subtitle}</h2>
 
         {/* Ratings */}

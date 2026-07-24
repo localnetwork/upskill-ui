@@ -1,5 +1,6 @@
 import BaseApi from "@/lib/api/_base.api";
 import modalState from "@/lib/store/modalState";
+import persistentStore from "@/lib/store/persistentStore";
 import { Star, ThumbsUp } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
@@ -47,6 +48,7 @@ function getEligibilityMessage(eligibility) {
 }
 
 export default function CourseReviews({ courseId }) {
+  const profile = persistentStore((state) => state.profile);
   const [sort, setSort] = useState("recent");
   const [reviews, setReviews] = useState([]);
   const [summary, setSummary] = useState({
@@ -57,13 +59,20 @@ export default function CourseReviews({ courseId }) {
   const [eligibility, setEligibility] = useState(null);
   const [loading, setLoading] = useState(false);
   const [likingReviewIds, setLikingReviewIds] = useState([]);
+  const [replyingReviewIds, setReplyingReviewIds] = useState([]);
+  const [replyDrafts, setReplyDrafts] = useState({});
 
   const normalizeReview = (review) => ({
     ...review,
     likesCount: Number(review?.likesCount || 0),
     likedByMe: Boolean(review?.likedByMe),
     canLike: Boolean(review?.canLike),
+    canReply: Boolean(review?.canReply),
+    authorReply: String(review?.authorReply || ""),
+    authorReplyAt: review?.authorReplyAt || null,
   });
+
+  const currentUserId = profile?.id || null;
 
   const fetchReviews = async () => {
     if (!courseId) return;
@@ -157,6 +166,48 @@ export default function CourseReviews({ courseId }) {
     });
   };
 
+  const getReplyDraftValue = (review) => {
+    const draft = replyDrafts?.[review.id];
+    if (typeof draft === "string") return draft;
+    return String(review?.authorReply || "");
+  };
+
+  const setReplyDraftValue = (reviewId, value) => {
+    setReplyDrafts((prev) => ({
+      ...prev,
+      [reviewId]: value,
+    }));
+  };
+
+  const handleSubmitReply = async (review) => {
+    if (!review?.id || !review?.canReply || !currentUserId) return;
+    if (replyingReviewIds.includes(review.id)) return;
+
+    const authorReply = String(getReplyDraftValue(review) || "").trim();
+    if (!authorReply) {
+      toast.error("Reply is required.");
+      return;
+    }
+
+    setReplyingReviewIds((prev) => [...prev, review.id]);
+    try {
+      const response = await BaseApi.post(
+        `${process.env.NEXT_PUBLIC_API_URL}/reviews/${encodeURIComponent(review.id)}/reply`,
+        { authorReply },
+      );
+      const updated = normalizeReview(response?.data?.data || {});
+      setReviews((prev) =>
+        prev.map((row) => (row.id === review.id ? { ...row, ...updated } : row)),
+      );
+      setReplyDraftValue(review.id, updated.authorReply || authorReply);
+      toast.success("Reply saved.");
+    } catch (error) {
+      toast.error(error?.data?.message || "Unable to save reply.");
+    } finally {
+      setReplyingReviewIds((prev) => prev.filter((id) => id !== review.id));
+    }
+  };
+
   const handleToggleLike = async (reviewId) => {
     if (!reviewId) return;
     if (likingReviewIds.includes(reviewId)) return;
@@ -184,6 +235,10 @@ export default function CourseReviews({ courseId }) {
         };
       }),
     );
+    if (!canToggle) {
+      toast.error("Only other enrolled students of this course can like this review.");
+      return;
+    }
 
     setLikingReviewIds((prev) => [...prev, reviewId]);
     try {
@@ -366,6 +421,41 @@ export default function CourseReviews({ courseId }) {
                 <p className="text-slate-600 mt-2 whitespace-pre-wrap">
                   {review?.comment || "No written comment."}
                 </p>
+                {review?.authorReply ? (
+                  <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#0056D2] text-xs font-bold text-white">
+                          {String(
+                            review?.courseAuthor?.fullName ||
+                              review?.courseAuthor?.username ||
+                              "A",
+                          )
+                            .charAt(0)
+                            .toUpperCase()}
+                        </span>
+                        <div>
+                          <p className="text-xs font-semibold text-slate-800">
+                            {review?.courseAuthor?.fullName ||
+                              review?.courseAuthor?.username ||
+                              "Course author"}
+                          </p>
+                        </div>
+                      </div>
+                      <span className="rounded-full bg-[#DBEAFE] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#1D4ED8]">
+                        Author
+                      </span>
+                    </div>
+                    <p className="mt-1 text-sm text-slate-700 whitespace-pre-wrap">
+                      {review.authorReply}
+                    </p>
+                    {review?.authorReplyAt ? (
+                      <p className="mt-1 text-xs text-slate-500">
+                        {formatDate(review.authorReplyAt)}
+                      </p>
+                    ) : null}
+                  </div>
+                ) : null}
                 <div className="mt-4">
                   <button
                     type="button"
@@ -388,6 +478,36 @@ export default function CourseReviews({ courseId }) {
                     Helpful ({Number(review?.likesCount || 0)})
                   </button>
                 </div>
+                {review?.canReply ? (
+                  <div className="mt-4 space-y-2">
+                    <label className="text-xs font-semibold text-slate-700">
+                      Reply as author
+                    </label>
+                    <textarea
+                      value={getReplyDraftValue(review)}
+                      onChange={(event) =>
+                        setReplyDraftValue(review.id, event.target.value)
+                      }
+                      rows={3}
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                      placeholder="Write a reply to this learner review"
+                    />
+                    <div className="flex justify-end">
+                      <button
+                        type="button"
+                        onClick={() => handleSubmitReply(review)}
+                        disabled={replyingReviewIds.includes(review.id)}
+                        className="rounded-lg bg-[#0056D2] px-3 py-2 text-xs font-semibold text-white disabled:opacity-60"
+                      >
+                        {replyingReviewIds.includes(review.id)
+                          ? "Saving..."
+                          : review?.authorReply
+                            ? "Update reply"
+                            : "Reply"}
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
               </div>
             ))}
           </div>
