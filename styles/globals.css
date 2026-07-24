@@ -30,6 +30,10 @@ p:not(:last-of-type) {
   font-family: "Playfair Display", serif;
 }
 
+.border-outline {
+  @apply border-[#e2e8f0];
+}
+
 /* inter-300 - latin */
 @font-face {
   font-display: swap; /* Check https://developer.mozilla.org/en-US/docs/Web/CSS/@font-face/font-display for other options. */

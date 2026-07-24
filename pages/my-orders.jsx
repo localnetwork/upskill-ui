@@ -1,5 +1,15 @@
 import ORDERAPI from "@/lib/api/orders/request";
-import { ChevronDown, Search } from "lucide-react";
+import Image from "next/image";
+import {
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ImageOff,
+  Info,
+  Search,
+  ShoppingBag,
+  XCircle,
+} from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 const DEFAULT_STATUS_OPTIONS = [
@@ -46,6 +56,73 @@ function toStatusLabel(status) {
     .replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
+function getOrderItems(order) {
+  if (Array.isArray(order?.items)) return order.items;
+  if (Array.isArray(order?.orderItems)) return order.orderItems;
+  if (Array.isArray(order?.courses)) return order.courses;
+  return [];
+}
+
+function getCourseImage(item) {
+  return (
+    item?.course?.cover_image?.path ||
+    item?.course?.media?.[0]?.storagePath ||
+    item?.cover_image?.path ||
+    item?.image ||
+    "/placeholder-cover.webp"
+  );
+}
+
+function getCourseTitle(item) {
+  return item?.course?.title || item?.title || "Course";
+}
+
+function getCourseInstructor(item) {
+  const educator = item?.course?.educator || {};
+  const authorData = item?.course?.author?.data || {};
+  const fullName =
+    `${educator?.firstName || authorData?.firstname || ""} ${educator?.lastName || authorData?.lastname || ""}`.trim();
+  return fullName || educator?.username || "Instructor";
+}
+
+function getOrderId(order) {
+  return String(order?.id || order?.orderId || order?.providerOrderId || "");
+}
+
+function getOrderStatus(order) {
+  return String(order?.status || order?.state || "CREATED").toUpperCase();
+}
+
+function getOrderDate(order) {
+  return (
+    order?.createdAt ||
+    order?.created_at ||
+    order?.orderDate ||
+    order?.updatedAt ||
+    order?.updated_at ||
+    null
+  );
+}
+
+function getOrderTotal(order, items = []) {
+  const orderTotal =
+    order?.totalAmount || order?.total || order?.amount || order?.subtotal;
+  if (orderTotal != null) return orderTotal;
+  return items.reduce(
+    (sum, item) => sum + Number(item?.totalAmount || item?.price || 0),
+    0,
+  );
+}
+
+function getStatusBadgeClass(status) {
+  const value = String(status).toUpperCase();
+  if (value === "PAID") return "bg-emerald-100 text-emerald-700";
+  if (value === "FAILED") return "bg-red-100 text-red-700";
+  if (value === "REFUNDED") return "bg-purple-100 text-purple-700";
+  if (value === "CANCELLED") return "bg-slate-100 text-slate-500";
+  return "bg-amber-100 text-amber-700";
+}
+
 export default function MyOrdersPage() {
   const [rows, setRows] = useState([]);
   const [authors, setAuthors] = useState([]);
@@ -70,6 +147,7 @@ export default function MyOrdersPage() {
       setPage(1);
       setSearch(searchInput.trim());
     }, 300);
+
     return () => clearTimeout(timer);
   }, [searchInput]);
 
@@ -88,14 +166,21 @@ export default function MyOrdersPage() {
         const payload = response?.data || {};
         const data = Array.isArray(payload?.data) ? payload.data : [];
         setRows(data);
-        setAuthors(Array.isArray(payload?.filters?.authors) ? payload.filters.authors : []);
+        setAuthors(
+          Array.isArray(payload?.filters?.authors)
+            ? payload.filters.authors
+            : [],
+        );
 
         const rawMeta = payload?.pagination || payload?.meta || {};
         setPagination((prev) => ({
           page: Number(rawMeta.page || 1),
           limit: Number(rawMeta.limit || prev.limit || 10),
           total: Number(rawMeta.total || 0),
-          totalPages: Math.max(1, Number(rawMeta.totalPages || rawMeta.total_pages || 1)),
+          totalPages: Math.max(
+            1,
+            Number(rawMeta.totalPages || rawMeta.total_pages || 1),
+          ),
         }));
       } catch (_error) {
         setRows([]);
@@ -107,13 +192,32 @@ export default function MyOrdersPage() {
     fetchOrders();
   }, [page, sort, search, status, authorId]);
 
+  useEffect(() => {
+    if (!rows.length) {
+      setExpandedOrderIds([]);
+      return;
+    }
+
+    setExpandedOrderIds((prev) => {
+      const existing = prev.filter((id) =>
+        rows.some((order) => getOrderId(order) === id),
+      );
+      if (existing.length) return existing;
+      return [getOrderId(rows[0])];
+    });
+  }, [rows]);
+
   const statusOptions = useMemo(() => DEFAULT_STATUS_OPTIONS, []);
   const authorOptions = useMemo(
     () => [{ id: "ALL", name: "All Authors" }, ...authors],
     [authors],
   );
+  const sortOptions = useMemo(() => SORT_OPTIONS, []);
 
-  const currentPage = Math.min(Math.max(1, pagination.page), Math.max(1, pagination.totalPages));
+  const currentPage = Math.min(
+    Math.max(1, pagination.page),
+    Math.max(1, pagination.totalPages),
+  );
   const totalPages = Math.max(1, pagination.totalPages);
   const visiblePages = useMemo(() => {
     const spread = 2;
@@ -132,195 +236,285 @@ export default function MyOrdersPage() {
     );
   };
 
+  const totalOrders = Number(pagination.total || rows.length || 0);
+  const startItem = totalOrders ? (currentPage - 1) * pagination.limit + 1 : 0;
+  const endItem = totalOrders
+    ? Math.min(currentPage * pagination.limit, totalOrders)
+    : 0;
+
   return (
-    <main className="mt-16 px-4 pt-4 max-w-5xl mx-auto">
-      <h1 className="text-3xl font-bold text-secondary mb-2">My Orders</h1>
-      <p className="text-[#64748b] mb-6">
-        View your purchases. Expand an order to see purchased courses.
-      </p>
+    <main
+      className="min-h-[884px] max-w-7xl mx-auto px-8 py-16"
+      data-stitch-vh="min-h-[884px]===min-h-screen"
+    >
+      {/* Hero Header */}
+      <header className="mb-12 relative">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div>
+            <span className="font-bold text-xs uppercase tracking-[0.2em] text-on-surface-variant/60 block mb-4">
+              Purchase History
+            </span>
 
-      <div className="relative w-full mb-4">
-        <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-          <Search className="text-[#6b7280]" />
-        </div>
-        <input
-          className="w-full h-12 pl-12 pr-4 bg-[#F8FAFC] rounded-full text-[#475569] placeholder:text-[#94a3b8] focus:ring-2 focus:ring-[#6b7280]/20 transition-all"
-          placeholder="Search by order ID or course title..."
-          type="text"
-          value={searchInput}
-          onChange={(e) => setSearchInput(e.target.value)}
-        />
-      </div>
+            <h1 className="text-6xl font-extrabold tracking-tight text-on-background mb-4">
+              My Orders
+            </h1>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
-        <select
-          className="border border-[#e2e8f0] rounded-lg px-3 py-2"
-          value={authorId}
-          onChange={(e) => {
-            setPage(1);
-            setAuthorId(e.target.value);
-          }}
-        >
-          {authorOptions.map((option) => (
-            <option key={option.id} value={option.id}>
-              {option.name}
-            </option>
-          ))}
-        </select>
-
-        <select
-          className="border border-[#e2e8f0] rounded-lg px-3 py-2"
-          value={status}
-          onChange={(e) => {
-            setPage(1);
-            setStatus(e.target.value);
-          }}
-        >
-          {statusOptions.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-
-        <select
-          className="border border-[#e2e8f0] rounded-lg px-3 py-2"
-          value={sort}
-          onChange={(e) => {
-            setPage(1);
-            setSort(e.target.value);
-          }}
-        >
-          {SORT_OPTIONS.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div className="space-y-3">
-        {isLoading ? (
-          Array.from({ length: 5 }).map((_, index) => (
-            <div
-              key={`order-loading-${index}`}
-              className="border border-[#e2e8f0] rounded-lg p-4 animate-pulse"
-            >
-              <div className="h-4 w-52 bg-gray-200 rounded mb-2" />
-              <div className="h-3 w-40 bg-gray-200 rounded mb-2" />
-              <div className="h-3 w-64 bg-gray-200 rounded" />
-            </div>
-          ))
-        ) : rows.length === 0 ? (
-          <div className="border border-[#e2e8f0] rounded-lg p-10 text-center text-[#64748b]">
-            No orders found.
+            <p className="text-lg text-on-surface-variant max-w-2xl">
+              Manage your learning journey. Review past transactions, download
+              invoices, and access your purchased premium courses.
+            </p>
           </div>
-        ) : (
-          rows.map((order) => {
-            const isExpanded = expandedOrderIds.includes(order.id);
-            const totalItems = Array.isArray(order.items) ? order.items.length : 0;
+        </div>
+
+        {/* Filter Bar */}
+        <div className="mt-12 bg-[#f8fafc] p-2 rounded-2xl flex flex-wrap gap-2 items-center border border-[#e2e8f0]/50">
+          <div className="flex-1 min-w-[200px] relative px-4 py-2 bg-white rounded-xl border border-outline flex items-center gap-3">
+            <Search size={18} className="text-slate-400" />
+
+            <input
+              type="text"
+              placeholder="Search by order ID or course title..."
+              className="w-full border-none p-0 text-sm focus:ring-0 placeholder:text-slate-400"
+              value={searchInput}
+              onChange={(event) => setSearchInput(event.target.value)}
+            />
+          </div>
+
+          <select
+            className="bg-white border border-outline text-sm rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+            value={status}
+            onChange={(event) => {
+              setPage(1);
+              setStatus(event.target.value);
+            }}
+          >
+            {statusOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+
+          <select
+            className="bg-white border border-outline text-sm rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+            value={authorId}
+            onChange={(event) => {
+              setPage(1);
+              setAuthorId(event.target.value);
+            }}
+          >
+            {authorOptions.map((option) => (
+              <option key={option.id} value={option.id}>
+                {option.name}
+              </option>
+            ))}
+          </select>
+
+          <select
+            className="bg-white border border-outline text-sm rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+            value={sort}
+            onChange={(event) => {
+              setPage(1);
+              setSort(event.target.value);
+            }}
+          >
+            {sortOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      </header>
+
+      <div className="space-y-4">
+        {isLoading ? (
+          <div className="border border-outline rounded-2xl bg-white p-10 text-center text-on-surface-variant">
+            Loading orders...
+          </div>
+        ) : rows.length ? (
+          rows.map((order, index) => {
+            const orderId = getOrderId(order) || `order-${index + 1}`;
+            const orderStatus = getOrderStatus(order);
+            const orderItems = getOrderItems(order);
+            const orderTotal = getOrderTotal(order, orderItems);
+            const isExpanded = expandedOrderIds.includes(orderId);
+            const isCancelled = ["CANCELLED", "FAILED"].includes(orderStatus);
 
             return (
-              <article
-                key={order.id}
-                className="border border-[#e2e8f0] rounded-lg bg-white overflow-hidden"
+              <div
+                key={orderId}
+                className={`group border border-outline rounded-2xl bg-white overflow-hidden transition-all duration-300 hover:border-primary/30 ${isExpanded ? "accordion-active" : ""}`}
+                id={orderId}
               >
-                <button
-                  type="button"
-                  onClick={() => toggleExpanded(order.id)}
-                  className="w-full text-left p-4 hover:bg-[#f8fafc] transition-colors"
+                <div
+                  className="p-6 cursor-pointer flex items-center justify-between transition-colors hover:bg-[#f8fafc]"
+                  onClick={() => toggleExpanded(orderId)}
                 >
-                  <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-6">
+                    <div
+                      className={`w-12 h-12 rounded-xl ${isCancelled ? "bg-slate-100" : "bg-primary-container"} flex items-center justify-center`}
+                    >
+                      {isCancelled ? (
+                        <XCircle size={22} className="text-slate-400" />
+                      ) : (
+                        <ShoppingBag size={22} className="text-primary" />
+                      )}
+                    </div>
+
                     <div>
-                      <h2 className="font-bold text-[16px] text-on-surface">
-                        Order #{order.id}
-                      </h2>
-                      <p className="text-[13px] text-[#64748b] mt-1">
-                        {formatDate(order.createdAt)} • {toStatusLabel(order.status)} •{" "}
-                        {totalItems} {totalItems === 1 ? "course" : "courses"}
+                      <div className="flex items-center gap-3 mb-1">
+                        <h3 className="font-bold text-lg">Order #{orderId}</h3>
+
+                        <span
+                          className={`${getStatusBadgeClass(orderStatus)} px-3 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider`}
+                        >
+                          {toStatusLabel(orderStatus)}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-4 text-sm text-on-surface-variant font-medium">
+                        <span>{formatDate(getOrderDate(order))}</span>
+
+                        <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+
+                        <span>
+                          {orderItems.length}{" "}
+                          {orderItems.length === 1 ? "Course" : "Courses"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-12">
+                    <div className="text-right">
+                      <p className="text-xs font-bold text-on-surface-variant/60 uppercase tracking-widest mb-0.5">
+                        Total Amount
                       </p>
-                      <p className="text-[14px] text-[#334155] mt-1">
-                        Total: {formatMoney(order.totalAmount, order.currency)}
+
+                      <p className="text-xl font-extrabold text-on-background">
+                        {formatMoney(orderTotal, order?.currency || "PHP")}
                       </p>
                     </div>
+
                     <ChevronDown
-                      className={`mt-1 transition-transform ${isExpanded ? "rotate-180" : ""}`}
-                      size={18}
+                      size={20}
+                      className={`text-slate-400 accordion-icon transition-transform duration-300 ${isExpanded ? "rotate-180" : ""}`}
                     />
                   </div>
-                </button>
+                </div>
 
                 {isExpanded ? (
-                  <div className="border-t border-[#e2e8f0] p-4 bg-[#fcfdff]">
-                    {totalItems === 0 ? (
-                      <p className="text-sm text-[#64748b]">No courses found in this order.</p>
-                    ) : (
-                      <ul className="space-y-3">
-                        {order.items.map((item) => {
-                          const course = item.course || {};
-                          const authorName = `${course?.educator?.firstName || ""} ${course?.educator?.lastName || ""}`.trim() || course?.educator?.username || "Unknown author";
-                          return (
-                            <li
-                              key={item.id}
-                              className="border border-[#e2e8f0] rounded-lg p-3 bg-white"
-                            >
-                              <p className="font-semibold text-[15px] text-on-surface">
-                                {course.title || "Untitled course"}
+                  <div className="accordion-content bg-slate-50/50 border-t border-slate-100">
+                    <div className="p-6 space-y-4">
+                      {orderItems.map((item, itemIndex) => {
+                        const courseImage = getCourseImage(item);
+                        const title = getCourseTitle(item);
+
+                        return (
+                          <div
+                            key={`${orderId}-item-${item?.id || itemIndex}`}
+                            className={`flex items-center gap-6 p-4 rounded-xl border border-[#e2e8f099]/60 transition-all ${isCancelled ? "bg-white/60 grayscale opacity-60" : "bg-white group/item hover:shadow-md"}`}
+                          >
+                            <div className="w-32 h-20 rounded-lg overflow-hidden flex-shrink-0 bg-slate-100 relative">
+                              {courseImage === "/placeholder-cover.webp" ? (
+                                <div className="w-full h-full flex items-center justify-center text-slate-400">
+                                  <ImageOff size={20} />
+                                </div>
+                              ) : (
+                                <Image
+                                  src={courseImage}
+                                  alt={title}
+                                  fill
+                                  className="w-full h-full object-cover group-hover/item:scale-110 transition-transform duration-500"
+                                />
+                              )}
+                            </div>
+
+                            <div className="flex-1">
+                              <h4 className="font-bold text-on-background text-lg group-hover/item:text-primary transition-colors">
+                                {title}
+                              </h4>
+
+                              <p className="text-sm text-on-surface-variant font-medium">
+                                Instructor: {getCourseInstructor(item)}
                               </p>
-                              <p className="text-xs text-[#64748b] mt-1">
-                                Author: {authorName}
-                              </p>
-                              <p className="text-xs text-[#64748b] mt-1">
-                                Price: {formatMoney(item.totalAmount, order.currency)}
-                              </p>
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    )}
+                            </div>
+
+                            <div className="text-right">
+                              <span className="text-lg font-bold text-on-background">
+                                {formatMoney(
+                                  item?.totalAmount || item?.price || 0,
+                                  order?.currency || "PHP",
+                                )}
+                              </span>
+
+                              {isCancelled ? (
+                                <p className="text-[10px] text-red-500 font-bold uppercase mt-1">
+                                  Transaction Void
+                                </p>
+                              ) : null}
+                            </div>
+                          </div>
+                        );
+                      })}
+
+                      {isCancelled ? (
+                        <div className="p-4 bg-red-50 rounded-xl flex items-center gap-4 border border-red-100">
+                          <Info size={18} className="text-red-500" />
+
+                          <p className="text-sm text-red-700 font-medium">
+                            This order was cancelled by the user. If you believe
+                            this was an error, please contact our support.
+                          </p>
+                        </div>
+                      ) : null}
+                    </div>
                   </div>
                 ) : null}
-              </article>
+              </div>
             );
           })
+        ) : (
+          <div className="border border-outline rounded-2xl bg-white p-10 text-center text-on-surface-variant">
+            No orders found.
+          </div>
         )}
       </div>
 
-      <div className="mt-8 mb-10 flex flex-col md:flex-row items-center justify-between gap-4">
-        <p className="text-sm text-[#64748b]">
-          Showing {rows.length} of {pagination.total} orders
+      {/* Pagination / Footer Stats */}
+      <div className="mt-12 flex flex-col md:flex-row justify-between items-center gap-6 pt-8 border-t border-[#e2e8f0]/50">
+        <p className="text-sm text-on-surface-variant font-medium">
+          Showing {startItem} - {endItem} of {totalOrders} orders
         </p>
-        {totalPages > 1 ? (
-          <div className="flex items-center gap-2">
+
+        <div className="flex items-center gap-2">
+          <button
+            disabled={currentPage <= 1 || isLoading}
+            onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+            className="w-10 h-10 rounded-full flex items-center justify-center border border-outline text-slate-400 hover:bg-slate-50 transition-colors disabled:opacity-30"
+          >
+            <ChevronLeft size={18} />
+          </button>
+
+          {visiblePages.map((itemPage) => (
             <button
-              className="px-3 py-2 rounded-md border border-[#e2e8f0] disabled:opacity-50"
-              onClick={() => setPage((prev) => Math.max(1, prev - 1))}
-              disabled={currentPage <= 1}
+              key={`page-${itemPage}`}
+              onClick={() => setPage(itemPage)}
+              className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition-colors ${itemPage === currentPage ? "bg-primary text-on-primary shadow-sm" : "border border-outline text-slate-600 hover:bg-slate-50"}`}
             >
-              Prev
+              {itemPage}
             </button>
-            {visiblePages.map((pageNumber) => (
-              <button
-                key={pageNumber}
-                className={`w-10 h-10 rounded-full font-bold ${
-                  pageNumber === currentPage
-                    ? "bg-primary text-white"
-                    : "bg-white border border-[#e2e8f0]"
-                }`}
-                onClick={() => setPage(pageNumber)}
-              >
-                {pageNumber}
-              </button>
-            ))}
-            <button
-              className="px-3 py-2 rounded-md border border-[#e2e8f0] disabled:opacity-50"
-              onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
-              disabled={currentPage >= totalPages}
-            >
-              Next
-            </button>
-          </div>
-        ) : null}
+          ))}
+
+          <button
+            disabled={currentPage >= totalPages || isLoading}
+            onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
+            className="w-10 h-10 rounded-full flex items-center justify-center border border-outline text-slate-600 hover:bg-slate-50 transition-colors disabled:opacity-30"
+          >
+            <ChevronRight size={18} />
+          </button>
+        </div>
       </div>
     </main>
   );

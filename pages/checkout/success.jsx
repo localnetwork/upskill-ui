@@ -74,16 +74,30 @@ export default function Page({ data = null, statusState = "PENDING" }) {
       ),
     [router?.query?.token, router?.query?.orderId, router?.query?.order_id],
   );
+  const providerOrderId = useMemo(() => {
+    const fromQuery = String(token || "").trim();
+    if (fromQuery) return fromQuery;
+
+    const asPath = String(router?.asPath || "");
+    const basePath = asPath.split("?")[0] || "";
+    const parts = basePath.split("/").filter(Boolean);
+    const last = parts.length ? parts[parts.length - 1] : "";
+    return decodeURIComponent(String(last || "").trim());
+  }, [token, router?.asPath]);
 
   const order = checkoutData?.order;
 
   const orderLines = order?.items || [];
   const state = checkoutData?.state || checkoutState;
   const approvalUrl = checkoutData?.approvalUrl || null;
+  const orderStatus = String(checkoutData?.orderStatus || "").toUpperCase();
   const paypalStatus = String(checkoutData?.paypalStatus || "").toUpperCase();
   const isPaid = state === "PAID";
   const isInvalid = state === "INVALID";
   const isFailed = state === "FAILED";
+  const isCancelled =
+    orderStatus === "CANCELLED" ||
+    ["CANCELLED", "VOIDED", "EXPIRED", "DECLINED"].includes(paypalStatus);
   const isPending = !isPaid && !isInvalid && !isFailed;
   const isUnpaidOrder = isPending && paypalStatus === "CREATED";
   const canCancelCheckout = Boolean(
@@ -104,10 +118,10 @@ export default function Page({ data = null, statusState = "PENDING" }) {
   };
 
   const fetchStatus = async () => {
-    if (!token) return;
+    if (!providerOrderId) return;
     try {
       const response = await BaseApi.get(
-        `${process.env.NEXT_PUBLIC_API_URL}/checkout/status/${encodeURIComponent(token)}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/checkout/status/${encodeURIComponent(providerOrderId)}`,
       );
       const nextData = response?.data?.data || null;
 
@@ -138,9 +152,16 @@ export default function Page({ data = null, statusState = "PENDING" }) {
   };
 
   const handleCancelCheckoutOrder = async () => {
-    if (!token || !canCancelCheckout || isCancellingOrder) return;
+    if (!providerOrderId || !canCancelCheckout || isCancellingOrder) return;
     setIsCancellingOrder(true);
-    router.push(`/checkout/cancel?token=${encodeURIComponent(token)}`);
+    try {
+      await BaseApi.post(`${process.env.NEXT_PUBLIC_API_URL}/checkout/cancel`, {
+        providerOrderId,
+      });
+      await fetchStatus();
+    } finally {
+      setIsCancellingOrder(false);
+    }
   };
 
   useEffect(() => {
@@ -150,13 +171,13 @@ export default function Page({ data = null, statusState = "PENDING" }) {
 
   useEffect(() => {
     if (!router.isReady) return;
-    if (!token) {
+    if (!providerOrderId) {
       setCheckoutData(null);
       setCheckoutState("INVALID");
       return;
     }
     if (router.pathname === "/checkout/success") {
-      router.replace(`/checkout/payments/${encodeURIComponent(token)}`);
+      router.replace(`/checkout/payments/${encodeURIComponent(providerOrderId)}`);
       return;
     }
     fetchStatus();
@@ -174,8 +195,9 @@ export default function Page({ data = null, statusState = "PENDING" }) {
     });
 
     const onCheckoutStatus = (payload = {}) => {
-      const matchesProviderOrderId = String(payload?.providerOrderId || "") === token;
-      const matchesOrderId = String(payload?.orderId || "") === token;
+      const matchesProviderOrderId =
+        String(payload?.providerOrderId || "") === providerOrderId;
+      const matchesOrderId = String(payload?.orderId || "") === providerOrderId;
       if (!matchesProviderOrderId && !matchesOrderId) return;
       fetchStatus();
     };
@@ -186,7 +208,7 @@ export default function Page({ data = null, statusState = "PENDING" }) {
       socket.off("checkout:status", onCheckoutStatus);
       socket.disconnect();
     };
-  }, [router, router.isReady, token]);
+  }, [router, router.isReady, providerOrderId]);
 
   return (
     <div className="py-[50px] flex flex-col justify-center items-center bg-[#F6F6F6] min-h-[calc(100vh-100px)]">
@@ -202,7 +224,9 @@ export default function Page({ data = null, statusState = "PENDING" }) {
           ? "Thank you for your purchase!"
           : isInvalid
             ? "Invalid checkout token"
-            : isFailed
+            : isCancelled
+              ? "Order cancelled"
+              : isFailed
               ? "Payment was not completed"
               : isUnpaidOrder
                 ? "Payment not completed yet"
@@ -291,7 +315,9 @@ export default function Page({ data = null, statusState = "PENDING" }) {
           </>
         ) : (
           <p className="text-[15px] text-gray-600">
-            This transaction could not be verified. Please try again.
+            {isCancelled
+              ? "This order was cancelled and any pending checkout items were returned to your cart."
+              : "This transaction could not be verified. Please try again."}
           </p>
         )}
       </div>
