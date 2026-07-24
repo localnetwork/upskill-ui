@@ -24,6 +24,7 @@ function CourseSectionSkeleton() {
 
 export default function CourseBuilder({ courseId }) {
   const [sections, setSections] = useState([]);
+  const [topics, setTopics] = useState([]);
   const [isSectionsLoading, setIsSectionsLoading] = useState(false);
   const courseManagement = courseStore((state) => state.courseManagement);
   const activeCourseId = courseId || courseManagement?.id;
@@ -36,13 +37,19 @@ export default function CourseBuilder({ courseId }) {
       const fetchId = ++latestFetchId.current;
       try {
         setIsSectionsLoading(true);
-        const response = await BaseApi.get(
-          `${process.env.NEXT_PUBLIC_API_URL}/course-sections/course/${activeCourseId}`,
-        );
+        const [sectionsResponse, topicsResponse] = await Promise.all([
+          BaseApi.get(
+            `${process.env.NEXT_PUBLIC_API_URL}/course-sections/course/${activeCourseId}`,
+          ),
+          BaseApi.get(
+            `${process.env.NEXT_PUBLIC_API_URL}/course-sections/course/${activeCourseId}/topics`,
+          ),
+        ]);
 
         if (latestFetchId.current !== fetchId) return;
 
-        const data = response.data.data || [];
+        const data = sectionsResponse.data.data || [];
+        setTopics(topicsResponse?.data?.data || []);
         setSections(
           data?.map((s) => ({
             ...s,
@@ -67,9 +74,11 @@ export default function CourseBuilder({ courseId }) {
 
     if (activeCourseId) {
       setSections([]);
+      setTopics([]);
       getSections();
     } else {
       setSections([]);
+      setTopics([]);
       setIsSectionsLoading(false);
     }
   }, [activeCourseId]);
@@ -125,6 +134,7 @@ export default function CourseBuilder({ courseId }) {
           <CourseSection
             key={s.tempKey}
             section={s}
+            topics={topics}
             onAddItem={(item) => addItemToSection(s.tempKey, item)}
             onUpdate={(updated) => updateSection(s.tempKey, updated)}
             onDelete={() => deleteSection(s.tempKey)}

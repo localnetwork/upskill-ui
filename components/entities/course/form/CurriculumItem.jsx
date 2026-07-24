@@ -15,9 +15,16 @@ import QuizItem from "./QuizItem";
 import CodingExerciseItem from "./CodingExerciseItem";
 import BaseApi from "@/lib/api/_base.api";
 import Pencil from "@/components/icons/Pencil";
+import TagAutocompleteMultiSelect from "@/components/forms/TagAutocompleteMultiSelect";
 import { Editor } from "@tinymce/tinymce-react";
 
-export default function CurriculumItem({ item, onSave, onUpdate, onDelete }) {
+export default function CurriculumItem({
+  item,
+  topics = [],
+  onSave,
+  onUpdate,
+  onDelete,
+}) {
   const [mode, setMode] = useState(null); // "edit" | "content" | null
   const [title, setTitle] = useState(item.title || "");
   const [description, setDescription] = useState(
@@ -28,6 +35,13 @@ export default function CurriculumItem({ item, onSave, onUpdate, onDelete }) {
   );
   const [error, setError] = useState("");
   const [currentItem, setCurrentItem] = useState(item);
+  const [topicIds, setTopicIds] = useState(
+    Array.isArray(item.topic_ids)
+      ? item.topic_ids.map((topicId) => String(topicId))
+      : item.topic_id
+        ? [String(item.topic_id)]
+        : []
+  );
   const [deleting, setDeleting] = useState(false);
   const [openContentOnSync, setOpenContentOnSync] = useState(false);
 
@@ -48,6 +62,13 @@ export default function CurriculumItem({ item, onSave, onUpdate, onDelete }) {
     setDescription(item.curriculum_description || "");
     setIsPublicPreview(Boolean(item.is_public_preview || item.is_preview));
     setCurrentItem(item);
+    setTopicIds(
+      Array.isArray(item.topic_ids)
+        ? item.topic_ids.map((topicId) => String(topicId))
+        : item.topic_id
+          ? [String(item.topic_id)]
+          : []
+    );
     setError("");
     if (shouldAutoOpenContent) {
       setOpenContentOnSync(false);
@@ -68,6 +89,7 @@ export default function CurriculumItem({ item, onSave, onUpdate, onDelete }) {
       curriculum_type: currentItem.curriculum_type,
       course_section_id: currentItem.section_id,
       is_public_preview: isPublicPreview,
+      topic_ids: topicIds,
     };
 
     try {
@@ -84,7 +106,14 @@ export default function CurriculumItem({ item, onSave, onUpdate, onDelete }) {
 
       setCurrentItem(saved);
       setTitle(saved.title);
-      setDescription(saved.description);
+      setDescription(saved.curriculum_description || saved.description || "");
+      setTopicIds(
+        Array.isArray(saved.topic_ids)
+          ? saved.topic_ids.map((topicId) => String(topicId))
+          : saved.topic_id
+            ? [String(saved.topic_id)]
+            : []
+      );
 
       const shouldOpenContent =
         currentItem.curriculum_type === "lecture" ||
@@ -117,6 +146,7 @@ export default function CurriculumItem({ item, onSave, onUpdate, onDelete }) {
       description: description.trim(),
       curriculum_type: currentItem.curriculum_type,
       is_public_preview: isPublicPreview,
+      topic_ids: topicIds,
     };
 
     try {
@@ -129,7 +159,14 @@ export default function CurriculumItem({ item, onSave, onUpdate, onDelete }) {
 
       setCurrentItem(updated);
       setTitle(updated.title);
-      setDescription(updated.curriculum_description);
+      setDescription(updated.curriculum_description || updated.description || "");
+      setTopicIds(
+        Array.isArray(updated.topic_ids)
+          ? updated.topic_ids.map((topicId) => String(topicId))
+          : updated.topic_id
+            ? [String(updated.topic_id)]
+            : []
+      );
 
       onUpdate?.(updated);
       setMode(null);
@@ -302,6 +339,16 @@ export default function CurriculumItem({ item, onSave, onUpdate, onDelete }) {
             />
             Make this curriculum public preview
           </label>
+
+          <div>
+            <label className="block font-semibold mb-1">Topic</label>
+            <TagAutocompleteMultiSelect
+              options={topics}
+              value={topicIds}
+              onChange={setTopicIds}
+              placeholder="Search topics and press Enter..."
+            />
+          </div>
 
           {error && <p className="text-sm text-red-600">{error}</p>}
 

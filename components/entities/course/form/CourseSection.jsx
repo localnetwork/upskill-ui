@@ -37,6 +37,7 @@ function CurriculumItemSkeleton() {
 
 export default function CourseSection({
   section,
+  topics = [],
   onAddItem,
   onUpdate,
   onDelete,
@@ -183,6 +184,8 @@ export default function CourseSection({
       curriculum_type,
       title: "",
       curriculum_description: "",
+      topic_id: null,
+      topic_ids: [],
       section_id: section.id,
       isNew: true,
     };
@@ -423,6 +426,7 @@ export default function CourseSection({
                         >
                           <CurriculumItem
                             item={it}
+                            topics={topics}
                             onSave={handleItemSave}
                             onUpdate={handleItemUpdate}
                             onDelete={handleItemDelete}
