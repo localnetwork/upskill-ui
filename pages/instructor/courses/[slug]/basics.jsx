@@ -1,8 +1,9 @@
 import CourseManagementLayout from "@/components/partials/CourseManagementLayout";
 import Select from "@/components/forms/Select";
 import InstructorLayout from "@/components/partials/InstructorLayout";
+import SlugField from "@/components/forms/SlugField";
 import BaseApi from "@/lib/api/_base.api";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import courseStore from "@/lib/store/courseStore";
 import dynamic from "next/dynamic";
 import Image from "next/image";
@@ -51,6 +52,7 @@ export default function CourseBasics({ course }) {
   const courseManagement = courseStore((state) => state.courseManagement);
   const [isLoading, setIsLoading] = useState(false);
   const [levels, setLevels] = useState([]);
+  const [languages, setLanguages] = useState([]);
 
   const normalizeLevelValue = (value) => {
     if (!value) return "";
@@ -67,8 +69,10 @@ export default function CourseBasics({ course }) {
 
   const [payload, setPayload] = useState({
     title: courseManagement?.title || course?.title || "",
+    slug: courseManagement?.slug || course?.slug || "",
     description: courseManagement?.description || course?.description || "",
     subtitle: courseManagement?.subtitle || course?.subtitle || "",
+    language: courseManagement?.language || course?.language || "",
     cover_image: courseManagement?.cover_image || course?.cover_image || "",
     promo_video: courseManagement?.promo_video || course?.promo_video || "",
     instructional_level: initialInstructionalLevel,
@@ -80,6 +84,12 @@ export default function CourseBasics({ course }) {
   });
 
   const [errors, setErrors] = useState(null);
+  const [slugStatus, setSlugStatus] = useState({
+    isChecking: false,
+    isAvailable: true,
+    isValid: true,
+    message: "",
+  });
 
   const normalizeMediaId = (value) => {
     if (!value) return "";
@@ -118,12 +128,37 @@ export default function CourseBasics({ course }) {
     setPayload((prev) => ({ ...prev, [name]: value }));
   };
 
+  const checkCourseSlugAvailability = useCallback(
+    async (slugValue) => {
+      const response = await BaseApi.get(
+        `${process.env.NEXT_PUBLIC_API_URL}/courses/slug-availability?slug=${encodeURIComponent(slugValue)}&excludeCourseId=${encodeURIComponent(String(course?.id || course?.uuid || ""))}&nocache=true`,
+      );
+      return { isAvailable: Boolean(response?.data?.data?.isAvailable) };
+    },
+    [course?.id, course?.uuid],
+  );
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!slugStatus.isValid) {
+      toast.error(slugStatus.message || "Slug is invalid.");
+      return;
+    }
+    if (slugStatus.isChecking) {
+      toast.error("Slug availability is still being checked.");
+      return;
+    }
+    if (!slugStatus.isAvailable) {
+      toast.error("Slug already exists.");
+      return;
+    }
+
     setIsLoading(true);
 
     const submitPayload = {
       ...payload,
+      slug: String(payload.slug || "").trim(),
       category_ids: getMergedCategoryIds(payload.category_ids),
       cover_image: normalizeMediaId(payload.cover_image),
       promo_video: normalizeMediaId(payload.promo_video),
@@ -154,24 +189,37 @@ export default function CourseBasics({ course }) {
   };
 
   useEffect(() => {
-    const fetchCourseLevels = async () => {
+    const fetchCourseBasicsOptions = async () => {
       try {
-        const response = await BaseApi.get(
-          `${process.env.NEXT_PUBLIC_API_URL}/course-levels`,
-        );
+        const [levelsRes, languagesRes] = await Promise.all([
+          BaseApi.get(`${process.env.NEXT_PUBLIC_API_URL}/course-levels`),
+          BaseApi.get(`${process.env.NEXT_PUBLIC_API_URL}/languages`),
+        ]);
+
         setLevels(
-          Array.isArray(response?.data)
-            ? response.data
-            : Array.isArray(response?.data?.data)
-              ? response.data.data
+          Array.isArray(levelsRes?.data)
+            ? levelsRes.data
+            : Array.isArray(levelsRes?.data?.data)
+              ? levelsRes.data.data
               : [],
+        );
+
+        const languageRows = Array.isArray(languagesRes?.data?.data)
+          ? languagesRes.data.data
+          : [];
+        setLanguages(
+          languageRows.map((item) => ({
+            value: String(item?.value || item?.label || ""),
+            label: String(item?.label || item?.value || ""),
+          })),
         );
       } catch (_error) {
         setLevels([]);
+        setLanguages([]);
       }
     };
 
-    fetchCourseLevels();
+    fetchCourseBasicsOptions();
   }, []);
 
   useEffect(() => {
@@ -245,6 +293,27 @@ export default function CourseBasics({ course }) {
         </div>
 
         <div>
+          <SlugField
+            label="Course Slug"
+            value={payload.slug}
+            sourceValue={payload.title}
+            placeholder="learn-php-programming-from-scratch"
+            maxLength={150}
+            resetKey={String(course?.id || course?.uuid || "course")}
+            onChange={(slugValue) =>
+              setPayload((prev) => ({ ...prev, slug: slugValue }))
+            }
+            onStatusChange={setSlugStatus}
+            checkAvailability={checkCourseSlugAvailability}
+          />
+          {extractErrors(errors, "slug") && (
+            <p className="text-red-500 text-[12px] mt-1 errrr">
+              {extractErrors(errors, "slug")}
+            </p>
+          )}
+        </div>
+
+        <div>
           <label className="mb-2 block font-normal" htmlFor="subtitle">
             Course Subtitle
           </label>
@@ -294,7 +363,7 @@ export default function CourseBasics({ course }) {
             <TextEditor
               name="description"
               onChange={handleChange}
-              payload={payload}
+              value={payload.description || ""}
               initialValue={
                 courseManagement?.description || course?.description || ""
               }
@@ -337,6 +406,33 @@ export default function CourseBasics({ course }) {
               ))}
               <option value="4">All Levels</option>
             </Select>
+          </div>
+        </div>
+
+        <div>
+          <label className="mb-2 block font-normal" htmlFor="language">
+            Course Language
+          </label>
+          <div className="relative">
+            <Select
+              id="language"
+              name="language"
+              className="border border-[oklch(67.22%_0.0355_279.77deg)] rounded-[5px] p-[10px] w-full"
+              value={payload.language || ""}
+              onChange={handleChange}
+            >
+              <option value="">-- Select language --</option>
+              {languages.map((language) => (
+                <option key={language.value} value={language.value}>
+                  {language.label}
+                </option>
+              ))}
+            </Select>
+            {extractErrors(errors, "language") && (
+              <p className="text-red-500 text-[12px] mt-1 errrr">
+                {extractErrors(errors, "language")}
+              </p>
+            )}
           </div>
         </div>
 

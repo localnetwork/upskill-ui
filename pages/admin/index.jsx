@@ -6,8 +6,10 @@ import Link from "next/link";
 import { Banknote, GraduationCap, ShoppingCart, User } from "lucide-react";
 import AdminUsersManagement from "@/components/entities/admin/AdminUsersManagement";
 import AdminCoursesManagement from "@/components/entities/admin/AdminCoursesManagement";
+import AdminCategoriesManagement from "@/components/entities/admin/AdminCategoriesManagement";
+import AdminTagsManagement from "@/components/entities/admin/AdminTagsManagement";
 
-const ADMIN_TABS = ["overview", "users", "courses", "payouts"];
+const ADMIN_TABS = ["overview", "users", "courses", "categories", "tags", "payouts"];
 
 const normalizeRoleNames = (roles) => {
   if (!Array.isArray(roles)) return [];
@@ -322,7 +324,7 @@ export default function AdminDashboard({ initialTab }) {
             Admin Dashboard
           </h1>
           <p className="mt-2 max-w-2xl text-on-surface-variant">
-            Manage courses, users, and instructor payout requests.
+            Manage users, courses, categories, tags, and instructor payout requests.
           </p>
         </div>
 
@@ -367,6 +369,10 @@ export default function AdminDashboard({ initialTab }) {
       {activeTab === "users" && <AdminUsersManagement />}
 
       {activeTab === "courses" && <AdminCoursesManagement />}
+
+      {activeTab === "categories" && <AdminCategoriesManagement />}
+
+      {activeTab === "tags" && <AdminTagsManagement />}
 
       {activeTab === "payouts" && (
         <div className="space-y-5">

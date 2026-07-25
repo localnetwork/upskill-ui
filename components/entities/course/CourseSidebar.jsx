@@ -213,7 +213,7 @@ export default function CourseSidebar({ course }) {
             >
               {isSubmitting ? "Please wait..." : "Draft this Course"}
             </button>
-          ) : workflowStatus === "DRAFT" ? (
+          ) : ["DRAFT", "REJECTED"].includes(workflowStatus) ? (
             <button
               onClick={handleRequestForReview}
               disabled={isSubmitting}
@@ -221,7 +221,11 @@ export default function CourseSidebar({ course }) {
                 isSubmitting ? "opacity-70 cursor-not-allowed" : ""
               }`}
             >
-              {isSubmitting ? "Please wait..." : "Request for Review"}
+              {isSubmitting
+                ? "Please wait..."
+                : workflowStatus === "REJECTED"
+                  ? "Resubmit for Review"
+                  : "Request for Review"}
             </button>
           ) : workflowStatus === "APPROVED" ? (
             <button

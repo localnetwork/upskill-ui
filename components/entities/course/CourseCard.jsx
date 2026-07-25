@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Check, PlayCircle, SignalMedium, Star } from "lucide-react";
+import { Check, PlayCircle, ShoppingCart, SignalMedium, Star } from "lucide-react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
 import Link from "next/link";
@@ -128,8 +128,11 @@ export default function CourseCard({ course }) {
 
     if (!profile) {
       modalState.setState({
-        loginModalOpen: true,
-        modalInfo: { type: "LOGIN", title: "" },
+        modalInfo: {
+          type: "LOGIN_ADD_TO_CART",
+          title: "",
+          message: "Please log in to add this course to your cart.",
+        },
       });
       return;
     }
@@ -269,9 +272,8 @@ export default function CourseCard({ course }) {
               </span>
             </div>
 
-            {profile?.permissions.includes("view-own-learnings") && (
+            {(!profile || profile?.permissions?.includes("view-own-learnings")) && (
               <div className="text-[14px] flex justify-end items-center max-w-[350px]">
-                {console.log("isEnrolled", isEnrolled)}
                 {isEnrolled ? (
                   <Link
                     href={`/courses/${course.slug}/learn`}
@@ -293,6 +295,7 @@ export default function CourseCard({ course }) {
                         disabled
                         className="opacity-50 border-[2px] hover:text-white text-[#0056D2] border-[#0056D2] flex items-center justify-center gap-[5px] text-center font-semibold px-[20px] py-[5px] rounded-[5px] hover:bg-[#1d6de0]"
                       >
+                        <ShoppingCart className="h-4 w-4" />
                         Adding to cart
                       </span>
                     ) : (
@@ -300,6 +303,7 @@ export default function CourseCard({ course }) {
                         onClick={handleCart}
                         className="border-[2px] hover:text-white text-[#0056D2] border-[#0056D2] flex items-center justify-center gap-[5px] text-center font-semibold px-[20px] py-[5px] rounded-[5px] hover:bg-[#1d6de0]"
                       >
+                        <ShoppingCart className="h-4 w-4" />
                         Add to Cart
                       </button>
                     )}

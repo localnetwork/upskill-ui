@@ -35,6 +35,9 @@ export default function Modal() {
     case "LOGIN":
       Content = <LoginFormModal />;
       break;
+    case "LOGIN_ADD_TO_CART":
+      Content = <LoginFormModal />;
+      break;
     case "ADD_TO_CART":
       Content = <AddToCart />;
       break;

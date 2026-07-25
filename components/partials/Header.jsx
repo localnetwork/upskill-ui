@@ -150,7 +150,7 @@ export default function Header() {
               <Link className="max-w-[180px] mr-5 inline-flex h-auto" href="/">
                 {/* <Logo /> */}
                 <Image
-                  src="/logo.png"
+                  src="/new-logo.png"
                   alt="Upskill Logo"
                   width={150}
                   height={50}

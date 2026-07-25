@@ -1,15 +1,15 @@
 import { useEffect, useRef } from "react";
 import HomeHeroSection from "./sections/HomeHeroSection";
+import CompanyLogosSection from "./sections/CompanyLogosSection";
 import FeaturedCoursesSection from "./sections/FeaturedCoursesSection";
+import PopularSkillsSection from "./sections/PopularSkillsSection";
+import StudentSuccessSection from "./sections/StudentSuccessSection";
 import CategoriesSection from "./sections/CategoriesSection";
-import LearningJourneySection from "./sections/LearningJourneySection";
-import PlatformStatisticsSection from "./sections/PlatformStatisticsSection";
-import InstructorShowcaseSection from "./sections/InstructorShowcaseSection";
-import PricingSection from "./sections/PricingSection";
-import Testimonials from "@/components/blocks/Testimonials";
-import FAQsBlock from "@/components/blocks/FAQsBlock";
+import CertificationPrepSection from "./sections/CertificationPrepSection";
 import FinalCTA from "@/components/blocks/FinalCTA";
 import usePrefersReducedMotion from "./usePrefersReducedMotion";
+import HomePopular from "./sections/HomePopular";
+import HomepageSkillsTransform from "./sections/HomepageSkillsTransform";
 
 export default function HomePageExperience() {
   const wrapperRef = useRef(null);
@@ -39,7 +39,9 @@ export default function HomePageExperience() {
         { opacity: 1, y: 0, duration: 0.48, ease: "power2.out" },
       );
 
-      const sections = wrapperRef.current.querySelectorAll("[data-home-section]");
+      const sections = wrapperRef.current.querySelectorAll(
+        "[data-home-section]",
+      );
       sections.forEach((section) => {
         const animation = gsap.fromTo(
           section,
@@ -72,15 +74,15 @@ export default function HomePageExperience() {
   return (
     <div ref={wrapperRef}>
       <HomeHeroSection />
+      <HomePopular />
+      <HomepageSkillsTransform />
+      {/* <CompanyLogosSection />
       <FeaturedCoursesSection />
+      <PopularSkillsSection /> 
+      <StudentSuccessSection />
       <CategoriesSection />
-      <LearningJourneySection />
-      <PlatformStatisticsSection />
-      <Testimonials />
-      <InstructorShowcaseSection />
-      <PricingSection />
-      <FAQsBlock />
-      <FinalCTA />
+      <CertificationPrepSection />
+      <FinalCTA /> */}
     </div>
   );
 }

@@ -21,6 +21,11 @@ export default function LoginFormModal() {
   const modalInfo = modalState((state) => state.modalInfo);
   const [isFocused, setIsFocused] = useState(false);
 
+  const headingText =
+    modalInfo?.type === "LOGIN_ADD_TO_CART"
+      ? "Log in to add this course to your cart"
+      : "Log in to continue your learning journey";
+
   const onChange = (e) => {
     setPayload({ ...payload, [e.target.name]: e.target.value });
   };
@@ -44,14 +49,35 @@ export default function LoginFormModal() {
 
     try {
       const response = await AUTHAPI.login(payload);
-      persistentStore.setState({ profile: response?.data?.user });
-      modalClose();
-      router.push("/");
-      window.location.reload();
+
+      if (response?.data?.requires_2fa) {
+        persistentStore.setState({
+          preAuthToken: response?.data?.pre_auth_token,
+        });
+        toast.success("Enter your 2FA code");
+        modalClose();
+        router.push("/verify-2fa");
+        return;
+      }
+
+      if (response?.data?.token && response?.data?.user) {
+        persistentStore.setState({
+          profile: response?.data?.user,
+          token: response?.data?.token,
+          preAuthToken: null,
+        });
+        modalClose();
+        toast.success("Login successful!");
+        window.location.href = "/";
+        return;
+      }
+
+      toast.error("Unexpected response from server");
     } catch (error) {
       console.log("Error", error);
       setErrors(error?.data?.errors);
       if (error?.data?.message) toast.error(error.data.message);
+      else toast.error("Login failed. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -76,8 +102,11 @@ export default function LoginFormModal() {
   return (
     <>
       <h2 className="text-3xl font-bold mb-6">
-        Log in to continue your learning journey
+        {headingText}
       </h2>
+      {modalInfo?.message ? (
+        <p className="text-sm text-slate-600 mb-5">{modalInfo.message}</p>
+      ) : null}
 
       <form className="flex flex-col gap-y-[20px]" onSubmit={onLogin}>
         <Input
