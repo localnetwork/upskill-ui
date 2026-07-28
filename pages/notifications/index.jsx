@@ -54,6 +54,20 @@ function notificationTypeLabel(notification) {
     .replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
+function resolveNotificationMessage(notification) {
+  const baseMessage = String(notification?.message || "").trim();
+  const note = String(notification?.metadata?.note || "").trim();
+  if (!note) return baseMessage;
+
+  const messageHasReason =
+    baseMessage.toLowerCase().includes("reason:") ||
+    baseMessage.toLowerCase().includes(note.toLowerCase());
+
+  return messageHasReason
+    ? baseMessage
+    : `${baseMessage} Reason: ${note}`;
+}
+
 export default function NotificationsPage() {
   const router = useRouter();
   const [searchInput, setSearchInput] = useState("");
@@ -252,7 +266,7 @@ export default function NotificationsPage() {
                   {notification.title}
                 </h3>
                 <p className="text-[14px] text-[#475569] mt-1 leading-relaxed">
-                  {notification.message}
+                  {resolveNotificationMessage(notification)}
                 </p>
                 <div className="mt-2 flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-widest">
                   <span className="text-primary">

@@ -16,6 +16,20 @@ function formatDate(value) {
   });
 }
 
+function resolveNotificationMessage(notification) {
+  const baseMessage = String(notification?.message || "").trim();
+  const note = String(notification?.metadata?.note || "").trim();
+  if (!note) return baseMessage;
+
+  const messageHasReason =
+    baseMessage.toLowerCase().includes("reason:") ||
+    baseMessage.toLowerCase().includes(note.toLowerCase());
+
+  return messageHasReason
+    ? baseMessage
+    : `${baseMessage}\nReason: ${note}`;
+}
+
 export default function NotificationDetailPage() {
   const router = useRouter();
   const { notifId } = router.query;
@@ -76,7 +90,7 @@ export default function NotificationDetailPage() {
           <h1 className="text-2xl font-bold text-on-surface">{notification.title}</h1>
           <p className="text-xs text-[#64748b] mt-2">{formatDate(notification.createdAt)}</p>
           <div className="mt-5 text-[15px] leading-relaxed text-[#334155] whitespace-pre-wrap">
-            {notification.message}
+            {resolveNotificationMessage(notification)}
           </div>
         </article>
       )}

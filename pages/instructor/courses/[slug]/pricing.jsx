@@ -6,6 +6,7 @@ import { setContext } from "@/lib/api/interceptor";
 import { useState } from "react";
 import { toast } from "react-hot-toast"; // ✅ make sure you have this imported
 import { extractErrors } from "@/lib/services/errorsExtractor";
+import courseStore from "@/lib/store/courseStore";
 export async function getServerSideProps(context) {
   const { slug } = context.params;
 
@@ -48,6 +49,14 @@ export default function Pricing({ course }) {
         `${process.env.NEXT_PUBLIC_API_URL}/courses/${course.uuid}/pricing`,
         newPayload,
       );
+      const nextPriceTier = response?.data?.data?.price_tier || null;
+      courseStore.setState((state) => ({
+        courseManagement: {
+          ...(state.courseManagement || course || {}),
+          price_tier: nextPriceTier,
+          updatedAt: new Date().toISOString(),
+        },
+      }));
       console.log("Pricing saved successfully:", response.data);
       toast.success("Pricing saved successfully");
       setErrors(null);

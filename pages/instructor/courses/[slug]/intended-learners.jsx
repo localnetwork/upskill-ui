@@ -213,11 +213,19 @@ export default function IntendedLearners({ course }) {
         `${process.env.NEXT_PUBLIC_API_URL}/courses/${course.id}/goals`,
         payload
       );
+      const nextGoals = data?.data || payload;
+      courseStore.setState((state) => ({
+        courseManagement: {
+          ...(state.courseManagement || course || {}),
+          goals: nextGoals,
+          updatedAt: new Date().toISOString(),
+        },
+      }));
 
       // refresh state with API response
-      setLearnings(mapToList(data?.data?.what_you_will_learn_data));
-      setRequirements(mapToList(data?.data?.requirements_data));
-      setAudience(mapToList(data?.data?.who_should_attend_data));
+      setLearnings(mapToList(nextGoals?.what_you_will_learn_data));
+      setRequirements(mapToList(nextGoals?.requirements_data));
+      setAudience(mapToList(nextGoals?.who_should_attend_data));
       toast.success("Intended learners updated successfully.");
     } catch (error) {
       console.log("error", error);
