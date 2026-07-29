@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { v4 as uuid } from "uuid";
 import CourseSection from "./CourseSection";
 import courseStore from "@/lib/store/courseStore";
@@ -32,46 +32,53 @@ export default function CourseBuilder({ courseId }) {
   const nextIdCounter = useRef(1);
   const latestFetchId = useRef(0);
 
+  const getSections = useCallback(async () => {
+    if (!activeCourseId) {
+      setSections([]);
+      setTopics([]);
+      setIsSectionsLoading(false);
+      return;
+    }
+
+    const fetchId = ++latestFetchId.current;
+    try {
+      setIsSectionsLoading(true);
+      const [sectionsResponse, topicsResponse] = await Promise.all([
+        BaseApi.get(
+          `${process.env.NEXT_PUBLIC_API_URL}/course-sections/course/${activeCourseId}`,
+        ),
+        BaseApi.get(
+          `${process.env.NEXT_PUBLIC_API_URL}/course-sections/course/${activeCourseId}/topics`,
+        ),
+      ]);
+
+      if (latestFetchId.current !== fetchId) return;
+
+      const data = sectionsResponse.data.data || [];
+      setTopics(topicsResponse?.data?.data || []);
+      setSections(
+        data?.map((s) => ({
+          ...s,
+          tempKey: uuid(),
+          isNew: false,
+        })),
+      );
+
+      const maxId = Math.max(
+        0,
+        ...data?.map((s) => parseInt(s.id, 10)).filter((n) => !isNaN(n)),
+      );
+      nextIdCounter.current = maxId + 1;
+    } catch (error) {
+      if (latestFetchId.current !== fetchId) return;
+      console.error("Error fetching sections:", error);
+    } finally {
+      if (latestFetchId.current !== fetchId) return;
+      setIsSectionsLoading(false);
+    }
+  }, [activeCourseId]);
+
   useEffect(() => {
-    const getSections = async () => {
-      const fetchId = ++latestFetchId.current;
-      try {
-        setIsSectionsLoading(true);
-        const [sectionsResponse, topicsResponse] = await Promise.all([
-          BaseApi.get(
-            `${process.env.NEXT_PUBLIC_API_URL}/course-sections/course/${activeCourseId}`,
-          ),
-          BaseApi.get(
-            `${process.env.NEXT_PUBLIC_API_URL}/course-sections/course/${activeCourseId}/topics`,
-          ),
-        ]);
-
-        if (latestFetchId.current !== fetchId) return;
-
-        const data = sectionsResponse.data.data || [];
-        setTopics(topicsResponse?.data?.data || []);
-        setSections(
-          data?.map((s) => ({
-            ...s,
-            tempKey: uuid(),
-            isNew: false, // fetched = not new
-          })),
-        );
-
-        const maxId = Math.max(
-          0,
-          ...data?.map((s) => parseInt(s.id, 10)).filter((n) => !isNaN(n)),
-        );
-        nextIdCounter.current = maxId + 1;
-      } catch (error) {
-        if (latestFetchId.current !== fetchId) return;
-        console.error("Error fetching sections:", error);
-      } finally {
-        if (latestFetchId.current !== fetchId) return;
-        setIsSectionsLoading(false);
-      }
-    };
-
     if (activeCourseId) {
       setSections([]);
       setTopics([]);
@@ -81,7 +88,26 @@ export default function CourseBuilder({ courseId }) {
       setTopics([]);
       setIsSectionsLoading(false);
     }
-  }, [activeCourseId]);
+  }, [activeCourseId, getSections]);
+
+  useEffect(() => {
+    const handleAICourseUpdated = (event) => {
+      const detailCourseId = String(event?.detail?.courseId || "").trim();
+      if (!detailCourseId) return;
+      if (String(activeCourseId || "") !== detailCourseId) return;
+      getSections();
+    };
+
+    if (typeof window !== "undefined") {
+      window.addEventListener("course-ai-updated", handleAICourseUpdated);
+    }
+
+    return () => {
+      if (typeof window !== "undefined") {
+        window.removeEventListener("course-ai-updated", handleAICourseUpdated);
+      }
+    };
+  }, [activeCourseId, getSections]);
 
   const addSection = () => {
     const newId = nextIdCounter.current++;
