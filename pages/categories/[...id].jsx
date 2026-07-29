@@ -1,6 +1,10 @@
 import PopularEducators from "@/components/entities/categories/show/PopularEducators";
 import BaseApi from "@/lib/api/_base.api";
 
+function asNumber(value) {
+  return Number(value || 0);
+}
+
 export async function getServerSideProps(context) {
   const segments = Array.isArray(context.params.id)
     ? context.params.id
@@ -23,6 +27,9 @@ export async function getServerSideProps(context) {
 }
 
 export default function Page({ category }) {
+  const expertCourses = asNumber(category?.expert_courses);
+  const totalEnrolled = asNumber(category?.total_enrolled);
+
   return (
     <>
       <section className="py-16 md:py-20 bg-[#F8FAFC]">
@@ -39,7 +46,7 @@ export default function Page({ category }) {
             <div className="mt-8 flex items-center space-x-6">
               <div className="flex flex-col">
                 <span className="text-2xl font-bold text-on-surface font-headline">
-                  1,248
+                  {expertCourses.toLocaleString("en-PH")}
                 </span>
                 <span className="text-xs font-bold uppercase tracking-widest text-secondary/70">
                   Expert Courses
@@ -48,7 +55,7 @@ export default function Page({ category }) {
               <div className="h-10 w-px bg-outline-variant"></div>
               <div className="flex flex-col">
                 <span className="text-2xl font-bold text-on-surface font-headline">
-                  850k+
+                  {totalEnrolled.toLocaleString("en-PH")}
                 </span>
                 <span className="text-xs font-bold uppercase tracking-widest text-secondary/70">
                   Enrolled

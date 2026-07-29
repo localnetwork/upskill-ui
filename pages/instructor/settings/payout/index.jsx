@@ -61,6 +61,25 @@ function toNumber(value, fallback = 0) {
   return Number.isFinite(next) ? next : fallback;
 }
 
+function startOfMonth(date) {
+  return new Date(date.getFullYear(), date.getMonth(), 1);
+}
+
+function endOfMonth(date) {
+  return new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59, 999);
+}
+
+function formatMonthKey(date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function formatMonthLabel(date, withYear = false) {
+  return new Intl.DateTimeFormat("en-PH", {
+    month: "short",
+    ...(withYear ? { year: "numeric" } : {}),
+  }).format(date);
+}
+
 function getFriendlyStatus(row) {
   const rawStatus = String(row?.status || "").toUpperCase();
   const reviewNote = String(row?.reviewNote || "");
@@ -336,6 +355,9 @@ export default function PayoutSettingsPage() {
   const [isRequestingPayout, setIsRequestingPayout] = useState(false);
   const [activePayout, setActivePayout] = useState(null);
   const [isRequestConfirmOpen, setIsRequestConfirmOpen] = useState(false);
+  const [earningsRange, setEarningsRange] = useState("6m");
+  const [customStartDate, setCustomStartDate] = useState("");
+  const [customEndDate, setCustomEndDate] = useState("");
 
   const {
     data: summaryResponse,
@@ -345,7 +367,7 @@ export default function PayoutSettingsPage() {
   const { data: payoutsResponse, mutate: mutatePayouts } =
     PAYOUTAPI.getMyPayouts({
       page: 1,
-      limit: 10,
+      limit: 200,
     });
 
   const summary = summaryResponse?.data || {};
@@ -437,49 +459,152 @@ export default function PayoutSettingsPage() {
     ].filter((item) => item.value > 0);
   }, [payoutRows]);
 
-  const earningsTrendData = useMemo(() => {
-    const now = new Date();
-    const sixMonthKeys = Array.from({ length: 6 }, (_, index) => {
-      const date = new Date(now.getFullYear(), now.getMonth() - (5 - index), 1);
-      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-      const label = new Intl.DateTimeFormat("en-PH", { month: "short" }).format(date);
-      return { key, label };
-    });
-
-    const baselineEarnings = Math.max(toNumber(summary?.thisMonthEarnings, 0), 500);
-    const byMonth = Object.fromEntries(
-      sixMonthKeys.map((entry, index) => [
-        entry.key,
-        {
-          month: entry.label,
-          earnings: Number((baselineEarnings * (0.6 + index * 0.12)).toFixed(2)),
-          payouts: 0,
-        },
-      ]),
-    );
+  const earningsEvents = useMemo(() => {
+    const events = [];
 
     payoutRows.forEach((row) => {
-      const dateValue = row?.requestedAt || row?.createdAt;
-      if (!dateValue) return;
-      const date = new Date(dateValue);
-      if (Number.isNaN(date.getTime())) return;
-      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-      if (!byMonth[key]) return;
-      byMonth[key].payouts += toNumber(row?.amount, 0);
-      if (byMonth[key].earnings < byMonth[key].payouts) {
-        byMonth[key].earnings = Number((byMonth[key].payouts * 1.22).toFixed(2));
-      }
+      const payoutItems = Array.isArray(row?.items) ? row.items : [];
+      payoutItems.forEach((payoutItem) => {
+        const dateValue =
+          payoutItem?.orderItem?.order?.createdAt ||
+          payoutItem?.orderItem?.createdAt ||
+          row?.requestedAt ||
+          row?.createdAt;
+        const date = new Date(dateValue);
+        if (Number.isNaN(date.getTime())) return;
+
+        const amount = toNumber(
+          payoutItem?.amount,
+          toNumber(payoutItem?.orderItem?.educatorEarning, 0),
+        );
+        if (amount <= 0) return;
+
+        events.push({
+          date,
+          amount: Number(amount.toFixed(2)),
+        });
+      });
     });
 
-    return sixMonthKeys.map((entry) => {
-      const row = byMonth[entry.key];
-      return {
-        month: row.month,
-        earnings: Number(toNumber(row.earnings, 0).toFixed(2)),
-        payouts: Number(toNumber(row.payouts, 0).toFixed(2)),
-      };
+    return events;
+  }, [payoutRows]);
+
+  const earningsTrendData = useMemo(() => {
+    const now = new Date();
+    let rangeStart = null;
+    let rangeEnd = endOfMonth(now);
+    let groupBy = "month";
+    let labelWithYear = false;
+
+    if (earningsRange === "year") {
+      rangeStart = new Date(now.getFullYear(), 0, 1);
+      rangeEnd = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999);
+      labelWithYear = false;
+    } else if (earningsRange === "5y") {
+      rangeStart = new Date(now.getFullYear() - 4, 0, 1);
+      rangeEnd = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999);
+      groupBy = "year";
+    } else if (earningsRange === "custom") {
+      const parsedStart = customStartDate ? new Date(customStartDate) : null;
+      const parsedEnd = customEndDate ? new Date(customEndDate) : null;
+      if (
+        parsedStart &&
+        parsedEnd &&
+        !Number.isNaN(parsedStart.getTime()) &&
+        !Number.isNaN(parsedEnd.getTime()) &&
+        parsedStart.getTime() <= parsedEnd.getTime()
+      ) {
+        rangeStart = new Date(
+          parsedStart.getFullYear(),
+          parsedStart.getMonth(),
+          parsedStart.getDate(),
+        );
+        rangeEnd = new Date(
+          parsedEnd.getFullYear(),
+          parsedEnd.getMonth(),
+          parsedEnd.getDate(),
+          23,
+          59,
+          59,
+          999,
+        );
+        labelWithYear = true;
+      } else {
+        rangeStart = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+      }
+    } else {
+      rangeStart = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+    }
+
+    const rows = [];
+    if (groupBy === "year") {
+      const byYear = new Map();
+      for (
+        let year = rangeStart.getFullYear();
+        year <= rangeEnd.getFullYear();
+        year += 1
+      ) {
+        byYear.set(String(year), 0);
+      }
+
+      earningsEvents.forEach((entry) => {
+        if (entry.date < rangeStart || entry.date > rangeEnd) return;
+        const key = String(entry.date.getFullYear());
+        if (!byYear.has(key)) return;
+        byYear.set(key, Number((byYear.get(key) + entry.amount).toFixed(2)));
+      });
+
+      byYear.forEach((earnings, year) => {
+        rows.push({
+          month: year,
+          earnings: Number(earnings.toFixed(2)),
+        });
+      });
+      return rows;
+    }
+
+    const byMonth = new Map();
+    let cursor = startOfMonth(rangeStart);
+    const limit = startOfMonth(rangeEnd);
+    while (cursor.getTime() <= limit.getTime()) {
+      byMonth.set(formatMonthKey(cursor), {
+        month: formatMonthLabel(cursor, labelWithYear),
+        earnings: 0,
+      });
+      cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
+    }
+
+    earningsEvents.forEach((entry) => {
+      if (entry.date < rangeStart || entry.date > rangeEnd) return;
+      const key = formatMonthKey(entry.date);
+      if (!byMonth.has(key)) return;
+      const current = byMonth.get(key);
+      current.earnings = Number((current.earnings + entry.amount).toFixed(2));
+      byMonth.set(key, current);
     });
-  }, [payoutRows, summary?.thisMonthEarnings]);
+
+    byMonth.forEach((entry) => {
+      rows.push({
+        month: entry.month,
+        earnings: Number(entry.earnings.toFixed(2)),
+      });
+    });
+
+    if (!rows.length) {
+      rows.push({
+        month: formatMonthLabel(now, true),
+        earnings: Number(toNumber(summary?.thisMonthEarnings, 0).toFixed(2)),
+      });
+    }
+
+    return rows;
+  }, [
+    earningsEvents,
+    earningsRange,
+    customStartDate,
+    customEndDate,
+    summary?.thisMonthEarnings,
+  ]);
 
   const previousPayouts = useMemo(
     () =>
@@ -637,9 +762,36 @@ export default function PayoutSettingsPage() {
           <div className="rounded-lg border border-[#e2e8f0] bg-white p-6 lg:col-span-2">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-semibold text-on-surface">
-                Earnings vs payouts
+                Earnings
               </h2>
-              <p className="text-xs text-slate-500">Last 6 months (demo view)</p>
+              <div className="flex flex-wrap items-center gap-2">
+                <select
+                  value={earningsRange}
+                  onChange={(event) => setEarningsRange(event.target.value)}
+                  className="rounded-md border border-slate-300 px-2 py-1 text-xs outline-none"
+                >
+                  <option value="6m">Last 6 months</option>
+                  <option value="year">Yearly</option>
+                  <option value="5y">5 years</option>
+                  <option value="custom">Custom range</option>
+                </select>
+                {earningsRange === "custom" ? (
+                  <>
+                    <input
+                      type="date"
+                      value={customStartDate}
+                      onChange={(event) => setCustomStartDate(event.target.value)}
+                      className="rounded-md border border-slate-300 px-2 py-1 text-xs outline-none"
+                    />
+                    <input
+                      type="date"
+                      value={customEndDate}
+                      onChange={(event) => setCustomEndDate(event.target.value)}
+                      className="rounded-md border border-slate-300 px-2 py-1 text-xs outline-none"
+                    />
+                  </>
+                ) : null}
+              </div>
             </div>
             <div className="mt-4 h-[260px] w-full">
               <ResponsiveContainer width="100%" height="100%">
@@ -652,13 +804,6 @@ export default function PayoutSettingsPage() {
                     dataKey="earnings"
                     stroke="#2563eb"
                     fill="#bfdbfe"
-                    strokeWidth={2}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="payouts"
-                    stroke="#16a34a"
-                    fill="#bbf7d0"
                     strokeWidth={2}
                   />
                 </AreaChart>

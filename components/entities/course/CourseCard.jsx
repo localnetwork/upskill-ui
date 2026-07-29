@@ -38,6 +38,12 @@ export default function CourseCard({ course }) {
     () => course?.goals?.what_you_will_learn_data || [],
     [course?.goals?.what_you_will_learn_data],
   );
+  const averageRating = Number(
+    course?.stats?.average_rating ?? course?.average_rating ?? course?.averageRating ?? 0,
+  );
+  const totalReviews = Number(
+    course?.stats?.total_reviews ?? course?.total_reviews ?? course?.reviews_count ?? course?.reviewsCount ?? 0,
+  );
 
   const firstParagraphRaw = course?.description
     ? course.description.split("</p>")[0] + "</p>"
@@ -208,8 +214,10 @@ export default function CourseCard({ course }) {
               <div className="flex text-yellow-400">
                 <Star className="inline-block w-4 h-4 text-yellow-500 mr-1" />
               </div>
-              <span className="text-md font-bold">4.9</span>
-              <span className="text-md text-slate-400">(4,215)</span>
+              <span className="text-md font-bold">{averageRating.toFixed(1)}</span>
+              <span className="text-md text-slate-400">
+                ({totalReviews.toLocaleString("en-PH")})
+              </span>
             </div>
             <h2 className="text-lg font-bold mb-1 leading-tight group-hover:text-primary transition-colors serif-heading">
               {course.title}

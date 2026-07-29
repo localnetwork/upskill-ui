@@ -20,21 +20,31 @@ export default function ShareSocial() {
     (typeof window !== "undefined" ? window.location.href : "");
   const shareTitle =
     modalInfo?.data?.title || "Check out my Upskill certificate";
+  const helperText =
+    modalInfo?.data?.description || "Share this link on social media.";
+  const copyButtonLabel = modalInfo?.data?.copyButtonLabel || "Copy URL";
+  const copiedMessage = modalInfo?.data?.copiedMessage || "URL copied.";
+  const failedMessage = modalInfo?.data?.copyFailedMessage || "Failed to copy URL.";
 
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(shareUrl);
-      toast.success("Certification URL copied.");
+      toast.success(copiedMessage);
     } catch (_error) {
-      toast.error("Failed to copy certification URL.");
+      toast.error(failedMessage);
     }
   };
 
   return (
     <div className="space-y-6">
-      <p className="text-sm text-slate-600">
-        Share your achievement on social media.
-      </p>
+      <p className="text-sm text-slate-600">{helperText}</p>
+
+      <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+          Share URL
+        </p>
+        <p className="break-all text-sm text-slate-700">{shareUrl}</p>
+      </div>
 
       <div className="grid grid-cols-2 xs:grid-cols-3 md:grid-cols-4 gap-4">
         <LinkedinShareButton url={shareUrl} title={shareTitle}>
@@ -85,7 +95,7 @@ export default function ShareSocial() {
         onClick={handleCopy}
         className="w-full bg-slate-100 text-slate-700 py-3 rounded-lg font-semibold hover:bg-slate-200 transition-colors"
       >
-        Copy Certification URL
+        {copyButtonLabel}
       </button>
     </div>
   );

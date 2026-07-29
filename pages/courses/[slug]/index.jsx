@@ -12,13 +12,10 @@ import {
   CheckCircle2,
   CheckCircle2Icon,
   ChevronRight,
-  Code,
   Globe,
   Heart,
   History,
-  Infinity,
   MonitorPlay,
-  Newspaper,
   Play,
   PlayCircle,
   ShoppingCart,
@@ -26,9 +23,7 @@ import {
   SquarePlay,
   Star,
   Trophy,
-  TrophyIcon,
   UsersRound,
-  Video,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -49,6 +44,36 @@ import persistentStore from "@/lib/store/persistentStore";
 import { trackAnalyticsEvent } from "@/lib/services/analytics";
 const shimmer =
   "animate-pulse bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 rounded";
+
+function formatPhpPrice(value) {
+  return new Intl.NumberFormat("en-PH", {
+    style: "currency",
+    currency: "PHP",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(Number(value || 0));
+}
+
+function formatMonthYear(value) {
+  if (!value) return "N/A";
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return "N/A";
+  return parsed.toLocaleDateString("en-PH", {
+    month: "2-digit",
+    year: "numeric",
+  });
+}
+
+function formatTotalLength(totalSeconds) {
+  const safeSeconds = Math.max(0, Number(totalSeconds || 0));
+  const hours = Math.floor(safeSeconds / 3600);
+  const minutes = Math.floor((safeSeconds % 3600) / 60);
+
+  if (hours > 0) {
+    return `${hours}h ${minutes}m`;
+  }
+  return `${minutes}m`;
+}
 
 function CoursePageSkeleton() {
   return (
@@ -131,6 +156,7 @@ export default function Course() {
   const [course, setCourse] = useState(null);
   const [isCourseLoading, setIsCourseLoading] = useState(true);
   const [isWishlistSubmitting, setIsWishlistSubmitting] = useState(false);
+  const [isShareSubmitting, setIsShareSubmitting] = useState(false);
 
   const [isScrolled, setIsScrolled] = useState(false);
 
@@ -139,6 +165,33 @@ export default function Course() {
   const updateCart = cartStore((state) => state.setCartCount);
 
   const profile = persistentStore((state) => state.profile);
+  const averageRating = Number(course?.stats?.average_rating || 0);
+  const totalReviews = Number(course?.stats?.total_reviews || 0);
+  const totalEnrollees = Number(course?.stats?.total_enrollees || 0);
+  const isBestseller = Boolean(course?.stats?.is_bestseller);
+  const topics = Array.isArray(course?.topics) ? course.topics : [];
+  const sectionCount = Array.isArray(course?.sections) ? course.sections.length : 0;
+  const lectureCount = Array.isArray(course?.sections)
+    ? course.sections.reduce(
+        (sum, section) =>
+          sum + (Array.isArray(section?.curriculums) ? section.curriculums.length : 0),
+        0,
+      )
+    : 0;
+  const totalLengthSeconds = Array.isArray(course?.sections)
+    ? course.sections.reduce(
+        (total, section) =>
+          total +
+          (Array.isArray(section?.curriculums)
+            ? section.curriculums.reduce(
+                (sectionTotal, curriculum) =>
+                  sectionTotal + Number(curriculum?.estimated_duration || 0),
+                0,
+              )
+            : 0),
+        0,
+      )
+    : 0;
 
   const handleCart = async (e) => {
     e.preventDefault();
@@ -246,12 +299,54 @@ export default function Course() {
     router.push(`/checkout/express?slug=${encodeURIComponent(course.slug)}`);
   };
 
+  const handleShare = async () => {
+    if (!course?.slug || isShareSubmitting) return;
+
+    try {
+      setIsShareSubmitting(true);
+      const response = await BaseApi.post(
+        `${process.env.NEXT_PUBLIC_API_URL}/share/courses/${encodeURIComponent(course.slug)}`,
+      );
+      const payload = response?.data?.data || {};
+      const shortUrl =
+        payload?.short_url ||
+        (typeof window !== "undefined"
+          ? `${window.location.origin}/share/${payload?.code || ""}`
+          : "");
+      if (!shortUrl || /\/share\/$/.test(shortUrl)) {
+        throw new Error("Missing short URL");
+      }
+
+      modalState.setState({
+        modalInfo: {
+          type: "SHARE_SOCIAL",
+          title: "Share course",
+          size: "sm",
+          data: {
+            url: shortUrl,
+            title: `Check out this course: ${course?.title || "Upskill course"}`,
+            description: "Share this short course link.",
+            copyButtonLabel: "Copy short URL",
+            copiedMessage: "Short URL copied.",
+            copyFailedMessage: "Failed to copy short URL.",
+          },
+        },
+      });
+    } catch (error) {
+      toast.error(error?.data?.message || "Unable to create share link.");
+    } finally {
+      setIsShareSubmitting(false);
+    }
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       try {
         setIsCourseLoading(true);
         setNotFound(false);
-        const response = await BaseApi.get(`${process.env.NEXT_PUBLIC_API_URL}/courses/route/${encodeURIComponent(slug)}`);
+        const response = await BaseApi.get(
+          `${process.env.NEXT_PUBLIC_API_URL}/courses/route/${encodeURIComponent(slug)}`,
+        );
 
         setCourse(response?.data);
       } catch (error) {
@@ -355,33 +450,37 @@ export default function Course() {
 
             <div className="flex flex-wrap items-center gap-6">
               <div className="flex items-center gap-2">
-                <span className="bg-orange-500 text-white text-[10px] font-black uppercase px-2 py-1 rounded">
-                  Bestseller
-                </span>
+                {isBestseller ? (
+                  <span className="bg-orange-500 text-white text-[10px] font-black uppercase px-2 py-1 rounded">
+                    Bestseller
+                  </span>
+                ) : null}
                 <div className="flex items-center gap-1 text-yellow-400">
-                  <span className="font-bold text-white">4.9</span>
-                  <Star className="inline-block w-4 h-4 text-yellow-500" />
-                  <Star className="inline-block w-4 h-4 text-yellow-500" />
-                  <Star className="inline-block w-4 h-4 text-yellow-500" />
-                  <Star className="inline-block w-4 h-4 text-yellow-500" />
+                  <span className="font-bold text-white">
+                    {averageRating.toFixed(1)}
+                  </span>
                   <Star className="inline-block w-4 h-4 text-yellow-500" />
                 </div>
-                <span className="text-slate-400 text-sm">(12,415 ratings)</span>
+                <span className="text-slate-400 text-sm">
+                  ({totalReviews.toLocaleString("en-PH")} ratings)
+                </span>
               </div>
               <div className="text-sm text-slate-300">
-                <span className="font-bold text-white">45,892</span> students
-                enrolled
+                <span className="font-bold text-white">
+                  {totalEnrollees.toLocaleString("en-PH")}
+                </span>{" "}
+                students enrolled
               </div>
             </div>
             <div className="flex flex-wrap gap-6 text-sm">
               <div className="flex items-center gap-2">
                 {/* <span className="material-symbols-outlined text-slate-400"></span> */}
                 <History className="inline text-slate-400" size={18} />
-                <span>Last updated 10/2023</span>
+                <span>Last updated {formatMonthYear(course?.updated_at)}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Globe className="inline text-slate-400" size={18} />
-                <span>English</span>
+                <span>{course?.language || "English"}</span>
               </div>
             </div>
           </div>
@@ -399,6 +498,24 @@ export default function Course() {
               <div className="prose prose-slate max-w-none">
                 <CourseDescription description={course?.description} />
                 <CourseLearnings course={course} />
+                {topics.length > 0 ? (
+                  <div className="mt-6">
+                    <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-slate-600">
+                      Explore Related Topics
+                    </h3>
+                    <div className="flex flex-wrap gap-2">
+                      {topics.map((topic) => (
+                        <Link
+                          key={topic.id}
+                          href={`/courses?topic=${encodeURIComponent(topic.slug)}`}
+                          className="px-3 py-1 rounded-full border border-slate-300 text-xs font-semibold text-slate-700 no-underline hover:border-primary hover:text-primary transition-colors"
+                        >
+                          {topic.title}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
               </div>
             </section>
 
@@ -408,7 +525,9 @@ export default function Course() {
                   Course content
                 </h2>
                 <span className="text-sm font-bold text-slate-500">
-                  12 sections • 145 lectures • 20h 42m total length
+                  {sectionCount} section{sectionCount === 1 ? "" : "s"} • {lectureCount}{" "}
+                  lecture{lectureCount === 1 ? "" : "s"} •{" "}
+                  {formatTotalLength(totalLengthSeconds)} total length
                 </span>
               </div>
 
@@ -483,7 +602,7 @@ export default function Course() {
                   <span className="text-4xl font-black">
                     {course?.price_tier?.title.toLowerCase() === "free"
                       ? "Free"
-                      : course?.price_tier?.price}
+                      : formatPhpPrice(course?.price_tier?.price)}
                   </span>
                 </div>
 
@@ -547,43 +666,17 @@ export default function Course() {
 
                 <div>
                   <h4 className="font-bold mb-4">This course includes:</h4>
-                  <ul className="space-y-3 text-sm text-slate-700">
-                    <li className="flex items-center gap-3">
-                      <Video className="text-slate-400 text-lg" size={20} />
-                      <span>20.5 hours on-demand video</span>
-                    </li>
-                    <li className="flex items-center gap-3">
-                      <Newspaper className="text-slate-400 text-lg" size={20} />
-                      <span>
-                        {course?.resources_count?.article_count && (
-                          <>
-                            {course?.resources_count?.article_count || 0}{" "}
-                            articles{" "}
-                          </>
-                        )}
-                        &amp; 12 downloadable resources
-                      </span>
-                    </li>
-                    <li className="flex items-center gap-3">
-                      <Code className="text-slate-400 text-lg" size={20} />
-                      <span>15 coding exercises</span>
-                    </li>
-                    <li className="flex items-center gap-3">
-                      <Infinity className="text-slate-400 text-lg" size={20} />
-                      <span>Full lifetime access</span>
-                    </li>
-                    <li className="flex items-center gap-3">
-                      <TrophyIcon
-                        className="text-slate-400 text-lg"
-                        size={20}
-                      />
-                      <span>Certificate of completion</span>
-                    </li>
-                  </ul>
+                  <CourseInclusions course={course} />
                 </div>
                 <div className="mt-8 flex justify-center gap-6">
-                  <button className="text-sm font-bold border-b-2 border-slate-900">
-                    Share
+                  <button
+                    onClick={handleShare}
+                    disabled={isShareSubmitting}
+                    className={`text-sm font-bold border-b-2 border-slate-900 ${
+                      isShareSubmitting ? "opacity-70 cursor-not-allowed" : ""
+                    }`}
+                  >
+                    {isShareSubmitting ? "Sharing..." : "Share"}
                   </button>
                   <button className="text-sm text-red-600 font-bold border-b-2 border-red-600">
                     Report Abuse

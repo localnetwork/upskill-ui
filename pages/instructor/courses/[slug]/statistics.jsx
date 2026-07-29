@@ -56,9 +56,7 @@ export default function CourseStatisticsManagement({ course }) {
       total_revenue: 0,
       revenue_this_month: 0,
       total_impressions: 0,
-      total_page_views: 0,
       unique_impression_visitors: 0,
-      unique_page_view_visitors: 0,
     },
     distribution: {
       rating_distribution: [],
@@ -88,9 +86,7 @@ export default function CourseStatisticsManagement({ course }) {
             total_revenue: 0,
             revenue_this_month: 0,
             total_impressions: 0,
-            total_page_views: 0,
             unique_impression_visitors: 0,
-            unique_page_view_visitors: 0,
           },
           distribution: {
             rating_distribution: [],
@@ -144,20 +140,12 @@ export default function CourseStatisticsManagement({ course }) {
         value: formatCurrency(stats?.overview?.revenue_this_month || 0),
       },
       {
-        label: "Course card impressions",
+        label: "Course impression",
         value: Number(stats?.overview?.total_impressions || 0),
-      },
-      {
-        label: "Course page views",
-        value: Number(stats?.overview?.total_page_views || 0),
       },
       {
         label: "Unique impression visitors",
         value: Number(stats?.overview?.unique_impression_visitors || 0),
-      },
-      {
-        label: "Unique page visitors",
-        value: Number(stats?.overview?.unique_page_view_visitors || 0),
       },
     ],
     [stats],
@@ -179,6 +167,19 @@ export default function CourseStatisticsManagement({ course }) {
         label: row.label,
         enrollments: Number(row.count || 0),
       })),
+    [stats],
+  );
+  const impressionChartData = useMemo(
+    () => [
+      {
+        label: "Total impressions",
+        value: Number(stats?.overview?.total_impressions || 0),
+      },
+      {
+        label: "Unique visitors",
+        value: Number(stats?.overview?.unique_impression_visitors || 0),
+      },
+    ],
     [stats],
   );
 
@@ -258,6 +259,26 @@ export default function CourseStatisticsManagement({ course }) {
                   activeDot={{ r: 6 }}
                 />
               </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </section>
+
+      <section className="mt-6">
+        <div className="bg-white rounded-lg border border-[#e2e8f0] p-6">
+          <h2 className="text-xl font-bold mb-4">Course impression</h2>
+          <div className="h-[280px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={impressionChartData}
+                margin={{ top: 10, right: 10, left: -20, bottom: 10 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                <XAxis dataKey="label" tick={{ fontSize: 12 }} />
+                <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
+                <Tooltip formatter={(value) => [`${value}`, "Impressions"]} />
+                <Bar dataKey="value" radius={[8, 8, 0, 0]} fill="#0056D2" />
+              </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
