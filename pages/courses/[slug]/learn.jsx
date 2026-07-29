@@ -11,6 +11,7 @@ import learnTabs from "@/lib/menu/learnNavTabs.json";
 import CourseNotes from "@/components/entities/course/learn/CourseNotes";
 import CourseQA from "@/components/entities/course/learn/CourseQA";
 import CourseReviews from "@/components/entities/course/show/CourseReviews";
+import CourseLearnAIAssistantDrawer from "@/components/entities/course/learn/CourseLearnAIAssistantDrawer";
 import { parseCookies, setCookie } from "nookies";
 import {
   getAuthTokenCookieNames,
@@ -146,6 +147,7 @@ export default function Page({ data }) {
   const [course, setCourse] = useState(data.course);
 
   const [currentTab, setCurrentTab] = useState("overview");
+  const [isAssistantOpen, setIsAssistantOpen] = useState(false);
 
   const findLectureByUuid = (uuid) => {
     for (const section of data.course.sections) {
@@ -266,9 +268,19 @@ export default function Page({ data }) {
             setPanelStatus={setPanelStatus}
             setCurrentLecture={setCurrentLecture}
             sections={course?.sections || []}
+            onToggleAssistant={() =>
+              setIsAssistantOpen((previous) => !previous)
+            }
+            isAssistantOpen={isAssistantOpen}
           />
         </div>
       </div>
+      <CourseLearnAIAssistantDrawer
+        open={isAssistantOpen}
+        onClose={() => setIsAssistantOpen(false)}
+        course={course}
+        currentLecture={currentLecture}
+      />
     </div>
   );
 }

@@ -51,9 +51,18 @@ export default function PopularEducators({ category }) {
                 href={educator?.username ? `/user/${educator.username}` : "#"}
                 className="flex flex-col items-center text-center group cursor-pointer"
               >
+                {console.log("educator", educator)}
                 <div className="relative mb-6">
                   <div className="w-28 h-28 md:w-36 md:h-36 rounded-full overflow-hidden border-4 border-surface-container p-1 group-hover:border-primary transition-colors duration-500 bg-on-surface text-surface flex items-center justify-center text-2xl md:text-3xl font-black">
-                    {getInitials(educator?.display_name)}
+                    {educator?.profile_picture?.path ? (
+                      <img
+                        src={educator.profile_picture.path}
+                        alt={educator?.display_name || "Educator"}
+                        className="w-full h-full rounded-full object-cover"
+                      />
+                    ) : (
+                      getInitials(educator?.display_name)
+                    )}
                   </div>
                   {index === 0 ? (
                     <div className="absolute bottom-1 right-1 bg-primary text-white p-1 rounded-full border-2 border-surface-container-lowest">
@@ -65,11 +74,13 @@ export default function PopularEducators({ category }) {
                   {educator?.display_name}
                 </h4>
                 <p className="text-[11px] text-secondary font-bold uppercase tracking-widest opacity-70">
-                  {educator?.headline || `${asNumber(educator?.courses_count)} courses`}
+                  {educator?.headline ||
+                    `${asNumber(educator?.courses_count)} courses`}
                 </p>
                 <p className="mt-2 text-[11px] text-slate-500 font-semibold">
-                  {asNumber(educator?.total_enrollees).toLocaleString("en-PH")} learners •{" "}
-                  {asNumber(educator?.average_rating).toFixed(1)} rating
+                  {asNumber(educator?.total_enrollees).toLocaleString("en-PH")}{" "}
+                  learners • {asNumber(educator?.average_rating).toFixed(1)}{" "}
+                  rating
                 </p>
               </Link>
             ))}

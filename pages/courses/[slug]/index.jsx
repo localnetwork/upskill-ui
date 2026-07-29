@@ -157,12 +157,16 @@ export default function Course() {
   const [isCourseLoading, setIsCourseLoading] = useState(true);
   const [isWishlistSubmitting, setIsWishlistSubmitting] = useState(false);
   const [isShareSubmitting, setIsShareSubmitting] = useState(false);
+  const [couponCodeInput, setCouponCodeInput] = useState("");
+  const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
+  const [hasAttemptedAutoApply, setHasAttemptedAutoApply] = useState(false);
 
   const [isScrolled, setIsScrolled] = useState(false);
 
   const [notFound, setNotFound] = useState(false);
 
   const updateCart = cartStore((state) => state.setCartCount);
+  const appliedCourseCoupons = cartStore((state) => state.appliedCourseCoupons || {});
 
   const profile = persistentStore((state) => state.profile);
   const averageRating = Number(course?.stats?.average_rating || 0);
@@ -192,6 +196,105 @@ export default function Course() {
         0,
       )
     : 0;
+  const activeCourseId = String(course?.id || "");
+  const appliedCourseCoupon = activeCourseId
+    ? appliedCourseCoupons?.[activeCourseId] || null
+    : null;
+  const availablePromotionCode = String(course?.promotion_coupon?.code || "")
+    .trim()
+    .toUpperCase();
+
+  const addCurrentCourseToCart = async ({ showModal = true } = {}) => {
+    if (!course?.id) return false;
+
+    try {
+      await BaseApi.post(`${process.env.NEXT_PUBLIC_API_URL}/cart`, {
+        course_id: course.id,
+      });
+      setCourse((prev) => ({ ...prev, is_in_cart: true }));
+      mutate(`${process.env.NEXT_PUBLIC_API_URL}/cart/count`);
+      mutate(`${process.env.NEXT_PUBLIC_API_URL}/cart`);
+      if (showModal) {
+        modalState.setState({
+          cartDrawerOpen: true,
+          modalInfo: {
+            type: "ADD_TO_CART",
+            title: "Added to cart",
+            message: `"${course.title}" has been added to your cart.`,
+            data: course,
+          },
+        });
+      }
+      return true;
+    } catch (error) {
+      if (error?.status === 409) {
+        setCourse((prev) => ({ ...prev, is_in_cart: true }));
+        return true;
+      }
+
+      console.error("Error adding to cart:", error);
+      toast.error("Failed to add course to cart. Please try again later.");
+      return false;
+    }
+  };
+
+  const applyCouponToCurrentCourse = async (rawCode, { silent = false } = {}) => {
+    const code = String(rawCode || "")
+      .trim()
+      .toUpperCase();
+    if (!course?.id || !code) return;
+
+    const isLogged = await isLoggedIn();
+    if (!isLogged) {
+      modalState.setState({
+        modalInfo: {
+          type: "LOGIN",
+          message: "Please log in to redeem a coupon code.",
+        },
+      });
+      return;
+    }
+
+    setIsApplyingCoupon(true);
+    try {
+      const isCourseInCart = Boolean(course?.is_in_cart);
+      if (!isCourseInCart) {
+        const added = await addCurrentCourseToCart({ showModal: false });
+        if (!added) return;
+      }
+
+      const response = await CARTAPI.validateCoupon(code);
+      const data = response?.data?.data || {};
+      const couponCourseId = String(data?.coupon?.courseId || "");
+      if (couponCourseId !== String(course.id)) {
+        toast.error("This coupon is not valid for this course.");
+        return;
+      }
+
+      const discountAmount = Number(data?.discountAmount || 0);
+      cartStore.setState({
+        appliedCourseCoupons: {
+          ...(cartStore.getState().appliedCourseCoupons || {}),
+          [String(course.id)]: {
+            code,
+            couponId: String(data?.coupon?.id || ""),
+            courseId: String(course.id),
+            discountAmount,
+          },
+        },
+      });
+      setCouponCodeInput("");
+      if (!silent) {
+        toast.success("Coupon applied.");
+      }
+    } catch (error) {
+      if (!silent) {
+        toast.error(error?.data?.message || "Unable to apply coupon.");
+      }
+    } finally {
+      setIsApplyingCoupon(false);
+    }
+  };
 
   const handleCart = async (e) => {
     e.preventDefault();
@@ -208,30 +311,11 @@ export default function Course() {
       return;
     }
 
-    try {
-      await BaseApi.post(`${process.env.NEXT_PUBLIC_API_URL}/cart`, {
-        course_id: course.id,
-      });
-      setCourse((prev) => ({ ...prev, is_in_cart: true }));
-      mutate(`${process.env.NEXT_PUBLIC_API_URL}/cart/count`);
-      mutate(`${process.env.NEXT_PUBLIC_API_URL}/cart`);
-      modalState.setState({
-        cartDrawerOpen: true,
-        modalInfo: {
-          type: "ADD_TO_CART",
-          title: "Added to cart",
-          message: `"${course.title}" has been added to your cart.`,
-          data: course,
-        },
-      });
-    } catch (error) {
-      console.error("Error adding to cart:", error);
+    const added = await addCurrentCourseToCart({ showModal: true });
+    if (!added) return;
 
-      if (error.status == 409) {
-        toast.error("Course is already in cart.");
-      } else {
-        toast.error("Failed to add course to cart. Please try again later.");
-      }
+    if (availablePromotionCode) {
+      await applyCouponToCurrentCourse(availablePromotionCode, { silent: true });
     }
   };
 
@@ -380,6 +464,32 @@ export default function Course() {
       window.removeEventListener("load", scrollTest);
     };
   }, [router.isReady, slug]);
+
+  useEffect(() => {
+    if (!course?.id || !course?.is_in_cart || !availablePromotionCode) return;
+    if (hasAttemptedAutoApply) return;
+    if (
+      String(appliedCourseCoupon?.code || "")
+        .trim()
+        .toUpperCase() === availablePromotionCode
+    ) {
+      setHasAttemptedAutoApply(true);
+      return;
+    }
+
+    setHasAttemptedAutoApply(true);
+    applyCouponToCurrentCourse(availablePromotionCode, { silent: true });
+  }, [
+    course?.id,
+    course?.is_in_cart,
+    availablePromotionCode,
+    appliedCourseCoupon?.code,
+    hasAttemptedAutoApply,
+  ]);
+
+  useEffect(() => {
+    setHasAttemptedAutoApply(false);
+  }, [course?.id]);
 
   useEffect(() => {
     if (!course?.id) return;
@@ -668,6 +778,55 @@ export default function Course() {
                   <h4 className="font-bold mb-4">This course includes:</h4>
                   <CourseInclusions course={course} />
                 </div>
+                {!course?.is_enrolled && (
+                  <div className="mt-6 pt-6 border-t border-slate-200">
+                    <h4 className="font-bold mb-3">Redeem coupon</h4>
+                    {availablePromotionCode ? (
+                      <div className="mb-3 rounded-lg bg-emerald-50 border border-emerald-200 px-3 py-2 text-[12px] text-emerald-800">
+                        Available promo code:{" "}
+                        <span className="font-black tracking-wide">
+                          {availablePromotionCode}
+                        </span>
+                      </div>
+                    ) : null}
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={couponCodeInput}
+                        onChange={(event) =>
+                          setCouponCodeInput(
+                            String(event.target.value || "").toUpperCase(),
+                          )
+                        }
+                        placeholder="Enter coupon code"
+                        className="w-full rounded-[8px] border border-gray-300 px-3 py-2 text-[14px]"
+                      />
+                      <button
+                        type="button"
+                        disabled={isApplyingCoupon}
+                        onClick={() =>
+                          applyCouponToCurrentCourse(couponCodeInput, {
+                            silent: false,
+                          })
+                        }
+                        className={`px-4 py-2 rounded-[8px] font-semibold text-white bg-[#0056D2] ${
+                          isApplyingCoupon
+                            ? "opacity-60 cursor-not-allowed"
+                            : "hover:opacity-90"
+                        }`}
+                      >
+                        {isApplyingCoupon ? "Applying..." : "Apply"}
+                      </button>
+                    </div>
+                    {appliedCourseCoupon ? (
+                      <p className="mt-2 text-[12px] text-emerald-700 font-semibold">
+                        Applied:{" "}
+                        {String(appliedCourseCoupon?.code || "").toUpperCase()} (-{" "}
+                        {formatPhpPrice(appliedCourseCoupon?.discountAmount || 0)})
+                      </p>
+                    ) : null}
+                  </div>
+                )}
                 <div className="mt-8 flex justify-center gap-6">
                   <button
                     onClick={handleShare}

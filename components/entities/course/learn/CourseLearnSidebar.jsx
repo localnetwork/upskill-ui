@@ -6,6 +6,7 @@ import {
   Newspaper,
   PanelLeftOpen,
   PanelRightOpen,
+  Sparkles,
   X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -41,6 +42,8 @@ export default function CourseLearnSidebar({
   setCurrentLecture,
   setPanelStatus,
   panelStatus,
+  onToggleAssistant,
+  isAssistantOpen,
 }) {
   const [openSection, setOpenSection] = useState(null);
   const router = useRouter();
@@ -76,7 +79,20 @@ export default function CourseLearnSidebar({
           <span className="bg-[#2a2b3f] absolute bottom-0 left-0 h-[2px] inline-block w-full" />
         </div>
 
-        <div className="absolute flex gap-[15px] right-[15px] top-[15px]">
+        <div className="absolute flex gap-[15px] right-[15px] top-[15px] items-center">
+          <button
+            type="button"
+            onClick={onToggleAssistant}
+            className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-[12px] font-semibold border ${
+              isAssistantOpen
+                ? "border-[#0056D2] text-[#0056D2] bg-[#0056D2]/10"
+                : "border-[#d1d2e0] text-[#2a2b3f] hover:bg-[#f3f4f8]"
+            }`}
+            title="AI assistant"
+          >
+            <Sparkles size={14} />
+            AI
+          </button>
           {panelStatus !== "expanded" ? (
             <div
               onClick={() => setPanelStatus("expanded")}

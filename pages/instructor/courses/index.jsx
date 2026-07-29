@@ -171,12 +171,21 @@ export default function Page() {
             </button>
           </form>
 
-          <Link
-            href="/instructor/courses/create"
-            className="flex shadow-md bg-[#0056D2] text-white font-semibold px-[30px] py-[10px] rounded-[10px] items-center gap-[10px] hover:opacity-90"
-          >
-            New Course
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/instructor/courses/ai-draft"
+              className="flex shadow-md bg-[#0f172a] text-white font-semibold px-[18px] py-[10px] rounded-[10px] items-center gap-[8px] hover:opacity-90"
+            >
+              <span aria-hidden>✨</span>
+              Draft with AI
+            </Link>
+            <Link
+              href="/instructor/courses/create"
+              className="flex shadow-md bg-[#0056D2] text-white font-semibold px-[30px] py-[10px] rounded-[10px] items-center gap-[10px] hover:opacity-90"
+            >
+              New Course
+            </Link>
+          </div>
         </div>
 
         <InstructorCoursesList courses={courses} isLoading={isLoading} />

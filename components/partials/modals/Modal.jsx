@@ -8,6 +8,7 @@ import ShareSocial from "./content/ShareSocial";
 import CourseReviewModal from "./content/CourseReviewModal";
 import AdminCourseReviewActionModal from "./content/AdminCourseReviewActionModal";
 import CoursePromotionModal from "./content/CoursePromotionModal";
+import CourseAIUpdateModal from "./content/CourseAIUpdateModal";
 
 export default function Modal() {
   const modalInfo = modalState((state) => state.modalInfo);
@@ -56,6 +57,9 @@ export default function Modal() {
       break;
     case "COURSE_PROMOTION":
       Content = <CoursePromotionModal />;
+      break;
+    case "COURSE_AI_UPDATE":
+      Content = <CourseAIUpdateModal />;
       break;
     default:
       return null;

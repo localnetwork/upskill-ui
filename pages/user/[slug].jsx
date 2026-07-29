@@ -38,6 +38,8 @@ export default function PublicProfile({ profile }) {
   const [expanded, setExpanded] = useState(false);
   const [visibleBio, setVisibleBio] = useState("");
 
+  console.log("profile", profile);
+
   useEffect(() => {
     if (profile?.biography) {
       // Split by <p> tags and keep first 3 paragraphs
@@ -116,7 +118,9 @@ export default function PublicProfile({ profile }) {
                 <div className="font-semibold text-[24px]">
                   {Number(educatorStats?.published_courses || 0)}
                 </div>
-                <div className="text-[13px] text-gray-600">Published courses</div>
+                <div className="text-[13px] text-gray-600">
+                  Published courses
+                </div>
               </div>
               <div className="border rounded-md p-4">
                 <div className="font-semibold text-[24px]">
@@ -133,7 +137,9 @@ export default function PublicProfile({ profile }) {
                 <div className="font-semibold text-[24px]">
                   {Number(learnerStats?.completed_courses_count || 0)}
                 </div>
-                <div className="text-[13px] text-gray-600">Completed courses</div>
+                <div className="text-[13px] text-gray-600">
+                  Completed courses
+                </div>
               </div>
               <div className="border rounded-md p-4">
                 <div className="font-semibold text-[24px]">
@@ -241,7 +247,9 @@ export default function PublicProfile({ profile }) {
 
           {isLearner && (
             <div className="mt-[50px]">
-              <h2 className="font-semibold text-[30px] mb-4">Completed courses</h2>
+              <h2 className="font-semibold text-[30px] mb-4">
+                Completed courses
+              </h2>
               {completedCourses.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 max-w-[1200px]">
                   {completedCourses.map((entry) => (
