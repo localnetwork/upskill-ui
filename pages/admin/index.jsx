@@ -10,6 +10,7 @@ import AdminCategoriesManagement from "@/components/entities/admin/AdminCategori
 import AdminTagsManagement from "@/components/entities/admin/AdminTagsManagement";
 
 const ADMIN_TABS = ["overview", "users", "courses", "categories", "tags", "payouts"];
+const DEFAULT_PLATFORM_CURRENCY = "PHP";
 
 const normalizeRoleNames = (roles) => {
   if (!Array.isArray(roles)) return [];
@@ -110,7 +111,7 @@ export default function AdminDashboard({ initialTab }) {
     platformFeePercent: 20,
     taxPercent: 0,
     payoutCycle: "ANYTIME",
-    defaultCurrency: "PHP",
+    defaultCurrency: DEFAULT_PLATFORM_CURRENCY,
   });
 
   const loadOverview = async () => {
@@ -200,7 +201,7 @@ export default function AdminDashboard({ initialTab }) {
         platformFeePercent: Number(data.platformFeePercent ?? 20),
         taxPercent: Number(data.taxPercent ?? 0),
         payoutCycle: String(data.payoutCycle || "ANYTIME"),
-        defaultCurrency: String(data.defaultCurrency || "PHP"),
+        defaultCurrency: DEFAULT_PLATFORM_CURRENCY,
       });
     } catch (error) {
       toast.error(error?.data?.message || "Failed to load platform settings.");
@@ -216,9 +217,7 @@ export default function AdminDashboard({ initialTab }) {
         platformFeePercent: Number(platformSettings.platformFeePercent || 0),
         taxPercent: Number(platformSettings.taxPercent || 0),
         payoutCycle: String(platformSettings.payoutCycle || "ANYTIME").toUpperCase(),
-        defaultCurrency: String(platformSettings.defaultCurrency || "PHP")
-          .trim()
-          .toUpperCase(),
+        defaultCurrency: DEFAULT_PLATFORM_CURRENCY,
       };
       await BaseApi.put(
         `${process.env.NEXT_PUBLIC_API_URL}/admin/platform-settings`,
@@ -457,18 +456,18 @@ export default function AdminDashboard({ initialTab }) {
                 <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
                   Default currency
                 </label>
-                <input
-                  type="text"
-                  maxLength={3}
+                <select
                   value={platformSettings.defaultCurrency}
                   onChange={(event) =>
                     setPlatformSettings((prev) => ({
                       ...prev,
-                      defaultCurrency: event.target.value.toUpperCase(),
+                      defaultCurrency: event.target.value,
                     }))
                   }
                   className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm uppercase outline-none"
-                />
+                >
+                  <option value={DEFAULT_PLATFORM_CURRENCY}>PHP</option>
+                </select>
               </div>
             </div>
           </div>

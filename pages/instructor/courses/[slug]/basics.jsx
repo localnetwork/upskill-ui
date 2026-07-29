@@ -207,10 +207,33 @@ export default function CourseBasics({ course }) {
         const languageRows = Array.isArray(languagesRes?.data?.data)
           ? languagesRes.data.data
           : [];
+
+        const groupedLanguages = languageRows.reduce((map, item) => {
+          const value = String(item?.value || item?.label || "").trim();
+          const label = String(item?.label || item?.value || "").trim();
+          if (!value || !label) return map;
+
+          const groupLabel = String(item?.group || "Philippines").trim();
+          const groupKey = groupLabel;
+
+          if (!map.has(groupKey)) {
+            map.set(groupKey, []);
+          }
+
+          const existing = map.get(groupKey);
+          if (!existing.some((row) => String(row.value) === value)) {
+            existing.push({ value, label });
+          }
+
+          return map;
+        }, new Map());
+
         setLanguages(
-          languageRows.map((item) => ({
-            value: String(item?.value || item?.label || ""),
-            label: String(item?.label || item?.value || ""),
+          Array.from(groupedLanguages.entries()).map(([group, options]) => ({
+            group,
+            options: options.sort((a, b) =>
+              String(a.label).localeCompare(String(b.label)),
+            ),
           })),
         );
       } catch (_error) {
@@ -300,6 +323,8 @@ export default function CourseBasics({ course }) {
             placeholder="learn-php-programming-from-scratch"
             maxLength={150}
             resetKey={String(course?.id || course?.uuid || "course")}
+            enableCustomizeToggle
+            customizeLabel="Customize slug"
             onChange={(slugValue) =>
               setPayload((prev) => ({ ...prev, slug: slugValue }))
             }
@@ -414,20 +439,24 @@ export default function CourseBasics({ course }) {
             Course Language
           </label>
           <div className="relative">
-            <Select
+            <select
               id="language"
               name="language"
-              className="border border-[oklch(67.22%_0.0355_279.77deg)] rounded-[5px] p-[10px] w-full"
+              className="border border-[oklch(67.22%_0.0355_279.77deg)] rounded-[5px] p-[10px] w-full bg-white"
               value={payload.language || ""}
               onChange={handleChange}
             >
               <option value="">-- Select language --</option>
-              {languages.map((language) => (
-                <option key={language.value} value={language.value}>
-                  {language.label}
-                </option>
+              {languages.map((group) => (
+                <optgroup key={group.group} label={group.group}>
+                  {group.options.map((language) => (
+                    <option key={language.value} value={language.value}>
+                      {language.label}
+                    </option>
+                  ))}
+                </optgroup>
               ))}
-            </Select>
+            </select>
             {extractErrors(errors, "language") && (
               <p className="text-red-500 text-[12px] mt-1 errrr">
                 {extractErrors(errors, "language")}

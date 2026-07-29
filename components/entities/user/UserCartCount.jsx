@@ -38,10 +38,23 @@ export default function UserCartCount() {
     onSuccess: (data) => {
       const nextCartTotal =
         data?.data?.cartTotal == null ? null : Number(data.data.cartTotal);
+      const currentCoupons = cartStore.getState().appliedCourseCoupons || {};
+      const nextCartItems = Array.isArray(data?.data?.cartItems)
+        ? data.data.cartItems
+        : [];
+      const validCourseIds = new Set(
+        nextCartItems.map((item) => String(item?.course?.id || "")),
+      );
+      const filteredCoupons = Object.fromEntries(
+        Object.entries(currentCoupons).filter(([courseId]) =>
+          validCourseIds.has(String(courseId)),
+        ),
+      );
 
       cartStore.setState({
-        cart: data?.data.cartItems || [],
+        cart: nextCartItems,
         cartTotal: nextCartTotal,
+        appliedCourseCoupons: filteredCoupons,
       });
     },
     onError: () => {
@@ -49,6 +62,7 @@ export default function UserCartCount() {
         cartCount: 0,
         cart: null,
         cartTotal: null,
+        appliedCourseCoupons: {},
       });
     },
   })();

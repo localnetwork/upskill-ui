@@ -1,9 +1,24 @@
 import Image from "next/image";
 import CARTAPI from "@/lib/api/cart/request";
 import { mutate } from "swr";
-import { useState } from "react";
-export default function CartItemCard({ item, isLast }) {
+import { useMemo, useState } from "react";
+
+function asCurrency(value) {
+  return Number(value || 0).toFixed(2);
+}
+
+export default function CartItemCard({ item, isLast, appliedCoupon }) {
   const [isRemoving, setIsRemoving] = useState(false);
+
+  const originalPrice = Number(item?.course?.price_tier?.price || 0);
+  const discountAmount = Number(appliedCoupon?.discountAmount || 0);
+  const discountedPrice = Math.max(0, originalPrice - discountAmount);
+  const hasDiscount = discountAmount > 0;
+
+  const couponLabel = useMemo(
+    () => String(appliedCoupon?.code || "").trim().toUpperCase(),
+    [appliedCoupon?.code],
+  );
 
   const handleDelete = async (cartItemId) => {
     if (isRemoving) return;
@@ -25,6 +40,7 @@ export default function CartItemCard({ item, isLast }) {
       setIsRemoving(false);
     }
   };
+
   return (
     <div
       key={item.course.id}
@@ -47,6 +63,11 @@ export default function CartItemCard({ item, isLast }) {
             by {item.course.author.data.firstname}{" "}
             {item.course.author.data.lastname}
           </p>
+          {appliedCoupon ? (
+            <p className="mt-2 text-[12px] text-emerald-700">
+              Coupon applied: {couponLabel}
+            </p>
+          ) : null}
         </div>
         <div className="col-span-1 flex font-light justify-end text-[#0056D2]">
           <div>
@@ -57,7 +78,7 @@ export default function CartItemCard({ item, isLast }) {
                   : "hover:bg-[#F0F6FF] cursor-pointer"
               }`}
               disabled={isRemoving}
-              onClick={(e) => {
+              onClick={() => {
                 handleDelete(item.id);
               }}
             >
@@ -66,11 +87,26 @@ export default function CartItemCard({ item, isLast }) {
           </div>
         </div>
         <div className="col-span-1 flex flex-col items-end">
-          <div className="text-[18px] font-semibold">
-            ₱{item?.course?.price_tier?.price}
-          </div>
+          {hasDiscount ? (
+            <>
+              <div className="text-[12px] text-gray-400 line-through">
+                ₱{asCurrency(originalPrice)}
+              </div>
+              <div className="text-[18px] font-semibold text-emerald-700">
+                ₱{asCurrency(discountedPrice)}
+              </div>
+              <div className="text-[12px] text-emerald-700">
+                -₱{asCurrency(discountAmount)}
+              </div>
+            </>
+          ) : (
+            <div className="text-[18px] font-semibold">
+              ₱{asCurrency(originalPrice)}
+            </div>
+          )}
         </div>
       </div>
     </div>
   );
 }
+

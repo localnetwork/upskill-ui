@@ -3,7 +3,8 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import toast from "react-hot-toast";
 import courseStore from "@/lib/store/courseStore";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { getApprovalReadinessSummary } from "./CourseApprovalReadiness";
 export default function CourseSidebar({ course }) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -34,40 +35,61 @@ export default function CourseSidebar({ course }) {
   const editingLinks = [
     {
       name: "Intended Learners",
+      tab: "intended-learners",
       link: `/instructor/courses/${course?.uuid}/intended-learners`,
     },
     {
       name: "Curriculum",
+      tab: "curriculum",
       link: `/instructor/courses/${course?.uuid}/curriculum`,
     },
     {
       name: "Basics",
+      tab: "basics",
       link: `/instructor/courses/${course?.uuid}/basics`,
     },
     {
       name: "Pricing",
+      tab: "pricing",
       link: `/instructor/courses/${course?.uuid}/pricing`,
     },
   ];
 
   const managementLinks = [
     {
+      name: "Promotions",
+      tab: "promotions",
+      link: `/instructor/courses/${course?.uuid}/promotions`,
+    },
+    {
       name: "Statistics",
+      tab: "statistics",
       link: `/instructor/courses/${course?.uuid}/statistics`,
     },
     {
       name: "Students",
+      tab: "students",
       link: `/instructor/courses/${course?.uuid}/students`,
     },
     {
       name: "Reviews",
+      tab: "reviews",
       link: `/instructor/courses/${course?.uuid}/reviews`,
     },
     {
       name: "Course Messages",
+      tab: "course-messages",
       link: `/instructor/courses/${course?.uuid}/course-messages`,
     },
   ];
+
+  const currentTab = useMemo(() => {
+    const path = String(router.pathname || "");
+    const parts = path.split("/").filter(Boolean);
+    const last = String(parts[parts.length - 1] || "");
+    if (last === "[slug]") return "basics";
+    return last;
+  }, [router.pathname]);
 
   const normalizeCourseState = (nextCourse = {}) => ({
     ...activeCourse,
@@ -83,6 +105,14 @@ export default function CourseSidebar({ course }) {
   });
 
   const handleRequestForReview = async () => {
+    const readiness = getApprovalReadinessSummary(activeCourse);
+    if (readiness.score < 100) {
+      toast.error(
+        `Approval readiness is ${readiness.score}%. Complete all checklist items and check everything before requesting review.`,
+      );
+      return;
+    }
+
     const confirm = window.confirm(
       "Submitting this course sends it for admin review. You can still edit after review decisions. Continue?",
     );
@@ -164,17 +194,20 @@ export default function CourseSidebar({ course }) {
           <div>
             {editingLinks.map((item, index) => (
               <div key={index} className="">
+                {(() => {
+                  const isActive = currentTab === item.tab;
+                  return (
                 <Link
                   href={item.link}
-                  className={`${
-                    router.asPath === item.link ? "" : ""
-                  } relative text-[17px] py-[10px] block pl-[30px] hover:bg-[#f5f5f5]`}
+                  className="relative text-[17px] py-[10px] block pl-[30px] hover:bg-[#f5f5f5]"
                 >
-                  {router.asPath === item.link && (
+                  {isActive && (
                     <span className="inline-block absolute left-0 top-0 w-[5px] bg-[#000] h-full" />
                   )}
                   {item.name}
                 </Link>
+                  );
+                })()}
               </div>
             ))}
           </div>
@@ -186,17 +219,20 @@ export default function CourseSidebar({ course }) {
           <div>
             {managementLinks.map((item, index) => (
               <div key={index} className="">
+                {(() => {
+                  const isActive = currentTab === item.tab;
+                  return (
                 <Link
                   href={item.link}
-                  className={`${
-                    router.asPath === item.link ? "" : ""
-                  } relative text-[17px] py-[10px] block pl-[30px] hover:bg-[#f5f5f5]`}
+                  className="relative text-[17px] py-[10px] block pl-[30px] hover:bg-[#f5f5f5]"
                 >
-                  {router.asPath === item.link && (
+                  {isActive && (
                     <span className="inline-block absolute left-0 top-0 w-[5px] bg-[#000] h-full" />
                   )}
                   {item.name}
                 </Link>
+                  );
+                })()}
               </div>
             ))}
           </div>

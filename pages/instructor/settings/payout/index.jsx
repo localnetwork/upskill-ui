@@ -21,10 +21,12 @@ import {
   YAxis,
 } from "recharts";
 
-function formatCurrency(value, currencyCode = "PHP") {
+const DISPLAY_CURRENCY = "PHP";
+
+function formatCurrency(value) {
   return new Intl.NumberFormat("en-PH", {
     style: "currency",
-    currency: currencyCode,
+    currency: DISPLAY_CURRENCY,
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(Number(value || 0));
@@ -320,7 +322,7 @@ function buildTransactionsForPayout(row, currencyCode) {
       courseTitle: orderItem?.course?.title || "Unknown course",
       purchasedAt,
       amount: Number(amount.toFixed(2)),
-      currency: String(row?.currency || currencyCode || "PHP").toUpperCase(),
+      currency: DISPLAY_CURRENCY,
     };
   });
 
@@ -348,7 +350,7 @@ export default function PayoutSettingsPage() {
 
   const summary = summaryResponse?.data || {};
   const payoutRows = payoutsResponse?.data || [];
-  const currencyCode = String(summary?.currency || "PHP").toUpperCase();
+  const currencyCode = DISPLAY_CURRENCY;
   const payoutCycle = String(summary?.payoutCycle || "ANYTIME").toUpperCase();
   const payoutCycleLabel = payoutCycle.toLowerCase();
   const payoutEstimate = summary?.payoutEstimate || null;
@@ -490,11 +492,15 @@ export default function PayoutSettingsPage() {
   const estimatedNextPayoutAmount = useMemo(() => {
     const available = toNumber(summary?.availableBalance, 0);
     const monthEarnings = toNumber(summary?.thisMonthEarnings, 0);
+    if (payoutCycle === "ANYTIME") {
+      return Number(available.toFixed(2));
+    }
     if (summary?.currentMonthRequest?.status === "REQUESTED") {
       return Number(available.toFixed(2));
     }
     return Number((available + monthEarnings * 0.45).toFixed(2));
   }, [
+    payoutCycle,
     summary?.availableBalance,
     summary?.thisMonthEarnings,
     summary?.currentMonthRequest?.status,
@@ -706,9 +712,11 @@ export default function PayoutSettingsPage() {
             <p className="mt-2 text-3xl font-bold text-[#0056d2]">
               {formatCurrency(estimatedNextPayoutAmount, currencyCode)}
             </p>
-            <p className="mt-2 text-sm text-slate-500">
-              Est. release: {formatDate(payoutEstimate?.estimatedPayoutAt || summary?.nextPayoutDate)}
-            </p>
+            {payoutCycle !== "ANYTIME" ? (
+              <p className="mt-2 text-sm text-slate-500">
+                Est. release: {formatDate(payoutEstimate?.estimatedPayoutAt || summary?.nextPayoutDate)}
+              </p>
+            ) : null}
             <p className="mt-3 text-xs text-slate-500">
               {payoutEstimate?.message || "Estimate based on current cycle and recent conversion rate."}
             </p>

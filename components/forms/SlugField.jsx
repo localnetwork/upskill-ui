@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Check, Loader2, X } from "lucide-react";
 
 function slugify(value = "", maxLength = 150) {
   return String(value)
@@ -7,8 +8,7 @@ function slugify(value = "", maxLength = 150) {
     .replace(/[^a-z0-9\s-]/g, "")
     .replace(/\s+/g, "-")
     .replace(/-+/g, "-")
-    .slice(0, maxLength)
-    .replace(/-+$/g, "");
+    .slice(0, maxLength);
 }
 
 function toStableSlugBase(value = "", maxLength = 150) {
@@ -77,8 +77,11 @@ export default function SlugField({
   onChange,
   onStatusChange,
   checkAvailability,
+  enableCustomizeToggle = false,
+  customizeLabel = "Customize slug",
 }) {
   const [isAutoMode, setIsAutoMode] = useState(!value);
+  const [isCustomMode, setIsCustomMode] = useState(false);
   const [status, setStatus] = useState({
     isChecking: false,
     isAvailable: true,
@@ -96,10 +99,34 @@ export default function SlugField({
     () => buildSlugSuggestions(sourceValue, normalizedValue, maxLength),
     [sourceValue, normalizedValue, maxLength],
   );
+  const inputDisabled = disabled || (enableCustomizeToggle && !isCustomMode);
 
   useEffect(() => {
     setIsAutoMode(!value);
-  }, [resetKey, value]);
+  }, [resetKey]);
+
+  useEffect(() => {
+    if (!enableCustomizeToggle) return;
+    if (!isCustomMode) return;
+    if (!value) {
+      setIsAutoMode(true);
+    }
+  }, [value, enableCustomizeToggle, isCustomMode]);
+
+  useEffect(() => {
+    if (enableCustomizeToggle) return;
+    setIsAutoMode(!value);
+  }, [value, enableCustomizeToggle]);
+
+  useEffect(() => {
+    if (!enableCustomizeToggle) {
+      setIsCustomMode(false);
+    }
+  }, [enableCustomizeToggle]);
+
+  useEffect(() => {
+    setIsCustomMode(false);
+  }, [resetKey]);
 
   useEffect(() => {
     if (normalizedValue === String(value || "")) return;
@@ -107,11 +134,25 @@ export default function SlugField({
   }, [normalizedValue, onChange, value]);
 
   useEffect(() => {
+    if (enableCustomizeToggle) {
+      if (isCustomMode) return;
+      if (suggestedSlug === normalizedValue) return;
+      onChange?.(suggestedSlug);
+      return;
+    }
+
     if (!isAutoMode) return;
     if (!suggestedSlug) return;
     if (suggestedSlug === normalizedValue) return;
     onChange?.(suggestedSlug);
-  }, [isAutoMode, suggestedSlug, normalizedValue, onChange]);
+  }, [
+    enableCustomizeToggle,
+    isCustomMode,
+    isAutoMode,
+    suggestedSlug,
+    normalizedValue,
+    onChange,
+  ]);
 
   useEffect(() => {
     let nextStatus = null;
@@ -196,34 +237,67 @@ export default function SlugField({
         <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500">
           {label}
         </label>
-        <button
-          type="button"
-          disabled={disabled || !suggestedSlug}
-          onClick={() => {
-            setIsAutoMode(true);
-            onChange?.(suggestedSlug);
-          }}
-          className="text-xs font-semibold text-[#0056d2] disabled:opacity-50"
-        >
-          Auto suggest
-        </button>
+        {enableCustomizeToggle ? (
+          <button
+            type="button"
+            disabled={disabled || !suggestedSlug}
+            onClick={() => {
+              if (isCustomMode) {
+                setIsCustomMode(false);
+                setIsAutoMode(true);
+                onChange?.(suggestedSlug);
+                return;
+              }
+              setIsCustomMode(true);
+            }}
+            className="text-xs font-semibold text-[#0056d2] disabled:opacity-50"
+          >
+            {isCustomMode ? "Use auto slug" : customizeLabel}
+          </button>
+        ) : (
+          <button
+            type="button"
+            disabled={disabled || !suggestedSlug}
+            onClick={() => {
+              setIsAutoMode(true);
+              onChange?.(suggestedSlug);
+            }}
+            className="text-xs font-semibold text-[#0056d2] disabled:opacity-50"
+          >
+            Auto suggest
+          </button>
+        )}
       </div>
 
-      <input
-        type="text"
-        value={normalizedValue}
-        onChange={(event) => {
-          setIsAutoMode(false);
-          onChange?.(slugify(event.target.value, maxLength));
-        }}
-        className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none"
-        placeholder={placeholder}
-        maxLength={maxLength}
-        disabled={disabled}
-        required
-      />
+      <div className="relative">
+        <input
+          type="text"
+          value={normalizedValue}
+          onChange={(event) => {
+            if (enableCustomizeToggle && !isCustomMode) return;
+            setIsAutoMode(false);
+            onChange?.(slugify(event.target.value, maxLength));
+          }}
+          className={`w-full rounded-md border border-slate-300 px-3 py-2 pr-10 text-sm outline-none ${
+            inputDisabled ? "opacity-50" : ""
+          }`}
+          placeholder={placeholder}
+          maxLength={maxLength}
+          disabled={inputDisabled}
+          required
+        />
+        <span className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+          {status.isChecking ? (
+            <Loader2 size={16} className="text-slate-400 animate-spin" />
+          ) : status.isValid && status.isAvailable && normalizedValue ? (
+            <Check size={16} className="text-emerald-600" />
+          ) : status.message ? (
+            <X size={16} className="text-rose-600" />
+          ) : null}
+        </span>
+      </div>
 
-      {suggestionOptions.length ? (
+      {!enableCustomizeToggle && suggestionOptions.length ? (
         <div className="mt-2 flex flex-wrap gap-2">
           {suggestionOptions.map((option) => (
             <button
