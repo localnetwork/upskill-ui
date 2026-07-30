@@ -9,6 +9,7 @@ import CourseReviewModal from "./content/CourseReviewModal";
 import AdminCourseReviewActionModal from "./content/AdminCourseReviewActionModal";
 import CoursePromotionModal from "./content/CoursePromotionModal";
 import CourseAIUpdateModal from "./content/CourseAIUpdateModal";
+import InstructorDraftCourseDeleteModal from "./content/InstructorDraftCourseDeleteModal";
 
 export default function Modal() {
   const modalInfo = modalState((state) => state.modalInfo);
@@ -60,6 +61,9 @@ export default function Modal() {
       break;
     case "COURSE_AI_UPDATE":
       Content = <CourseAIUpdateModal />;
+      break;
+    case "INSTRUCTOR_DRAFT_COURSE_DELETE":
+      Content = <InstructorDraftCourseDeleteModal />;
       break;
     default:
       return null;

@@ -1,14 +1,30 @@
-import CARTAPI from "@/lib/api/cart/request";
-import { forwardRef, useEffect } from "react";
+import { forwardRef, useMemo } from "react";
 import cartStore from "@/lib/store/cartStore";
 import Image from "next/image";
-import UserAvatar from "../user/UserAvatar";
 import Link from "next/link";
 import globalStore from "@/lib/store/globalStore";
+
+function asCurrency(value) {
+  return Number(value || 0).toFixed(2);
+}
 
 const CartDrawer = forwardRef((props, ref) => {
   const cart = cartStore((state) => state.cart);
   const cartTotal = cartStore((state) => state.cartTotal);
+  const appliedCourseCoupons = cartStore((state) => state.appliedCourseCoupons || {});
+
+  const totalDiscount = useMemo(
+    () =>
+      Object.values(appliedCourseCoupons || {}).reduce(
+        (sum, coupon) => sum + Number(coupon?.discountAmount || 0),
+        0,
+      ),
+    [appliedCourseCoupons],
+  );
+
+  const netTotal = useMemo(() => {
+    return Math.max(0, Number(cartTotal || 0) - totalDiscount);
+  }, [cartTotal, totalDiscount]);
 
   return (
     <div
@@ -63,7 +79,15 @@ const CartDrawer = forwardRef((props, ref) => {
                 ))}
             </div>
             <div className="text-[20px] flex justify-between mt-[-15px]">
-              <span>Total:</span> <span>PHP {cartTotal}</span>
+              <span>Total:</span>
+              <span className="text-right">
+                PHP {asCurrency(netTotal)}
+                {totalDiscount > 0 ? (
+                  <span className="ml-2 text-[14px] text-slate-500 line-through">
+                    PHP {asCurrency(cartTotal)}
+                  </span>
+                ) : null}
+              </span>
             </div>
             <div>
               <Link

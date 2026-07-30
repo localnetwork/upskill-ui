@@ -23,6 +23,7 @@ export default function Page() {
   const [isLoading, setIsLoading] = useState(false);
   const [courses, setCourses] = useState([]);
   const [totalPages, setTotalPages] = useState(1);
+  const [deletingCourseId, setDeletingCourseId] = useState(null);
 
   const fetchCourseLevels = async () => {
     try {
@@ -120,6 +121,25 @@ export default function Page() {
     fetchAuthoredCourses(updatedParams);
   };
 
+  const handleDeleteDraftCourse = async (courseId) => {
+    const normalizedCourseId = String(courseId || "").trim();
+    if (!normalizedCourseId) return;
+
+    try {
+      setDeletingCourseId(normalizedCourseId);
+      await BaseApi.delete(
+        `${process.env.NEXT_PUBLIC_API_URL}/courses/${normalizedCourseId}`,
+      );
+      toast.success("Draft course deleted.");
+      await fetchAuthoredCourses(params);
+    } catch (error) {
+      toast.error(error?.data?.message || "Failed to delete draft course.");
+      throw error;
+    } finally {
+      setDeletingCourseId(null);
+    }
+  };
+
   return (
     <InstructorLayout>
       <div>
@@ -188,7 +208,12 @@ export default function Page() {
           </div>
         </div>
 
-        <InstructorCoursesList courses={courses} isLoading={isLoading} />
+        <InstructorCoursesList
+          courses={courses}
+          isLoading={isLoading}
+          onDeleteDraftCourse={handleDeleteDraftCourse}
+          deletingCourseId={deletingCourseId}
+        />
 
         <InstructorCoursesPagination
           totalPages={totalPages}

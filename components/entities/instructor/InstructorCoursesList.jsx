@@ -1,7 +1,14 @@
 import Image from "next/image";
 import Link from "next/link";
+import modalState from "@/lib/store/modalState";
+import { Trash2 } from "lucide-react";
 
-export default function InstructorCoursesList({ courses, isLoading }) {
+export default function InstructorCoursesList({
+  courses,
+  isLoading,
+  onDeleteDraftCourse,
+  deletingCourseId,
+}) {
   const skeletonRows = [1, 2, 3];
   const shimmer =
     "animate-pulse bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200";
@@ -42,86 +49,120 @@ export default function InstructorCoursesList({ courses, isLoading }) {
   }
 
   const formatRating = (value) => Number(value || 0).toFixed(2);
+  const openDeleteModal = (course) => {
+    if (typeof onDeleteDraftCourse !== "function") return;
+
+    modalState.setState({
+      modalInfo: {
+        type: "INSTRUCTOR_DRAFT_COURSE_DELETE",
+        title: "Delete Draft Course",
+        size: "sm",
+        data: {
+          courseTitle: course?.title || "this draft course",
+          onConfirm: async () => onDeleteDraftCourse(course?.id),
+        },
+      },
+    });
+  };
 
   return (
     <div className="grid gap-4 relative">
       {courses.length ? (
-        courses.map((course) => (
-          <div
-            key={course.id}
-            className="flex flex-col md:flex-row border-[1px] border-solid border-[oklch(86.72%_0.0192_282.72deg)]"
-          >
-            <div className="w-full md:w-[150px] h-full">
-              <Image
-                width={320}
-                height={100}
-                src={
-                  course?.cover_image?.path
-                    ? course.cover_image.path
-                    : "/placeholder-cover.webp"
-                }
-                alt={course.title}
-                className="w-full object-cover h-[140px] md:h-[100px]"
-              />
-            </div>
+        courses.map((course) => {
+          const totalEnrollments = Number(course?.stats?.total_enrollments || 0);
+          const canDeleteDraft =
+            course?.published === "0" && totalEnrollments === 0;
+          const isDeleting = deletingCourseId === course?.id;
 
-            <div className="grid grid-cols-1 md:grid-cols-5 flex-1">
-              {/* MANAGE COURSE */}
-              <div className="relative group flex col-span-1 md:col-span-2 flex-col justify-between py-[15px] px-[20px]">
-                <div className="group-hover:flex text-[20px] absolute top-0 left-0 w-full h-full hidden">
-                  <Link
-                    href={"/instructor/courses/" + course.uuid + "/basics"}
-                    className="text-[#0056D2] flex items-center justify-center w-full h-full font-semibold px-[20px] py-[10px] rounded-[5px] hover:opacity-90 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-                  >
-                    <span className="bg-white opacity-70 absolute top-0 left-0 w-full h-full z-[-1]" />
-                    Edit/Manage Course
-                  </Link>
-                </div>
-                <span className="font-bold">{course.title}</span>
-                <div className="flex mt-3  gap-[15px] items-center">
-                  <span className="font-bold uppercase">
-                    {course?.published === "0" ? "Draft" : "Published"}
-                  </span>
-                  {course?.published === "0" && (
-                    <span className="text-[12px]">
-                      Only visible to you and your students
-                    </span>
+          return (
+            <div
+              key={course.id}
+              className="flex flex-col md:flex-row border-[1px] border-solid border-[oklch(86.72%_0.0192_282.72deg)]"
+            >
+              <div className="w-full md:w-[150px] h-full">
+                <Image
+                  width={320}
+                  height={100}
+                  src={
+                    course?.cover_image?.path
+                      ? course.cover_image.path
+                      : "/placeholder-cover.webp"
+                  }
+                  alt={course.title}
+                  className="w-full object-cover h-[140px] md:h-[100px]"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-5 flex-1">
+                {/* MANAGE COURSE */}
+                <div className="relative group flex col-span-1 md:col-span-2 flex-col justify-between py-[15px] px-[20px]">
+                  {canDeleteDraft && (
+                    <button
+                      type="button"
+                      className="absolute top-2 right-2 z-20 p-1.5 rounded-md text-rose-600 hover:bg-rose-50 disabled:opacity-50"
+                      onClick={() => openDeleteModal(course)}
+                      aria-label="Delete draft course"
+                      title="Delete draft course"
+                      disabled={isDeleting}
+                    >
+                      <Trash2 size={18} />
+                    </button>
                   )}
+                  <div className="group-hover:flex text-[20px] absolute top-0 left-0 w-full h-full hidden">
+                    <Link
+                      href={"/instructor/courses/" + course.uuid + "/basics"}
+                      className="text-[#0056D2] flex items-center justify-center w-full h-full font-semibold px-[20px] py-[10px] rounded-[5px] hover:opacity-90 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+                    >
+                      <span className="bg-white opacity-70 absolute top-0 left-0 w-full h-full z-[-1]" />
+                      Edit/Manage Course
+                    </Link>
+                  </div>
+                  <span className="font-bold">{course.title}</span>
+                  <div className="flex mt-3  gap-[15px] items-center">
+                    <span className="font-bold uppercase">
+                      {course?.published === "0" ? "Draft" : "Published"}
+                    </span>
+                    {course?.published === "0" && (
+                      <span className="text-[12px]">
+                        Only visible to you and your students
+                      </span>
+                    )}
+                  </div>
                 </div>
-              </div>
-              <div className="relative col-span-1 group flex flex-col justify-between py-[15px] px-[20px] border-t md:border-t-0 md:border-l border-[oklch(90%_0.01_280deg)]">
-                <div className="group-hover:flex text-[20px] absolute top-0 left-0 w-full h-full hidden">
-                  <Link
-                    href={"/instructor/courses/" + course.uuid + "/statistics"}
-                    className="text-[#0056D2] flex items-center justify-center w-full h-full font-semibold px-[20px] py-[10px] rounded-[5px] hover:opacity-90 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-                  >
-                    <span className="bg-white opacity-70 absolute top-0 left-0 w-full h-full z-[-1]" />
-                    See Statistics
-                  </Link>
+                <div className="relative col-span-1 group flex flex-col justify-between py-[15px] px-[20px] border-t md:border-t-0 md:border-l border-[oklch(90%_0.01_280deg)]">
+                  <div className="group-hover:flex text-[20px] absolute top-0 left-0 w-full h-full hidden">
+                    <Link
+                      href={"/instructor/courses/" + course.uuid + "/statistics"}
+                      className="text-[#0056D2] flex items-center justify-center w-full h-full font-semibold px-[20px] py-[10px] rounded-[5px] hover:opacity-90 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+                    >
+                      <span className="bg-white opacity-70 absolute top-0 left-0 w-full h-full z-[-1]" />
+                      See Statistics
+                    </Link>
+                  </div>
+                  <div className="font-semibold text-[25px]">
+                    {Number(course?.stats?.enrollments_this_month || 0)}
+                  </div>
+                  <div className="text-[15px]">Enrollments this month</div>
                 </div>
-                <div className="font-semibold text-[25px]">
-                  {Number(course?.stats?.enrollments_this_month || 0)}
+                <div className="relative col-span-1 group flex flex-col justify-between py-[15px] px-[20px] border-t md:border-t-0 md:border-l border-[oklch(90%_0.01_280deg)]">
+                  <div className="group-hover:flex text-[20px] absolute top-0 left-0 w-full h-full hidden">
+                    <Link
+                      href={`/instructor/courses/${course.uuid}/reviews`}
+                      className="text-[#0056D2] flex items-center justify-center w-full h-full font-semibold px-[20px] py-[10px] rounded-[5px] hover:opacity-90 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+                    >
+                      <span className="bg-white opacity-70 absolute top-0 left-0 w-full h-full z-[-1]" />
+                      See Reviews
+                    </Link>
+                  </div>
+                  <div className="font-semibold text-[25px]">
+                    {formatRating(course?.stats?.average_rating)}
+                  </div>
+                  <div className="text-[15px]">Course Rating</div>
                 </div>
-                <div className="text-[15px]">Enrollments this month</div>
-              </div>
-              <div className="relative col-span-1 group flex flex-col justify-between py-[15px] px-[20px] border-t md:border-t-0 md:border-l border-[oklch(90%_0.01_280deg)]">
-                <div className="group-hover:flex text-[20px] absolute top-0 left-0 w-full h-full hidden">
-                  <Link
-                    href={`/instructor/courses/${course.uuid}/reviews`}
-                    className="text-[#0056D2] flex items-center justify-center w-full h-full font-semibold px-[20px] py-[10px] rounded-[5px] hover:opacity-90 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-                  >
-                    <span className="bg-white opacity-70 absolute top-0 left-0 w-full h-full z-[-1]" />
-                    See Reviews
-                  </Link>
-                </div>
-                <div className="font-semibold text-[25px]">
-                  {formatRating(course?.stats?.average_rating)}
-                </div>
-                <div className="text-[15px]">Course Rating</div>
               </div>
             </div>
-          </div>
-        ))
+          );
+        })
       ) : (
         <>{!isLoading && <p>No courses found.</p>}</>
       )}

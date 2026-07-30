@@ -10,7 +10,13 @@ import Spinner from "@/components/icons/Spinner";
 
 export default function ExpressCheckout() {
   const router = useRouter();
-  const { slug } = router.query;
+  const { slug: rawSlug, coupon: rawCoupon } = router.query;
+  const slug = Array.isArray(rawSlug) ? rawSlug[0] : rawSlug;
+  const couponCode = String(
+    Array.isArray(rawCoupon) ? rawCoupon[0] : rawCoupon || "",
+  )
+    .trim()
+    .toUpperCase();
   const [course, setCourse] = useState(null);
   const [loadingCourse, setLoadingCourse] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -59,9 +65,14 @@ export default function ExpressCheckout() {
 
     try {
       setIsLoading(true);
+      const payload = {
+        courseId: course.id,
+        couponCode: couponCode || undefined,
+        couponCodes: couponCode ? [couponCode] : undefined,
+      };
       const response = await BaseApi.post(
         `${process.env.NEXT_PUBLIC_API_URL}/checkout`,
-        { courseId: course.id },
+        payload,
       );
 
       if (response?.data?.data?.reusedCheckout) {

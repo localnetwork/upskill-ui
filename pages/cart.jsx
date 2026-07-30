@@ -206,15 +206,24 @@ export default function Cart() {
                 </div>
 
                 <div className="w-[350px]">
-                  <span className="text-[18px] font-semibold text-gray-500">
-                    Total:
-                  </span>
-                  <p className="font-semibold text-[35px]">₱{asCurrency(payableTotal)}</p>
-                  {Number(totalDiscount || 0) > 0 ? (
-                    <p className="text-[14px] text-emerald-700 mt-1">
-                      Discounts applied: ₱{asCurrency(totalDiscount)}
-                    </p>
-                  ) : null}
+                  <div className="text-[14px] text-gray-600 space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span>Subtotal:</span>
+                      <span>₱{asCurrency(cartTotal)}</span>
+                    </div>
+                    {Number(totalDiscount || 0) > 0 ? (
+                      <div className="flex items-center justify-between text-emerald-700">
+                        <span>Discounts:</span>
+                        <span>-₱{asCurrency(totalDiscount)}</span>
+                      </div>
+                    ) : null}
+                  </div>
+                  <div className="mt-2">
+                    <span className="text-[18px] font-semibold text-gray-500">
+                      Total:
+                    </span>
+                    <p className="font-semibold text-[35px]">₱{asCurrency(payableTotal)}</p>
+                  </div>
                   {appliedCouponCodes.length > 0 ? (
                     <p className="text-[13px] text-gray-500 mt-2">
                       Applied coupons: {appliedCouponCodes.join(", ")}

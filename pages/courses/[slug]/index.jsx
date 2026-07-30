@@ -159,7 +159,6 @@ export default function Course() {
   const [isShareSubmitting, setIsShareSubmitting] = useState(false);
   const [couponCodeInput, setCouponCodeInput] = useState("");
   const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
-  const [hasAttemptedAutoApply, setHasAttemptedAutoApply] = useState(false);
 
   const [isScrolled, setIsScrolled] = useState(false);
 
@@ -200,9 +199,12 @@ export default function Course() {
   const appliedCourseCoupon = activeCourseId
     ? appliedCourseCoupons?.[activeCourseId] || null
     : null;
-  const availablePromotionCode = String(course?.promotion_coupon?.code || "")
-    .trim()
-    .toUpperCase();
+  const isFreeCourse = String(course?.price_tier?.title || "").toLowerCase() === "free";
+  const baseCoursePrice = Number(course?.price_tier?.price || 0);
+  const appliedDiscountAmount = Number(appliedCourseCoupon?.discountAmount || 0);
+  const effectiveDiscountAmount = appliedDiscountAmount;
+  const effectiveCoursePrice = Math.max(0, baseCoursePrice - effectiveDiscountAmount);
+  const hasDiscountedPrice = !isFreeCourse && effectiveDiscountAmount > 0;
 
   const addCurrentCourseToCart = async ({ showModal = true } = {}) => {
     if (!course?.id) return false;
@@ -238,7 +240,10 @@ export default function Course() {
     }
   };
 
-  const applyCouponToCurrentCourse = async (rawCode, { silent = false } = {}) => {
+  const applyCouponToCurrentCourse = async (
+    rawCode,
+    { silent = false, promptLogin = true } = {},
+  ) => {
     const code = String(rawCode || "")
       .trim()
       .toUpperCase();
@@ -246,23 +251,19 @@ export default function Course() {
 
     const isLogged = await isLoggedIn();
     if (!isLogged) {
-      modalState.setState({
-        modalInfo: {
-          type: "LOGIN",
-          message: "Please log in to redeem a coupon code.",
-        },
-      });
+      if (promptLogin) {
+        modalState.setState({
+          modalInfo: {
+            type: "LOGIN",
+            message: "Please log in to redeem a coupon code.",
+          },
+        });
+      }
       return;
     }
 
     setIsApplyingCoupon(true);
     try {
-      const isCourseInCart = Boolean(course?.is_in_cart);
-      if (!isCourseInCart) {
-        const added = await addCurrentCourseToCart({ showModal: false });
-        if (!added) return;
-      }
-
       const response = await CARTAPI.validateCoupon(code);
       const data = response?.data?.data || {};
       const couponCourseId = String(data?.coupon?.courseId || "");
@@ -313,10 +314,6 @@ export default function Course() {
 
     const added = await addCurrentCourseToCart({ showModal: true });
     if (!added) return;
-
-    if (availablePromotionCode) {
-      await applyCouponToCurrentCourse(availablePromotionCode, { silent: true });
-    }
   };
 
   const handleWishlist = async (e) => {
@@ -380,7 +377,18 @@ export default function Course() {
       return;
     }
 
-    router.push(`/checkout/express?slug=${encodeURIComponent(course.slug)}`);
+    const expressCouponCode = String(appliedCourseCoupon?.code || "")
+      .trim()
+      .toUpperCase();
+
+    const queryParams = new URLSearchParams({
+      slug: String(course.slug),
+    });
+    if (expressCouponCode) {
+      queryParams.set("coupon", expressCouponCode);
+    }
+
+    router.push(`/checkout/express?${queryParams.toString()}`);
   };
 
   const handleShare = async () => {
@@ -464,32 +472,6 @@ export default function Course() {
       window.removeEventListener("load", scrollTest);
     };
   }, [router.isReady, slug]);
-
-  useEffect(() => {
-    if (!course?.id || !course?.is_in_cart || !availablePromotionCode) return;
-    if (hasAttemptedAutoApply) return;
-    if (
-      String(appliedCourseCoupon?.code || "")
-        .trim()
-        .toUpperCase() === availablePromotionCode
-    ) {
-      setHasAttemptedAutoApply(true);
-      return;
-    }
-
-    setHasAttemptedAutoApply(true);
-    applyCouponToCurrentCourse(availablePromotionCode, { silent: true });
-  }, [
-    course?.id,
-    course?.is_in_cart,
-    availablePromotionCode,
-    appliedCourseCoupon?.code,
-    hasAttemptedAutoApply,
-  ]);
-
-  useEffect(() => {
-    setHasAttemptedAutoApply(false);
-  }, [course?.id]);
 
   useEffect(() => {
     if (!course?.id) return;
@@ -709,11 +691,20 @@ export default function Course() {
 
               <div className="p-8">
                 <div className="flex items-baseline gap-3 mb-6">
-                  <span className="text-4xl font-black">
-                    {course?.price_tier?.title.toLowerCase() === "free"
-                      ? "Free"
-                      : formatPhpPrice(course?.price_tier?.price)}
-                  </span>
+                  {isFreeCourse ? (
+                    <span className="text-4xl font-black">Free</span>
+                  ) : (
+                    <>
+                      <span className="text-4xl font-black">
+                        {formatPhpPrice(effectiveCoursePrice)}
+                      </span>
+                      {hasDiscountedPrice ? (
+                        <span className="text-lg text-slate-500 line-through">
+                          {formatPhpPrice(baseCoursePrice)}
+                        </span>
+                      ) : null}
+                    </>
+                  )}
                 </div>
 
                 {profile?.permissions?.includes("view-own-learnings") && (
@@ -781,14 +772,6 @@ export default function Course() {
                 {!course?.is_enrolled && (
                   <div className="mt-6 pt-6 border-t border-slate-200">
                     <h4 className="font-bold mb-3">Redeem coupon</h4>
-                    {availablePromotionCode ? (
-                      <div className="mb-3 rounded-lg bg-emerald-50 border border-emerald-200 px-3 py-2 text-[12px] text-emerald-800">
-                        Available promo code:{" "}
-                        <span className="font-black tracking-wide">
-                          {availablePromotionCode}
-                        </span>
-                      </div>
-                    ) : null}
                     <div className="flex gap-2">
                       <input
                         type="text"
