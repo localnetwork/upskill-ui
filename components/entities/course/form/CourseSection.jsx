@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import BaseApi from "@/lib/api/_base.api";
 import courseStore from "@/lib/store/courseStore";
 import CurriculumItem from "./CurriculumItem";
@@ -9,6 +9,7 @@ import {
   HelpCircle,
   Code,
   ClipboardCheck,
+  AlertTriangle,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -41,6 +42,7 @@ export default function CourseSection({
   onAddItem,
   onUpdate,
   onDelete,
+  onItemsHydrated,
   autoExpand = false,
 }) {
   const [open, setOpen] = useState(autoExpand);
@@ -55,6 +57,7 @@ export default function CourseSection({
     section.section_description || section.description || ""
   );
   const [items, setItems] = useState(section.items || []); // curriculums
+  const [itemsLoaded, setItemsLoaded] = useState(Boolean(section.itemsLoaded));
   const [loadingItems, setLoadingItems] = useState(false);
 
   const [isEditing, setIsEditing] = useState(!section.id);
@@ -73,16 +76,58 @@ export default function CourseSection({
 
   const courseManagement = courseStore((state) => state.courseManagement);
 
+  const hasMissingCurriculumContent = (curriculum = {}) => {
+    const resourceType = String(curriculum?.curriculum_resource_type || "null");
+    const asset = curriculum?.asset || {};
+
+    if (resourceType === "video") {
+      return !String(asset?.path || "").trim();
+    }
+    if (resourceType === "article") {
+      return !String(asset?.content || "").trim();
+    }
+    if (resourceType === "quiz") {
+      const questions = Array.isArray(asset?.questions) ? asset.questions : [];
+      return questions.length === 0;
+    }
+    if (resourceType === "coding_exercise") {
+      const stepChallenges =
+        asset?.step_challenges && typeof asset.step_challenges === "object"
+          ? asset.step_challenges
+          : {};
+      const hasAnyStepChallenges = Object.values(stepChallenges).some(
+        (steps) => Array.isArray(steps) && steps.length > 0,
+      );
+      return !hasAnyStepChallenges;
+    }
+
+    return true;
+  };
+
+  const missingCurriculumCount = useMemo(
+    () => (Array.isArray(items) ? items.filter(hasMissingCurriculumContent).length : 0),
+    [items],
+  );
+  const hasMissingContentInSection = missingCurriculumCount > 0;
+
+  useEffect(() => {
+    setItems(Array.isArray(section.items) ? section.items : []);
+    setItemsLoaded(Boolean(section.itemsLoaded));
+  }, [section.items, section.itemsLoaded]);
+
   /** Fetch curriculums when section expands */
   useEffect(() => {
     const fetchItems = async () => {
-      if (open && section.id) {
+      if (open && section.id && !itemsLoaded) {
         setLoadingItems(true);
         try {
           const response = await BaseApi.get(
             `${process.env.NEXT_PUBLIC_API_URL}/course-sections/${section.id}/curriculums`
           );
-          setItems(response?.data?.data || response?.data || []);
+          const nextItems = response?.data?.data || response?.data || [];
+          setItems(nextItems);
+          setItemsLoaded(true);
+          onItemsHydrated?.(nextItems);
         } catch (error) {
           console.error("Error fetching curriculums:", error);
         } finally {
@@ -91,7 +136,7 @@ export default function CourseSection({
       }
     };
     fetchItems();
-  }, [open, section.id]);
+  }, [open, section.id, itemsLoaded, onItemsHydrated]);
 
   /** Save section (create or update) */
   const handleSaveSection = async () => {
@@ -189,7 +234,12 @@ export default function CourseSection({
       section_id: section.id,
       isNew: true,
     };
-    setItems((prev) => [...prev, newItem]);
+    setItems((prev) => {
+      const next = [...prev, newItem];
+      onItemsHydrated?.(next);
+      return next;
+    });
+    setItemsLoaded(true);
     onAddItem?.(section.id, newItem);
   };
 
@@ -210,15 +260,30 @@ export default function CourseSection({
   };
 
   const handleItemSave = (savedItem) => {
-    setItems((prev) => replaceOrAppend(prev, savedItem));
+    setItems((prev) => {
+      const next = replaceOrAppend(prev, savedItem);
+      onItemsHydrated?.(next);
+      return next;
+    });
+    setItemsLoaded(true);
   };
 
   const handleItemUpdate = (updatedItem) => {
-    setItems((prev) => replaceOrAppend(prev, updatedItem));
+    setItems((prev) => {
+      const next = replaceOrAppend(prev, updatedItem);
+      onItemsHydrated?.(next);
+      return next;
+    });
+    setItemsLoaded(true);
   };
 
   const handleItemDelete = (deletedId) => {
-    setItems((prev) => prev.filter((i) => i.id !== deletedId));
+    setItems((prev) => {
+      const next = prev.filter((i) => i.id !== deletedId);
+      onItemsHydrated?.(next);
+      return next;
+    });
+    setItemsLoaded(true);
   };
 
   const itemTypes = [
@@ -270,10 +335,18 @@ export default function CourseSection({
   };
 
   return (
-    <div className="[border:1px_solid_oklch(67.22%_0.0355_279.77deg)] overflow-hidden">
+    <div
+      className={`overflow-hidden ${
+        hasMissingContentInSection
+          ? "border-2 border-dashed border-red-400 bg-red-50/20"
+          : "[border:1px_solid_oklch(67.22%_0.0355_279.77deg)]"
+      }`}
+    >
       {/* Header */}
       <div
-        className="flex justify-between items-center bg-[#F6F7F9] px-[30px] py-[20px] cursor-pointer"
+        className={`flex justify-between items-center px-[30px] py-[20px] cursor-pointer ${
+          hasMissingContentInSection ? "bg-red-50" : "bg-[#F6F7F9]"
+        }`}
         onClick={() => setOpen(!open)}
       >
         <h2
@@ -330,7 +403,15 @@ export default function CourseSection({
             </>
           )}
         </h2>
-        <span>{open ? "▲" : "▼"}</span>
+        <div className="flex items-center gap-3">
+          {hasMissingContentInSection && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-1 text-[11px] font-semibold text-red-700">
+              <AlertTriangle size={12} />
+              {missingCurriculumCount} missing content
+            </span>
+          )}
+          <span>{open ? "▲" : "▼"}</span>
+        </div>
       </div>
 
       {/* Body */}

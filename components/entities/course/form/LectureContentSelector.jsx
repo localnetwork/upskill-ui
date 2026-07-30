@@ -17,19 +17,36 @@ export default function LectureContentSelector({
   const [selectedType, setSelectedType] = useState(null);
   const [description, setDescription] = useState("");
 
+  const normalizeLectureType = (value) => {
+    const normalized = String(value || "").trim().toLowerCase();
+    if (normalized === "video") return "video";
+    if (normalized === "article" || normalized === "resource") return "article";
+    return null;
+  };
+
+  const lockedTypeFromCurriculum = normalizeLectureType(
+    lecture?.curriculum_resource_type,
+  );
+
   // ✅ preload if lecture already exists
   useEffect(() => {
     if (lecture) {
-      setSelectedType(lecture.type || null);
+      setSelectedType(
+        normalizeLectureType(lecture.type) || lockedTypeFromCurriculum || null,
+      );
       setTitle(lecture.title || "");
       setDescription(lecture.description || "");
     }
-  }, [lecture]);
+  }, [lecture, lockedTypeFromCurriculum]);
 
   const types = [
     { key: "video", label: "Video", icon: Film },
     { key: "article", label: "Article", icon: FileText },
   ];
+
+  const availableTypes = lockedTypeFromCurriculum
+    ? types.filter((type) => type.key === lockedTypeFromCurriculum)
+    : types;
 
   function handleSave(data) {
     const payload = {
@@ -110,7 +127,7 @@ export default function LectureContentSelector({
                   Choose Lecture Type
                 </p>
                 <div className="grid grid-cols-2 gap-4">
-                  {types.map(({ key, label, icon: Icon }) => (
+                  {availableTypes.map(({ key, label, icon: Icon }) => (
                     <button
                       key={key}
                       type="button"
@@ -127,14 +144,14 @@ export default function LectureContentSelector({
                   ))}
                 </div>
               </>
-            ) : (
+            ) : !lockedTypeFromCurriculum ? (
               <div
                 className="space-y-4 cursor-pointer text-[18px] text-gray-500"
                 onClick={() => setSelectedType(null)}
               >
                 ← Back
               </div>
-            )}
+            ) : null}
 
             {/* Type-specific Form */}
             <div className="mt-4">

@@ -32,6 +32,19 @@ export default function CourseBuilder({ courseId }) {
   const nextIdCounter = useRef(1);
   const latestFetchId = useRef(0);
 
+  const mapSectionsForCourseStore = useCallback(
+    (inputSections = []) =>
+      (Array.isArray(inputSections) ? inputSections : [])
+        .filter((section) => Boolean(section?.id))
+        .map((section) => ({
+          id: section.id,
+          uuid: section.id,
+          title: section.title || "",
+          curriculums: Array.isArray(section.items) ? section.items : [],
+        })),
+    [],
+  );
+
   const getSections = useCallback(async () => {
     if (!activeCourseId) {
       setSections([]);
@@ -55,10 +68,30 @@ export default function CourseBuilder({ courseId }) {
       if (latestFetchId.current !== fetchId) return;
 
       const data = sectionsResponse.data.data || [];
+      const storeCourse = courseStore.getState().courseManagement;
+      const sourceSections = Array.isArray(storeCourse?.sections)
+        ? storeCourse.sections
+        : [];
+      const curriculumBySectionId = new Map();
+
+      for (const section of sourceSections) {
+        const sectionId = String(section?.id || section?.uuid || "").trim();
+        if (!sectionId) continue;
+        const curriculums = Array.isArray(section?.curriculums)
+          ? section.curriculums
+          : Array.isArray(section?.items)
+            ? section.items
+            : [];
+        curriculumBySectionId.set(sectionId, curriculums);
+      }
+
       setTopics(topicsResponse?.data?.data || []);
       setSections(
         data?.map((s) => ({
           ...s,
+          items:
+            curriculumBySectionId.get(String(s?.id || "").trim()) || [],
+          itemsLoaded: curriculumBySectionId.has(String(s?.id || "").trim()),
           tempKey: uuid(),
           isNew: false,
         })),
@@ -89,6 +122,24 @@ export default function CourseBuilder({ courseId }) {
       setIsSectionsLoading(false);
     }
   }, [activeCourseId, getSections]);
+
+  useEffect(() => {
+    if (isSectionsLoading) return;
+    if (!activeCourseId) return;
+
+    const storeCourse = courseStore.getState().courseManagement;
+    const storeCourseId = String(storeCourse?.id || storeCourse?.uuid || "").trim();
+    const currentCourseId = String(activeCourseId || "").trim();
+    if (!storeCourse || !storeCourseId || storeCourseId !== currentCourseId) return;
+
+    const nextSections = mapSectionsForCourseStore(sections);
+    courseStore.setState({
+      courseManagement: {
+        ...storeCourse,
+        sections: nextSections,
+      },
+    });
+  }, [sections, isSectionsLoading, activeCourseId, mapSectionsForCourseStore]);
 
   useEffect(() => {
     const handleAICourseUpdated = (event) => {
@@ -142,7 +193,21 @@ export default function CourseBuilder({ courseId }) {
     setSections((prev) =>
       prev.map((sec) =>
         sec.tempKey === sectionId
-          ? { ...sec, items: [...(sec.items || []), item] }
+          ? { ...sec, items: [...(sec.items || []), item], itemsLoaded: true }
+          : sec,
+      ),
+    );
+  };
+
+  const hydrateSectionItems = (sectionTempKey, nextItems) => {
+    setSections((prev) =>
+      prev.map((sec) =>
+        sec.tempKey === sectionTempKey
+          ? {
+              ...sec,
+              items: Array.isArray(nextItems) ? nextItems : [],
+              itemsLoaded: true,
+            }
           : sec,
       ),
     );
@@ -164,6 +229,7 @@ export default function CourseBuilder({ courseId }) {
             onAddItem={(item) => addItemToSection(s.tempKey, item)}
             onUpdate={(updated) => updateSection(s.tempKey, updated)}
             onDelete={() => deleteSection(s.tempKey)}
+            onItemsHydrated={(items) => hydrateSectionItems(s.tempKey, items)}
             autoExpand={s.isNew}
           />
         ))}

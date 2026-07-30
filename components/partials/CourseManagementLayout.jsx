@@ -27,6 +27,17 @@ export default function CourseManagementLayout({
         : { ...courseManagement, ...course }
       : course;
 
+  const readinessCourse = {
+    ...(activeCourse || {}),
+    sections: Array.isArray(activeCourse?.sections)
+      ? activeCourse.sections
+      : Array.isArray(course?.sections)
+        ? course.sections
+        : [],
+    resources_count: activeCourse?.resources_count || course?.resources_count || {},
+    goals: activeCourse?.goals || course?.goals || {},
+  };
+
   const showReadiness = ["basics", "curriculum", "intended-learners", "pricing"].includes(
     String(activeTab || ""),
   );
@@ -43,7 +54,7 @@ export default function CourseManagementLayout({
               <h1 className="text-3xl font-semibold">{title}</h1>
             </div>
             <div className="mt-[50px]">
-              {showReadiness ? <CourseApprovalReadiness course={activeCourse} /> : null}
+              {showReadiness ? <CourseApprovalReadiness course={readinessCourse} /> : null}
               {children}
             </div>
           </div>

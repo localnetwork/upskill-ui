@@ -8,7 +8,6 @@ import {
   OctagonAlert,
   Save,
   Trash,
-  Trash2,
 } from "lucide-react"; // icons
 import LectureContentSelector from "./LectureContentSelector";
 import QuizItem from "./QuizItem";
@@ -28,10 +27,10 @@ export default function CurriculumItem({
   const [mode, setMode] = useState(null); // "edit" | "content" | null
   const [title, setTitle] = useState(item.title || "");
   const [description, setDescription] = useState(
-    item.curriculum_description || ""
+    item.curriculum_description || "",
   );
   const [isPublicPreview, setIsPublicPreview] = useState(
-    Boolean(item.is_public_preview || item.is_preview)
+    Boolean(item.is_public_preview || item.is_preview),
   );
   const [error, setError] = useState("");
   const [currentItem, setCurrentItem] = useState(item);
@@ -40,22 +39,71 @@ export default function CurriculumItem({
       ? item.topic_ids.map((topicId) => String(topicId))
       : item.topic_id
         ? [String(item.topic_id)]
-        : []
+        : [],
   );
   const [deleting, setDeleting] = useState(false);
   const [openContentOnSync, setOpenContentOnSync] = useState(false);
 
-  const isLecture = currentItem.curriculum_type === "lecture";
-  const isQuiz = currentItem.curriculum_type === "quiz";
-  const isCoding = currentItem.curriculum_type === "coding_exercise";
+  const resourceType = String(currentItem?.curriculum_resource_type || "null");
+  const normalizeCurriculumType = (curriculum) => {
+    const directType = String(curriculum?.curriculum_type || "")
+      .trim()
+      .toLowerCase();
+    if (directType) return directType;
+
+    const fromResource = String(curriculum?.curriculum_resource_type || "")
+      .trim()
+      .toLowerCase();
+    if (fromResource === "quiz") return "quiz";
+    if (fromResource === "coding_exercise") return "coding_exercise";
+    if (fromResource === "video" || fromResource === "article")
+      return "lecture";
+    return "";
+  };
+  const normalizedCurriculumType = normalizeCurriculumType(currentItem);
+  const isLecture = normalizedCurriculumType === "lecture";
+  const isQuiz = normalizedCurriculumType === "quiz";
+  const isCoding = normalizedCurriculumType === "coding_exercise";
+  const quizQuestions = Array.isArray(currentItem?.asset?.questions)
+    ? currentItem.asset.questions
+    : [];
+  const codingStepChallenges =
+    currentItem?.asset?.step_challenges &&
+    typeof currentItem.asset.step_challenges === "object"
+      ? currentItem.asset.step_challenges
+      : {};
+  const hasCodingSteps = Object.values(codingStepChallenges).some(
+    (steps) => Array.isArray(steps) && steps.length > 0,
+  );
+  const hasVideoContent = Boolean(
+    String(currentItem?.asset?.path || "").trim(),
+  );
+  const hasArticleContent = Boolean(
+    String(currentItem?.asset?.content || "").trim(),
+  );
+  const hasMissingContent =
+    resourceType === "video"
+      ? !hasVideoContent
+      : resourceType === "article"
+        ? !hasArticleContent
+        : resourceType === "quiz"
+          ? quizQuestions.length === 0
+          : resourceType === "coding_exercise"
+            ? !hasCodingSteps
+            : true;
+
+  const isContentCapableCurriculum = (curriculum) => {
+    const normalizedType = normalizeCurriculumType(curriculum);
+    return (
+      normalizedType === "lecture" ||
+      normalizedType === "quiz" ||
+      normalizedType === "coding_exercise"
+    );
+  };
 
   useEffect(() => {
     const shouldAutoOpenContent =
-      openContentOnSync &&
-      !item.isNew &&
-      (item.curriculum_type === "lecture" ||
-        item.curriculum_type === "quiz" ||
-        item.curriculum_type === "coding_exercise");
+      openContentOnSync && !item.isNew && isContentCapableCurriculum(item);
 
     setMode(shouldAutoOpenContent ? "content" : item.isNew ? "edit" : null);
     setTitle(item.title || "");
@@ -67,7 +115,7 @@ export default function CurriculumItem({
         ? item.topic_ids.map((topicId) => String(topicId))
         : item.topic_id
           ? [String(item.topic_id)]
-          : []
+          : [],
     );
     setError("");
     if (shouldAutoOpenContent) {
@@ -95,7 +143,7 @@ export default function CurriculumItem({
     try {
       const response = await BaseApi.post(
         `${process.env.NEXT_PUBLIC_API_URL}/course-curriculums`,
-        payload
+        payload,
       );
 
       const saved = {
@@ -112,13 +160,10 @@ export default function CurriculumItem({
           ? saved.topic_ids.map((topicId) => String(topicId))
           : saved.topic_id
             ? [String(saved.topic_id)]
-            : []
+            : [],
       );
 
-      const shouldOpenContent =
-        currentItem.curriculum_type === "lecture" ||
-        currentItem.curriculum_type === "quiz" ||
-        currentItem.curriculum_type === "coding_exercise";
+      const shouldOpenContent = isContentCapableCurriculum(currentItem);
       setOpenContentOnSync(shouldOpenContent);
       onSave?.(saved);
 
@@ -152,20 +197,22 @@ export default function CurriculumItem({
     try {
       const response = await BaseApi.put(
         `${process.env.NEXT_PUBLIC_API_URL}/course-curriculums/${currentItem.id}`,
-        payload
+        payload,
       );
 
       const updated = response?.data?.data || { ...currentItem, ...payload };
 
       setCurrentItem(updated);
       setTitle(updated.title);
-      setDescription(updated.curriculum_description || updated.description || "");
+      setDescription(
+        updated.curriculum_description || updated.description || "",
+      );
       setTopicIds(
         Array.isArray(updated.topic_ids)
           ? updated.topic_ids.map((topicId) => String(topicId))
           : updated.topic_id
             ? [String(updated.topic_id)]
-            : []
+            : [],
       );
 
       onUpdate?.(updated);
@@ -184,7 +231,7 @@ export default function CurriculumItem({
     try {
       setDeleting(true);
       await BaseApi.delete(
-        `${process.env.NEXT_PUBLIC_API_URL}/course-curriculums/${currentItem.id}`
+        `${process.env.NEXT_PUBLIC_API_URL}/course-curriculums/${currentItem.id}`,
       );
 
       onDelete?.(currentItem.id);
@@ -197,7 +244,7 @@ export default function CurriculumItem({
 
   return (
     <div
-      className={`${currentItem?.curriculum_resource_type == null || currentItem?.curriculum_resource_type == "null" ? "hahaha !border-2 border-dashed border-red-500" : "hello [border:1px_solid_oklch(67.22%_0.0355_279.77deg)]"} px-[20px] py-[15px] mb-2 bg-gray-50 w-full`}
+      className={`${hasMissingContent ? "border-2 border-dashed border-red-500 bg-red-50/40" : "[border:1px_solid_oklch(67.22%_0.0355_279.77deg)] bg-gray-50"} px-[20px] py-[15px] mb-2 w-full`}
     >
       {/* Header */}
       <div className="flex justify-between items-center w-full">
@@ -224,14 +271,13 @@ export default function CurriculumItem({
           ) : (
             <div className="flex items-center">
               <span>
-                {currentItem?.curriculum_resource_type === "video" ? (
+                {resourceType === "video" ? (
                   <MonitorPlay size={18} className="inline mr-2" />
-                ) : currentItem?.curriculum_resource_type === "article" ? (
+                ) : resourceType === "article" ? (
                   <Newspaper size={18} className="inline mr-2" />
-                ) : currentItem?.curriculum_resource_type === "quiz" ? (
+                ) : resourceType === "quiz" ? (
                   <NotebookText size={18} className="inline mr-2" />
-                ) : currentItem?.curriculum_resource_type ===
-                  "coding_exercise" ? (
+                ) : resourceType === "coding_exercise" ? (
                   <Code size={18} className="inline mr-2" />
                 ) : (
                   <OctagonAlert
@@ -241,6 +287,11 @@ export default function CurriculumItem({
                 )}
                 {title || "Untitled"}
               </span>
+              {hasMissingContent && (
+                <span className="ml-2 text-[11px] font-semibold uppercase tracking-wide text-red-600">
+                  Missing content
+                </span>
+              )}
               {!currentItem.isNew && (
                 <div className="flex text-sm items-center">
                   <button
@@ -277,6 +328,15 @@ export default function CurriculumItem({
         </div>
 
         <div>
+          {console.log("resourceType", resourceType)}
+          {console.log(
+            "isLecture:",
+            isLecture,
+            "isQuiz:",
+            isQuiz,
+            "isCoding:",
+            isCoding,
+          )}
           {(isLecture || isQuiz || isCoding) && (
             <button
               onClick={() => setMode(mode === "content" ? null : "content")}
@@ -286,13 +346,9 @@ export default function CurriculumItem({
                   Close
                 </span>
               ) : (
-                <>
-                  {item.title && (
-                    <span className="text-[12px] px-4 py-2 cursor-pointer flex items-center justify-center font-bold border-[2px] border-[#0056D2] hover:bg-[#0056D2] hover:text-white text-[#0056D2] rounded">
-                      <NotebookText size={16} className="mr-1" /> Content
-                    </span>
-                  )}
-                </>
+                <span className="text-[12px] px-4 py-2 cursor-pointer flex items-center justify-center font-bold border-[2px] border-[#0056D2] hover:bg-[#0056D2] hover:text-white text-[#0056D2] rounded">
+                  <NotebookText size={16} className="mr-1" /> Content
+                </span>
               )}
             </button>
           )}

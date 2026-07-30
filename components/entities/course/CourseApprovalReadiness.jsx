@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { useMemo } from "react";
+import { AlertTriangle } from "lucide-react";
 
 function stripHtml(value) {
   return String(value || "")
@@ -22,6 +23,85 @@ function hasMedia(value) {
   return false;
 }
 
+function getSectionCurriculums(section) {
+  if (Array.isArray(section?.curriculums)) return section.curriculums;
+  if (Array.isArray(section?.lessons)) return section.lessons;
+  if (Array.isArray(section?.items)) return section.items;
+  return [];
+}
+
+function getCurriculumResourceType(curriculum = {}) {
+  const directType = String(curriculum?.curriculum_resource_type || "").trim();
+  if (directType) return directType;
+
+  const normalizedType = String(
+    curriculum?.curriculum_type || curriculum?.type || "",
+  )
+    .trim()
+    .toLowerCase();
+
+  if (normalizedType === "quiz") return "quiz";
+  if (normalizedType === "coding_exercise") return "coding_exercise";
+  if (normalizedType === "assignment") return "article";
+  if (normalizedType === "lecture") return "null";
+  return "null";
+}
+
+function hasMissingCurriculumContent(curriculum = {}) {
+  const resourceType = getCurriculumResourceType(curriculum);
+  const asset = curriculum?.asset || {};
+
+  if (resourceType === "video") {
+    return !String(asset?.path || "").trim();
+  }
+
+  if (resourceType === "article") {
+    return !String(asset?.content || "").trim();
+  }
+
+  if (resourceType === "quiz") {
+    const questions = Array.isArray(asset?.questions) ? asset.questions : [];
+    return questions.length === 0;
+  }
+
+  if (resourceType === "coding_exercise") {
+    const stepChallenges =
+      asset?.step_challenges && typeof asset.step_challenges === "object"
+        ? asset.step_challenges
+        : {};
+    const hasAnyStepChallenges = Object.values(stepChallenges).some(
+      (steps) => Array.isArray(steps) && steps.length > 0,
+    );
+    return !hasAnyStepChallenges;
+  }
+
+  return true;
+}
+
+function buildMissingCurriculumSummary(course) {
+  const sections = Array.isArray(course?.sections) ? course.sections : [];
+  const sectionIssues = [];
+  let totalMissingCurriculums = 0;
+
+  for (const section of sections) {
+    const curriculums = getSectionCurriculums(section);
+    const missingCount = curriculums.filter(hasMissingCurriculumContent).length;
+    if (missingCount > 0) {
+      totalMissingCurriculums += missingCount;
+      sectionIssues.push({
+        id: String(section?.id || "").trim() || `section-${sectionIssues.length + 1}`,
+        title: String(section?.title || "Untitled section").trim(),
+        missingCount,
+      });
+    }
+  }
+
+  return {
+    totalMissingCurriculums,
+    sectionIssues,
+  };
+}
+
 export function getApprovalChecks(course, baseUuid) {
   const title = String(course?.title || "").trim();
   const subtitle = String(course?.subtitle || "").trim();
@@ -32,6 +112,7 @@ export function getApprovalChecks(course, baseUuid) {
   const requirementsCount = countFilled(course?.goals?.requirements_data);
   const audienceCount = countFilled(course?.goals?.who_should_attend_data);
   const hasCategory = Array.isArray(course?.category_ids) && course.category_ids.length > 0;
+  const { totalMissingCurriculums } = buildMissingCurriculumSummary(course);
   const levelId =
     course?.instructional_level?.id ||
     course?.instructional_level ||
@@ -85,6 +166,12 @@ export function getApprovalChecks(course, baseUuid) {
       key: "curriculum",
       label: "Build curriculum (1+ section, 5+ lessons)",
       done: sectionCount >= 1 && lessonCount >= 5,
+      href: `/instructor/courses/${baseUuid}/curriculum`,
+    },
+    {
+      key: "curriculum-content",
+      label: "Complete all curriculum content items",
+      done: totalMissingCurriculums === 0,
       href: `/instructor/courses/${baseUuid}/curriculum`,
     },
     {
@@ -151,6 +238,11 @@ export default function CourseApprovalReadiness({ course }) {
     () => getApprovalReadinessSummary(course),
     [course],
   );
+  const baseUuid = course?.uuid || course?.id || "";
+  const { totalMissingCurriculums, sectionIssues } = useMemo(
+    () => buildMissingCurriculumSummary(course),
+    [course],
+  );
   const normalizedScore = Math.min(100, Math.max(0, score));
   const tone = getScoreTone(score);
   const radius = 30;
@@ -166,6 +258,13 @@ export default function CourseApprovalReadiness({ course }) {
             Complete the checklist to improve your chance of approval. Hover the
             progress circle to view details.
           </p>
+          {totalMissingCurriculums > 0 && (
+            <div className="mt-3 inline-flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700">
+              <AlertTriangle size={14} />
+              {totalMissingCurriculums} curriculum item
+              {totalMissingCurriculums > 1 ? "s" : ""} missing content
+            </div>
+          )}
         </div>
         <div className="relative group">
           <div className="relative h-20 w-20">
@@ -233,6 +332,32 @@ export default function CourseApprovalReadiness({ course }) {
                   </Link>
                 ))}
               </div>
+
+              {sectionIssues.length > 0 && (
+                <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3">
+                  <p className="flex items-center gap-2 text-sm font-semibold text-red-700">
+                    <AlertTriangle size={14} />
+                    Sections that still need curriculum content
+                  </p>
+                  <div className="mt-2 space-y-2">
+                    {sectionIssues.map((section) => (
+                      <Link
+                        key={section.id}
+                        href={`/instructor/courses/${baseUuid}/curriculum`}
+                        className="flex items-center justify-between rounded-md border border-red-200 bg-white px-3 py-2 text-xs hover:bg-red-50/60"
+                      >
+                        <span className="flex items-center gap-2 text-red-700">
+                          <AlertTriangle size={12} />
+                          {section.title}
+                        </span>
+                        <span className="rounded-full bg-red-100 px-2 py-0.5 font-bold text-red-700">
+                          {section.missingCount} missing
+                        </span>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

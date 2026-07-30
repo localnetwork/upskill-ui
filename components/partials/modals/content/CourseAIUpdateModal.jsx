@@ -14,7 +14,9 @@ function resolveCourseContext(modalInfo, courseManagement) {
 export default function CourseAIUpdateModal() {
   const modalInfo = modalState((state) => state.modalInfo);
   const courseManagement = courseStore((state) => state.courseManagement);
-  const [prompt, setPrompt] = useState("");
+  const [prompt, setPrompt] = useState(
+    String(modalInfo?.data?.initialPrompt || ""),
+  );
   const [phase, setPhase] = useState("idle"); // idle | running | success
 
   const course = useMemo(
@@ -56,6 +58,7 @@ export default function CourseAIUpdateModal() {
           new CustomEvent("course-ai-updated", {
             detail: {
               courseId: courseId,
+              updatedCourse,
             },
           }),
         );
