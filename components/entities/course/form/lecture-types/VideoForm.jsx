@@ -113,6 +113,7 @@ export default function VideoForm({ onSave, onCancel, lecture }) {
           {videoUploaded ? (
             <SecureVideo
               lessonId={lecture.id}
+              src={lecture?.asset?.path || lecture?.videoUrl || ""}
               className="w-full h-[200px] object-cover"
             />
           ) : preview ? (

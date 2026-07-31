@@ -84,12 +84,12 @@ function normalizeSections(rawSections = []) {
                 }
               : curriculum?.videoUrl || curriculum?.type === "VIDEO"
                 ? {
-                    id: curriculum?.id || curriculum?.uuid,
-                    path: `/stream.php?id=${encodeURIComponent(curriculum?.id || curriculum?.uuid || "")}`,
-                  }
-                : curriculum?.assignmentText
-                  ? { id: curriculum?.id || curriculum?.uuid, content: curriculum.assignmentText }
-                  : null),
+                  id: curriculum?.id || curriculum?.uuid,
+                  path: curriculum?.videoUrl || "",
+                }
+              : curriculum?.assignmentText
+                ? { id: curriculum?.id || curriculum?.uuid, content: curriculum.assignmentText }
+                : null),
       })),
     };
   });
@@ -107,7 +107,11 @@ function LecturePreview({ lecture }) {
   if (lecture.curriculum_resource_type === "video") {
     return (
       <div className="w-full h-[500px] bg-[#16161D] p-4">
-        <SecureVideo lessonId={lecture.id} className="w-full h-full object-cover" />
+        <SecureVideo
+          lessonId={lecture.id}
+          src={lecture?.asset?.path || lecture?.videoUrl || ""}
+          className="w-full h-full object-cover"
+        />
       </div>
     );
   }

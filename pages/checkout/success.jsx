@@ -10,24 +10,35 @@ import { io } from "socket.io-client";
 import { getAuthTokenFromCookieMap } from "@/lib/services/authToken";
 
 export async function getServerSideProps(context) {
-  const { query } = context;
-  const token = String(
+  const { query, params, resolvedUrl } = context;
+  const queryToken = String(
     query?.token || query?.orderId || query?.order_id || "",
   ).trim();
+  const paramsToken = String(
+    params?.orderId || params?.token || params?.order_id || "",
+  ).trim();
+  const pathToken = (() => {
+    const pathname = String(resolvedUrl || "").split("?")[0] || "";
+    const parts = pathname.split("/").filter(Boolean);
+    const last = parts.length ? parts[parts.length - 1] : "";
+    return decodeURIComponent(String(last || "").trim());
+  })();
+  const token = queryToken || paramsToken || pathToken;
   setContext(context);
 
-  if (!token) {
-    return {
-      props: {
-        data: null,
-        statusState: "INVALID",
-        errorMessage: "Missing payment token.",
-      },
-    };
-  }
+  // if (!token) {
+  //   return {
+  //     props: {
+  //       data: null,
+  //       statusState: "INVALID",
+  //       errorMessage: "Missing payment token.",
+  //     },
+  //   };
+  // }
 
   try {
-    const res = await BaseApi.get(
+    console.log("try here");
+    const res = await BaseApi.customGet(
       `${process.env.NEXT_PUBLIC_API_URL}/checkout/status/${encodeURIComponent(token)}`,
     );
 
@@ -100,8 +111,12 @@ export default function Page({ data = null, statusState = "PENDING" }) {
     ["CANCELLED", "VOIDED", "EXPIRED", "DECLINED"].includes(paypalStatus);
   const isPending = !isPaid && !isInvalid && !isFailed;
   const isUnpaidOrder = isPending && paypalStatus === "CREATED";
+  const canCancelByLocalStatus =
+    orderStatus === "CREATED" &&
+    String(checkoutData?.paymentStatus || "").toUpperCase() === "CREATED" &&
+    paypalStatus === "CREATED";
   const canCancelCheckout = Boolean(
-    checkoutData?.canCancelCheckout ?? (isPending && !isPaid),
+    checkoutData?.canCancelCheckout ?? canCancelByLocalStatus,
   );
   const canCompletePayment = Boolean(
     (checkoutData?.canCompletePayment ?? isUnpaidOrder) && approvalUrl,
@@ -177,7 +192,9 @@ export default function Page({ data = null, statusState = "PENDING" }) {
       return;
     }
     if (router.pathname === "/checkout/success") {
-      router.replace(`/checkout/payments/${encodeURIComponent(providerOrderId)}`);
+      router.replace(
+        `/checkout/payments/${encodeURIComponent(providerOrderId)}`,
+      );
       return;
     }
     fetchStatus();
@@ -227,10 +244,10 @@ export default function Page({ data = null, statusState = "PENDING" }) {
             : isCancelled
               ? "Order cancelled"
               : isFailed
-              ? "Payment was not completed"
-              : isUnpaidOrder
-                ? "Payment not completed yet"
-                : "Finalizing your order..."}
+                ? "Payment was not completed"
+                : isUnpaidOrder
+                  ? "Payment not completed yet"
+                  : "Finalizing your order..."}
       </h1>
       <p className="text-[20px] mt-2">
         {isInvalid

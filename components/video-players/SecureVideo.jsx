@@ -1,58 +1,69 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { parseCookies } from "nookies";
 import { getAuthTokenFromCookieMap } from "@/lib/services/authToken";
+import {
+  buildBunnyEmbedUrlFromPlaybackUrl,
+  extractBunnyVideoIdFromPlaybackUrl,
+  resolveVideoSource,
+} from "@/lib/services/videoSource";
 
-export default function SecureVideo({ lessonId, className = "w-full h-auto rounded" }) {
-  const [streamUrl, setStreamUrl] = useState("");
+export default function SecureVideo({
+  lessonId,
+  src = "",
+  className = "w-full rounded",
+}) {
+  const [iframeUrl, setIframeUrl] = useState("");
   const [loading, setLoading] = useState(false);
-  const [loadFailed, setLoadFailed] = useState(false);
+  const resolvedSrc = useMemo(() => resolveVideoSource(src), [src]);
+  const fallbackEmbedUrl = useMemo(
+    () => buildBunnyEmbedUrlFromPlaybackUrl(resolvedSrc),
+    [resolvedSrc],
+  );
 
   useEffect(() => {
-    if (!lessonId) return;
-
-    const cookies = parseCookies();
-    const token = getAuthTokenFromCookieMap(cookies);
-    const streamTokenUrl = `${process.env.NEXT_PUBLIC_API_URL}/stream-token.php?id=${encodeURIComponent(lessonId)}`;
     let mounted = true;
 
-    async function loadVideo() {
-      try {
-        if (!token) {
-          throw new Error("Unauthorized");
-        }
-        setLoading(true);
-        setLoadFailed(false);
-        setStreamUrl("");
+    async function loadSignedEmbedUrl() {
+      if (!lessonId) {
+        if (mounted) setIframeUrl(fallbackEmbedUrl || "");
+        return;
+      }
 
-        const response = await fetch(streamTokenUrl, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "x-upskill-stream-intent": "playback",
+      const cookies = parseCookies();
+      const token = getAuthTokenFromCookieMap(cookies);
+      if (!token) {
+        if (mounted) setIframeUrl("");
+        return;
+      }
+
+      try {
+        setLoading(true);
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/stream-token?id=${encodeURIComponent(lessonId)}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "x-upskill-stream-intent": "playback",
+            },
           },
-        });
+        );
 
         if (!response.ok) {
-          throw new Error("Unable to load secure video");
+          throw new Error(
+            `Unable to get secure player URL (${response.status})`,
+          );
         }
 
         const payload = await response.json();
-        const playbackToken = payload?.data?.token;
-        if (!playbackToken) {
-          throw new Error("Missing playback token");
-        }
-        const nextStreamUrl =
-          `${process.env.NEXT_PUBLIC_API_URL}/stream.php?id=${encodeURIComponent(lessonId)}` +
-          `&st=${encodeURIComponent(playbackToken)}`;
-
+        const signedEmbedUrl = String(payload?.data?.embed_url || "").trim();
         if (mounted) {
-          setStreamUrl(nextStreamUrl);
+          setIframeUrl(signedEmbedUrl || "");
         }
       } catch (_error) {
         if (mounted) {
-          setLoadFailed(true);
-          setStreamUrl("");
+          setIframeUrl("");
         }
       } finally {
         if (mounted) {
@@ -61,28 +72,42 @@ export default function SecureVideo({ lessonId, className = "w-full h-auto round
       }
     }
 
-    loadVideo();
+    loadSignedEmbedUrl();
 
     return () => {
       mounted = false;
     };
-  }, [lessonId]);
+  }, [lessonId, fallbackEmbedUrl]);
+
+  const isBunnyVideo = Boolean(extractBunnyVideoIdFromPlaybackUrl(resolvedSrc));
 
   if (loading) {
     return <div className="text-sm text-gray-500">Loading secure video...</div>;
   }
 
-  if (!streamUrl || loadFailed) {
-    return <div className="text-sm text-red-500">Unable to load video preview.</div>;
+  if (!iframeUrl && lessonId && isBunnyVideo) {
+    return (
+      <div className="text-sm text-red-500">
+        Unable to load secured Bunny video.
+      </div>
+    );
+  }
+
+  if (!iframeUrl) {
+    return (
+      <div className="text-sm text-red-500">
+        Unable to load Bunny video preview.
+      </div>
+    );
   }
 
   return (
-    <video
-      src={streamUrl}
-      controls
-      controlsList="nodownload noremoteplayback"
-      disablePictureInPicture
-      onContextMenu={(e) => e.preventDefault()}
+    <iframe
+      src={iframeUrl}
+      loading="lazy"
+      allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
+      allowFullScreen
+      height={300}
       className={className}
     />
   );

@@ -26,6 +26,14 @@ export default function CourseAIUpdateModal() {
   const courseId = String(
     modalInfo?.data?.courseId || course?.uuid || course?.id || "",
   ).trim();
+  const preferredLanguage = String(course?.language || "").trim();
+  const preferredInstructionalLevel = String(
+    course?.instructional_level?.title ||
+      course?.instructional_level?.label ||
+      course?.instructional_level ||
+      course?.level?.title ||
+      "",
+  ).trim();
 
   const canSubmit =
     courseId &&
@@ -47,6 +55,8 @@ export default function CourseAIUpdateModal() {
         `${process.env.NEXT_PUBLIC_API_URL}/courses/${encodeURIComponent(courseId)}/ai-update`,
         {
           prompt: String(prompt || "").trim(),
+          language: preferredLanguage || undefined,
+          instructional_level: preferredInstructionalLevel || undefined,
         },
       );
       const updatedCourse = response?.data?.data?.course || null;

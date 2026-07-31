@@ -98,7 +98,10 @@ export default function LectureContentSelector({
           <div className="space-y-2">
             <h3 className="font-semibold">{title}</h3>
             <p className="text-sm text-gray-600">{description}</p>
-            <SecureVideo lessonId={lecture.id} />
+            <SecureVideo
+              lessonId={lecture.id}
+              src={lecture?.asset?.path || lecture?.videoUrl || ""}
+            />
           </div>
         );
       case "article":

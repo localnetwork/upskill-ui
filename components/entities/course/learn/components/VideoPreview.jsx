@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { parseCookies } from "nookies";
 import { useRouter } from "next/router";
 import { MediaPlayer, MediaProvider } from "@vidstack/react";
 import {
@@ -11,7 +10,58 @@ import {
 import "@vidstack/react/player/styles/base.css";
 import "@vidstack/react/player/styles/plyr/theme.css";
 import BaseApi from "@/lib/api/_base.api";
-import { getAuthTokenFromCookieMap } from "@/lib/services/authToken";
+import {
+  buildBunnyEmbedUrlFromPlaybackUrl,
+  extractBunnyVideoIdFromPlaybackUrl,
+  isAbsoluteHttpUrl,
+  resolveVideoSource,
+} from "@/lib/services/videoSource";
+
+const PLAYER_JS_SRC =
+  "https://assets.mediadelivery.net/playerjs/playerjs-latest.min.js";
+let playerJsLoaderPromise = null;
+
+function loadBunnyPlayerJs() {
+  if (typeof window === "undefined") {
+    return Promise.resolve(null);
+  }
+
+  if (window.playerjs) {
+    return Promise.resolve(window.playerjs);
+  }
+
+  if (playerJsLoaderPromise) {
+    return playerJsLoaderPromise;
+  }
+
+  playerJsLoaderPromise = new Promise((resolve, reject) => {
+    const existingScript = document.querySelector(
+      `script[src="${PLAYER_JS_SRC}"]`,
+    );
+
+    if (existingScript) {
+      existingScript.addEventListener("load", () => resolve(window.playerjs), {
+        once: true,
+      });
+      existingScript.addEventListener(
+        "error",
+        () => reject(new Error("Failed to load Bunny PlayerJS")),
+        { once: true },
+      );
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = PLAYER_JS_SRC;
+    script.async = true;
+    script.onload = () => resolve(window.playerjs);
+    script.onerror = () =>
+      reject(new Error("Failed to load Bunny PlayerJS"));
+    document.head.appendChild(script);
+  });
+
+  return playerJsLoaderPromise;
+}
 
 export default function VideoPreview({
   course,
@@ -21,9 +71,11 @@ export default function VideoPreview({
   setCourse,
 }) {
   const [mediaSrc, setMediaSrc] = useState(null);
+  const [iframeSrc, setIframeSrc] = useState("");
   const [loading, setLoading] = useState(false);
   const [countdown, setCountdown] = useState(null);
   const playerRef = useRef(null);
+  const iframeRef = useRef(null);
   const containerRef = useRef(null);
   const completedLectureRef = useRef("");
   const router = useRouter();
@@ -31,43 +83,64 @@ export default function VideoPreview({
   useEffect(() => {
     if (!course || !lecture) return;
 
-    const cookies = parseCookies();
-    const token = getAuthTokenFromCookieMap(cookies);
-    const streamTokenUrl = `${process.env.NEXT_PUBLIC_API_URL}/stream-token.php?id=${encodeURIComponent(lecture.id)}`;
-
+    const directVideoUrl = resolveVideoSource(
+      lecture?.asset?.path || lecture?.videoUrl || "",
+    );
+    const isBunnyVideo = Boolean(
+      extractBunnyVideoIdFromPlaybackUrl(directVideoUrl),
+    );
     let isMounted = true;
 
     async function loadVideo() {
       try {
-        if (!token) {
-          throw new Error("Unauthorized");
-        }
-
         setLoading(true);
+        setIframeSrc("");
         setMediaSrc(null);
 
-        const res = await fetch(streamTokenUrl, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "x-upskill-stream-intent": "playback",
-          },
-        });
-
-        if (!res.ok) {
-          throw new Error(`Video request failed (${res.status})`);
+        if (lecture?.id) {
+          try {
+            const response = await BaseApi.get(
+              `${process.env.NEXT_PUBLIC_API_URL}/stream-token`,
+              {
+                params: {
+                  id: lecture.id,
+                },
+                headers: {
+                  "x-upskill-stream-intent": "playback",
+                },
+              },
+            );
+            const signedEmbedUrl = String(
+              response?.data?.data?.embed_url || "",
+            ).trim();
+            if (signedEmbedUrl) {
+              if (isMounted) {
+                setIframeSrc(signedEmbedUrl);
+                setMediaSrc(null);
+              }
+              return;
+            }
+          } catch (streamError) {
+            if (isBunnyVideo) {
+              throw streamError;
+            }
+          }
         }
 
-        const payload = await res.json();
-        const playbackToken = payload?.data?.token;
-        if (!playbackToken) {
-          throw new Error("Missing playback token");
+        if (isBunnyVideo) {
+          throw new Error("Missing secure Bunny embed URL");
         }
-        const directStreamUrl =
-          `${process.env.NEXT_PUBLIC_API_URL}/stream.php?id=${encodeURIComponent(lecture.id)}` +
-          `&st=${encodeURIComponent(playbackToken)}`;
 
+        if (!isAbsoluteHttpUrl(directVideoUrl)) {
+          throw new Error("Missing video URL");
+        }
+
+        const bunnyIframeUrl = buildBunnyEmbedUrlFromPlaybackUrl(directVideoUrl);
         if (isMounted) {
-          setMediaSrc([{ src: directStreamUrl, type: "video/mp4" }]);
+          setIframeSrc(bunnyIframeUrl);
+          setMediaSrc(
+            bunnyIframeUrl ? null : [{ src: directVideoUrl, type: "video/mp4" }],
+          );
         }
       } catch (err) {
         console.error("Error loading video:", err);
@@ -81,7 +154,7 @@ export default function VideoPreview({
     return () => {
       isMounted = false;
     };
-  }, [course?.id, lecture?.id]);
+  }, [course?.id, lecture?.id, lecture?.asset?.path, lecture?.videoUrl]);
 
   useEffect(() => {
     setCountdown(null);
@@ -129,26 +202,14 @@ export default function VideoPreview({
         process.env.NEXT_PUBLIC_API_URL + "/course-curriculums/add-progress",
         { course_id: course.id, curriculum_id: lecture.id },
       );
-      console.log("✅ Progress saved for", lecture.title);
     } catch (error) {
-      console.error("❌ Error adding progress:", error);
+      console.error("Error adding progress:", error);
     }
   };
 
-  const handleEnded = async () => {
+  const markLectureCompleted = async () => {
     if (completedLectureRef.current === lecture?.id) {
       return;
-    }
-
-    const videoEl = playerRef.current?.el?.querySelector("video");
-    if (videoEl) {
-      const duration = Number(videoEl.duration);
-      const currentTime = Number(videoEl.currentTime || 0);
-      const hasKnownDuration = Number.isFinite(duration) && duration > 0;
-      const reachedEndByTime = hasKnownDuration && currentTime >= duration - 0.35;
-      if (!videoEl.ended && !reachedEndByTime) {
-        return;
-      }
     }
 
     completedLectureRef.current = lecture?.id || "";
@@ -170,7 +231,69 @@ export default function VideoPreview({
     if (nextLecture) setCountdown(5);
   };
 
-  // Countdown auto-advance
+  const handleEnded = async () => {
+    const videoEl = playerRef.current?.el?.querySelector("video");
+    if (videoEl) {
+      const duration = Number(videoEl.duration);
+      const currentTime = Number(videoEl.currentTime || 0);
+      const hasKnownDuration = Number.isFinite(duration) && duration > 0;
+      const reachedEndByTime =
+        hasKnownDuration && currentTime >= duration - 0.35;
+      if (!videoEl.ended && !reachedEndByTime) {
+        return;
+      }
+    }
+
+    await markLectureCompleted();
+  };
+
+  useEffect(() => {
+    if (!iframeSrc || !lecture?.id) return;
+
+    let activePlayer = null;
+    let readyHandler = null;
+    let endedHandler = null;
+    let cancelled = false;
+
+    const attachIframePlaybackEvents = async () => {
+      try {
+        const playerjs = await loadBunnyPlayerJs();
+        if (cancelled || !playerjs || !iframeRef.current) return;
+
+        activePlayer = new playerjs.Player(iframeRef.current);
+        readyHandler = () => {
+          endedHandler = () => {
+            markLectureCompleted();
+          };
+          activePlayer.on("ended", endedHandler);
+        };
+        activePlayer.on("ready", readyHandler);
+      } catch (error) {
+        console.error("Unable to attach Bunny iframe playback events:", error);
+      }
+    };
+
+    attachIframePlaybackEvents();
+
+    return () => {
+      cancelled = true;
+      if (activePlayer && endedHandler) {
+        try {
+          activePlayer.off("ended", endedHandler);
+        } catch (_error) {
+          // no-op
+        }
+      }
+      if (activePlayer && readyHandler) {
+        try {
+          activePlayer.off("ready", readyHandler);
+        } catch (_error) {
+          // no-op
+        }
+      }
+    };
+  }, [iframeSrc, lecture?.id]);
+
   useEffect(() => {
     if (countdown === null) return;
     if (countdown <= 0) {
@@ -197,7 +320,18 @@ export default function VideoPreview({
         </div>
       )}
 
-      {mediaSrc && !loading && (
+      {iframeSrc && !loading && (
+        <iframe
+          ref={iframeRef}
+          src={iframeSrc}
+          className="h-full w-full"
+          allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
+          allowFullScreen
+          loading="lazy"
+        />
+      )}
+
+      {mediaSrc && !loading && !iframeSrc && (
         <>
           <MediaPlayer
             ref={playerRef}
@@ -210,7 +344,6 @@ export default function VideoPreview({
             autoPlay
             onEnded={handleEnded}
           >
-            {/* ✅ Custom <video> element so controlsList reaches the DOM node */}
             <MediaProvider>
               <video
                 slot="media"
@@ -221,7 +354,6 @@ export default function VideoPreview({
             <PlyrLayout icons={plyrLayoutIcons} />
           </MediaPlayer>
 
-          {/* Countdown overlay */}
           {countdown !== null && (
             <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 text-white z-[2000] backdrop-blur-sm">
               <div className="relative mb-6">

@@ -7,6 +7,10 @@ import {
   X,
 } from "lucide-react";
 import { formatReadTime } from "@/lib/services/readTimeFormatter";
+import {
+  buildBunnyEmbedUrlFromPlaybackUrl,
+  resolveVideoSource,
+} from "@/lib/services/videoSource";
 
 const CURRICULUM_ICONS = {
   article: Newspaper,
@@ -66,11 +70,25 @@ export default function CourseSections({ course }) {
     const asset = previewCurriculum.preview_asset || {};
 
     if (type === "video" && asset.path) {
+      const resolvedVideoSource = resolveVideoSource(asset.path);
+      const bunnyEmbedUrl = buildBunnyEmbedUrlFromPlaybackUrl(resolvedVideoSource);
+      if (bunnyEmbedUrl) {
+        return (
+          <iframe
+            src={bunnyEmbedUrl}
+            className="w-full rounded-lg bg-black h-[420px]"
+            allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
+            allowFullScreen
+            loading="lazy"
+          />
+        );
+      }
+
       return (
         <video
           controls
           className="w-full rounded-lg bg-black max-h-[420px]"
-          src={`${process.env.NEXT_PUBLIC_API_URL}${asset.path}`}
+          src={resolvedVideoSource}
         />
       );
     }
