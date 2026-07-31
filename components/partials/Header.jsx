@@ -9,7 +9,7 @@ import UserNav from "../entities/user/UserNav";
 import UserResendNotif from "../entities/user/UserResendNotif";
 import UserNotifications from "../entities/user/UserNotifications";
 import Image from "next/image";
-import { Bell, ChevronDown, ShoppingCart } from "lucide-react";
+import { Bell, ChevronDown, MessageCircle, ShoppingCart } from "lucide-react";
 import ExploreDropdown from "../dropdowns/ExploreDropdown";
 import BaseApi from "@/lib/api/_base.api";
 import { io } from "socket.io-client";
@@ -35,9 +35,13 @@ export default function Header() {
 
   const drawerRef = useRef(null);
   const notificationRef = useRef(null);
+  const chatRef = useRef(null);
   const [notifications, setNotifications] = useState([]);
+  const [recentMessages, setRecentMessages] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [chatUnreadCount, setChatUnreadCount] = useState(0);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
 
   const socketRef = useRef(null);
 
@@ -60,6 +64,53 @@ export default function Header() {
     } catch (_error) {}
   }, [profile]);
 
+  const refreshChatUnread = useCallback(async () => {
+    if (!profile) {
+      setChatUnreadCount(0);
+      return;
+    }
+
+    try {
+      const response = await BaseApi.get(
+        `${process.env.NEXT_PUBLIC_API_URL}/chat/unread-count`,
+      );
+      setChatUnreadCount(Number(response?.data?.data?.totalUnread || 0));
+    } catch (_error) {}
+  }, [profile]);
+
+  const refreshRecentMessages = useCallback(async () => {
+    if (!profile) {
+      setRecentMessages([]);
+      return;
+    }
+    try {
+      const response = await BaseApi.get(
+        `${process.env.NEXT_PUBLIC_API_URL}/chat/conversations`,
+        { params: { page: 1, limit: 5 } },
+      );
+      const rows = Array.isArray(response?.data?.data) ? response.data.data : [];
+      setRecentMessages(rows);
+    } catch (_error) {}
+  }, [profile]);
+
+  const playChatNotificationSound = useCallback(() => {
+    if (typeof window === "undefined") return;
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) return;
+    const context = new AudioContextClass();
+    const oscillator = context.createOscillator();
+    const gain = context.createGain();
+    oscillator.type = "sine";
+    oscillator.frequency.value = 880;
+    gain.gain.value = 0.0001;
+    oscillator.connect(gain);
+    gain.connect(context.destination);
+    oscillator.start();
+    gain.gain.exponentialRampToValueAtTime(0.12, context.currentTime + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + 0.2);
+    oscillator.stop(context.currentTime + 0.2);
+  }, []);
+
   useEffect(() => {
     function handleClickOutside(e) {
       if (
@@ -79,6 +130,8 @@ export default function Header() {
 
   useEffect(() => {
     refreshNotifications();
+    refreshChatUnread();
+    refreshRecentMessages();
     if (!profile?.id) {
       if (socketRef.current) {
         socketRef.current.disconnect();
@@ -105,6 +158,13 @@ export default function Header() {
     socket.on("notification:new", () => {
       refreshNotifications();
     });
+    socket.on("chat:new", (payload) => {
+      if (payload?.message?.senderId !== profile?.id) {
+        playChatNotificationSound();
+      }
+      refreshChatUnread();
+      refreshRecentMessages();
+    });
 
     return () => {
       socket.disconnect();
@@ -112,7 +172,16 @@ export default function Header() {
         socketRef.current = null;
       }
     };
-  }, [profile?.id, refreshNotifications]);
+  }, [playChatNotificationSound, profile?.id, refreshChatUnread, refreshNotifications, refreshRecentMessages]);
+
+  useEffect(() => {
+    if (!profile?.id) return;
+    const timer = setInterval(() => {
+      refreshChatUnread();
+      refreshRecentMessages();
+    }, 30000);
+    return () => clearInterval(timer);
+  }, [profile?.id, refreshChatUnread, refreshRecentMessages]);
 
   useEffect(() => {
     if (!isNotificationOpen) return;
@@ -126,6 +195,19 @@ export default function Header() {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [isNotificationOpen]);
+
+  useEffect(() => {
+    if (!isChatOpen) return;
+    const handleClickOutside = (e) => {
+      if (!chatRef.current?.contains(e.target)) {
+        setIsChatOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isChatOpen]);
 
   const handleNotificationClick = async (notification) => {
     if (!notification?.id) return;
@@ -183,11 +265,96 @@ export default function Header() {
               </div>
 
               {profile && (
+                <div className="relative" ref={chatRef}>
+                  <button
+                    type="button"
+                    className="relative cursor-pointer"
+                    onClick={() => {
+                      setIsNotificationOpen(false);
+                      setIsChatOpen((previous) => {
+                        const next = !previous;
+                        if (next) refreshRecentMessages();
+                        return next;
+                      });
+                    }}
+                  >
+                    <MessageCircle />
+                    {chatUnreadCount > 0 ? (
+                      <span className="absolute border-[2px] border-white -top-2 -right-2 w-[20px] h-[20px] px-1 rounded-full bg-red-600 text-white text-[10px] font-bold flex items-center justify-center">
+                        {chatUnreadCount > 9 ? "9+" : chatUnreadCount}
+                      </span>
+                    ) : null}
+                  </button>
+                  {isChatOpen && (
+                    <div className="absolute border border-[#f3f3f3] right-0 mt-4 w-[330px] bg-white rounded-lg shadow-[0rem_0.125rem_1rem_rgba(0,0,0,0.15)] z-50 p-3">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">
+                        Recent messages
+                      </p>
+                      <div className="max-h-[320px] overflow-y-auto space-y-2">
+                        {recentMessages.length === 0 ? (
+                          <p className="text-sm text-slate-500">No recent messages.</p>
+                        ) : (
+                          recentMessages.map((conversation) => (
+                            <Link
+                              key={conversation.id}
+                              href={`/messages?conversationId=${encodeURIComponent(conversation.id)}`}
+                              onClick={() => setIsChatOpen(false)}
+                              className="block rounded-md border border-slate-200 px-3 py-2 hover:bg-slate-50"
+                            >
+                              <div className="flex items-center justify-between gap-2">
+                                <p className="line-clamp-1 text-sm font-semibold text-slate-800">
+                                  {conversation.title || "Conversation"}
+                                </p>
+                                <span
+                                  className={`h-2.5 w-2.5 rounded-full ${
+                                    (conversation.otherParticipants || []).some(
+                                      (item) => item.isOnline,
+                                    )
+                                      ? "bg-emerald-500"
+                                      : "bg-slate-300"
+                                  }`}
+                                />
+                                {Number(conversation.unreadCount || 0) > 0 ? (
+                                  <span className="rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-bold text-white">
+                                    {conversation.unreadCount}
+                                  </span>
+                                ) : null}
+                              </div>
+                              <p className="line-clamp-1 text-xs text-slate-500">
+                                {conversation.lastMessage?.deletedForEveryone
+                                  ? "Message deleted"
+                                  : conversation.lastMessage?.body ||
+                                  (conversation.lastMessage?.mediaPath
+                                    ? "[Attachment]"
+                                    : "No messages yet")}
+                              </p>
+                            </Link>
+                          ))
+                        )}
+                      </div>
+                      <div className="mt-3 border-t border-slate-100 pt-2 text-right">
+                        <Link
+                          href="/messages"
+                          onClick={() => setIsChatOpen(false)}
+                          className="text-sm font-semibold text-primary hover:underline"
+                        >
+                          See All Messages
+                        </Link>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {profile && (
                 <div className="relative" ref={notificationRef}>
                   <button
                     type="button"
                     className="relative cursor-pointer"
-                    onClick={() => setIsNotificationOpen((prev) => !prev)}
+                    onClick={() => {
+                      setIsChatOpen(false);
+                      setIsNotificationOpen((prev) => !prev);
+                    }}
                   >
                     <Bell />
                     {unreadCount > 0 ? (

@@ -20,6 +20,7 @@ import { Editor } from "@tinymce/tinymce-react";
 export default function CurriculumItem({
   item,
   topics = [],
+  allItems = [],
   onSave,
   onUpdate,
   onDelete,
@@ -43,6 +44,19 @@ export default function CurriculumItem({
   );
   const [deleting, setDeleting] = useState(false);
   const [openContentOnSync, setOpenContentOnSync] = useState(false);
+  const [unlockType, setUnlockType] = useState(
+    String(item?.unlock_type || "immediate").trim().toLowerCase(),
+  );
+  const [unlockAt, setUnlockAt] = useState(() => {
+    const raw = String(item?.unlock_at || "").trim();
+    if (!raw) return "";
+    const date = new Date(raw);
+    if (Number.isNaN(date.getTime())) return "";
+    return date.toISOString().slice(0, 16);
+  });
+  const [prerequisiteLessonId, setPrerequisiteLessonId] = useState(
+    String(item?.prerequisite_lesson_id || "").trim(),
+  );
 
   const resourceType = String(currentItem?.curriculum_resource_type || "null");
   const normalizeCurriculumType = (curriculum) => {
@@ -91,6 +105,14 @@ export default function CurriculumItem({
           : resourceType === "coding_exercise"
             ? !hasCodingSteps
             : true;
+  const prerequisiteOptions = Array.isArray(allItems)
+    ? allItems.filter(
+        (candidate) => candidate?.id && candidate.id !== currentItem?.id,
+      )
+    : [];
+  const hasUnlockValidationError =
+    (unlockType === "date" && !unlockAt) ||
+    (unlockType === "after_custom" && !prerequisiteLessonId);
 
   const isContentCapableCurriculum = (curriculum) => {
     const normalizedType = normalizeCurriculumType(curriculum);
@@ -117,6 +139,23 @@ export default function CurriculumItem({
           ? [String(item.topic_id)]
           : [],
     );
+    setUnlockType(
+      String(item?.unlock_type || "immediate").trim().toLowerCase(),
+    );
+    const rawUnlockAt = String(item?.unlock_at || "").trim();
+    if (!rawUnlockAt) {
+      setUnlockAt("");
+    } else {
+      const parsedUnlockAt = new Date(rawUnlockAt);
+      setUnlockAt(
+        Number.isNaN(parsedUnlockAt.getTime())
+          ? ""
+          : parsedUnlockAt.toISOString().slice(0, 16),
+      );
+    }
+    setPrerequisiteLessonId(
+      String(item?.prerequisite_lesson_id || "").trim(),
+    );
     setError("");
     if (shouldAutoOpenContent) {
       setOpenContentOnSync(false);
@@ -138,6 +177,12 @@ export default function CurriculumItem({
       course_section_id: currentItem.section_id,
       is_public_preview: isPublicPreview,
       topic_ids: topicIds,
+      unlock_type: unlockType || "immediate",
+      unlock_at: unlockType === "date" && unlockAt ? unlockAt : null,
+      prerequisite_lesson_id:
+        unlockType === "after_custom" && prerequisiteLessonId
+          ? prerequisiteLessonId
+          : null,
     };
 
     try {
@@ -192,6 +237,12 @@ export default function CurriculumItem({
       curriculum_type: currentItem.curriculum_type,
       is_public_preview: isPublicPreview,
       topic_ids: topicIds,
+      unlock_type: unlockType || "immediate",
+      unlock_at: unlockType === "date" && unlockAt ? unlockAt : null,
+      prerequisite_lesson_id:
+        unlockType === "after_custom" && prerequisiteLessonId
+          ? prerequisiteLessonId
+          : null,
     };
 
     try {
@@ -420,6 +471,56 @@ export default function CurriculumItem({
             />
           </div>
 
+          <div className="grid md:grid-cols-3 gap-3">
+            <div>
+              <label className="block font-semibold mb-1">Unlock rule</label>
+              <select
+                value={unlockType}
+                onChange={(event) => setUnlockType(event.target.value)}
+                className="w-full rounded border border-slate-300 px-2 py-2"
+              >
+                <option value="immediate">Immediate</option>
+                <option value="date">Date & time</option>
+                <option value="after_previous">After previous lesson</option>
+                <option value="after_custom">After custom prerequisite</option>
+              </select>
+            </div>
+
+            {unlockType === "date" && (
+              <div>
+                <label className="block font-semibold mb-1">Unlock at</label>
+                <input
+                  type="datetime-local"
+                  value={unlockAt}
+                  onChange={(event) => setUnlockAt(event.target.value)}
+                  className="w-full rounded border border-slate-300 px-2 py-2"
+                />
+              </div>
+            )}
+
+            {unlockType === "after_custom" && (
+              <div>
+                <label className="block font-semibold mb-1">
+                  Prerequisite lesson
+                </label>
+                <select
+                  value={prerequisiteLessonId}
+                  onChange={(event) =>
+                    setPrerequisiteLessonId(event.target.value)
+                  }
+                  className="w-full rounded border border-slate-300 px-2 py-2"
+                >
+                  <option value="">Select prerequisite</option>
+                  {prerequisiteOptions.map((candidate) => (
+                    <option key={candidate.id} value={candidate.id}>
+                      {candidate.title || candidate.id}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+
           {error && <p className="text-sm text-red-600">{error}</p>}
 
           <div className="flex justify-end gap-2">
@@ -444,7 +545,9 @@ export default function CurriculumItem({
               <button
                 onClick={handleSave}
                 className="px-4 py-2 cursor-pointer flex items-center justify-center font-bold border-[2px] border-[#0056D2] hover:bg-[#0056D2] hover:text-white text-[#0056D2] rounded"
-                disabled={!title.trim() || !description.trim()}
+                disabled={
+                  !title.trim() || !description.trim() || hasUnlockValidationError
+                }
               >
                 Save Curriculum
               </button>
@@ -452,7 +555,9 @@ export default function CurriculumItem({
               <button
                 onClick={handleUpdate}
                 className="px-4 py-2 cursor-pointer flex items-center justify-center font-bold border-[2px] border-[#0056D2] hover:bg-[#0056D2] hover:text-white text-[#0056D2] rounded"
-                disabled={!title.trim() || !description.trim()}
+                disabled={
+                  !title.trim() || !description.trim() || hasUnlockValidationError
+                }
               >
                 <Save size={16} className="mr-1" />
                 Update Curriculum

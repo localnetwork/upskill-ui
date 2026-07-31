@@ -4,6 +4,7 @@ import {
   Code,
   MonitorPlay,
   Newspaper,
+  Lock,
   PanelLeftOpen,
   PanelRightOpen,
   Sparkles,
@@ -175,6 +176,7 @@ export default function CourseLearnSidebar({
                 <div className="items flex flex-col">
                   {section.curriculums.map((curriculum) => {
                     const isActive = curriculum.uuid === activeLectureUuid;
+                    const isLocked = Boolean(curriculum?.is_locked);
 
                     let icon;
                     switch (curriculum.curriculum_resource_type) {
@@ -198,6 +200,7 @@ export default function CourseLearnSidebar({
                       <div
                         key={curriculum.id}
                         onClick={() => {
+                          if (isLocked) return;
                           setCurrentLecture(curriculum);
                           router.replace({
                             pathname: router.pathname,
@@ -209,10 +212,17 @@ export default function CourseLearnSidebar({
                         }}
                         className={`flex relative pl-[50px] group cursor-pointer items-center py-[15px] font-light px-[30px] text-[15px] transition
                           ${
-                            isActive
-                              ? "bg-[#0056D2]/10 text-[#0056D2] font-medium"
-                              : "hover:bg-[#ced9e9] text-[#2a2b3f] hover:text-[#1d1e2e]"
+                            isLocked
+                              ? "bg-slate-100 text-slate-400 cursor-not-allowed"
+                              : isActive
+                                ? "bg-[#0056D2]/10 text-[#0056D2] font-medium"
+                                : "hover:bg-[#ced9e9] text-[#2a2b3f] hover:text-[#1d1e2e]"
                           }`}
+                        title={
+                          isLocked
+                            ? curriculum?.lock_reason || "This lesson is locked"
+                            : ""
+                        }
                       >
                         <div
                           className={`${
@@ -229,6 +239,11 @@ export default function CourseLearnSidebar({
                         </div>
                         <span className="mr-1">{icon}</span>
                         {curriculum.title}
+                        {isLocked && (
+                          <span className="ml-2 inline-flex items-center">
+                            <Lock size={13} />
+                          </span>
+                        )}
                       </div>
                     );
                   })}

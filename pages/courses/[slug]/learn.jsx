@@ -163,13 +163,21 @@ export default function Page({ data }) {
   useEffect(() => {
     if (!router.isReady) return;
 
+    const orderedCurriculums = (data?.course?.sections || []).flatMap(
+      (section) => section.curriculums || [],
+    );
+    const firstAccessibleLecture =
+      orderedCurriculums.find((curriculum) => !curriculum?.is_locked) ||
+      orderedCurriculums[0] ||
+      null;
+
     if (!router.query.lecture) {
-      setCurrentLecture(data?.course?.sections?.[0]?.curriculums?.[0] || null);
+      setCurrentLecture(firstAccessibleLecture);
       router.replace({
         pathname: router.pathname,
         query: {
           ...router.query,
-          lecture: data?.course?.sections?.[0]?.curriculums?.[0]?.uuid || null,
+          lecture: firstAccessibleLecture?.uuid || null,
         },
       });
     } else {
@@ -248,7 +256,7 @@ export default function Page({ data }) {
 
               {currentTab === "qa" && (
                 <CourseQA
-                  courseId={course?.id}
+                  courseSlug={course?.slug}
                   lectureId={currentLecture?.id}
                 />
               )}

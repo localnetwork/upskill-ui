@@ -522,6 +522,7 @@ export default function CourseSection({
                           <CurriculumItem
                             item={it}
                             topics={topics}
+                            allItems={items}
                             onSave={handleItemSave}
                             onUpdate={handleItemUpdate}
                             onDelete={handleItemDelete}

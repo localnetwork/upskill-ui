@@ -48,45 +48,58 @@ export default function CourseAssetPreview({
   };
   const prevLecture = findPreviousLecture();
   const nextLecture = findNextLecture();
+  const isLockedLecture = Boolean(lecture?.is_locked);
   // Determine which component to render
   let component = null;
-  switch (lecture?.curriculum_resource_type) {
-    case "video":
-      component = (
-        <VideoPreview
-          lecture={lecture}
-          course={course}
-          prevLecture={prevLecture}
-          nextLecture={nextLecture}
-          setCourse={setCourse}
-        />
-      );
-      break;
-    case "article":
-      component = (
-        <ArticlePreview
-          course={course}
-          lecture={lecture}
-          setCourse={setCourse}
-        />
-      );
-      break;
-    case "quiz":
-      component = (
-        <QuizPreview course={course} lecture={lecture} setCourse={setCourse} />
-      );
-      break;
-    case "coding_exercise":
-      component = (
-        <CodingExercisePreview
-          course={course}
-          lecture={lecture}
-          setCourse={setCourse}
-        />
-      );
-      break;
-    default:
-      component = null;
+  if (isLockedLecture) {
+    component = (
+      <div className="h-full w-full flex flex-col items-center justify-center text-center px-6 text-white">
+        <h3 className="text-xl font-semibold mb-2">This lesson is locked</h3>
+        <p className="text-sm text-slate-300 max-w-xl">
+          {lecture?.lock_reason ||
+            "Complete the required prerequisite to unlock this lesson."}
+        </p>
+      </div>
+    );
+  } else {
+    switch (lecture?.curriculum_resource_type) {
+      case "video":
+        component = (
+          <VideoPreview
+            lecture={lecture}
+            course={course}
+            prevLecture={prevLecture}
+            nextLecture={nextLecture}
+            setCourse={setCourse}
+          />
+        );
+        break;
+      case "article":
+        component = (
+          <ArticlePreview
+            course={course}
+            lecture={lecture}
+            setCourse={setCourse}
+          />
+        );
+        break;
+      case "quiz":
+        component = (
+          <QuizPreview course={course} lecture={lecture} setCourse={setCourse} />
+        );
+        break;
+      case "coding_exercise":
+        component = (
+          <CodingExercisePreview
+            course={course}
+            lecture={lecture}
+            setCourse={setCourse}
+          />
+        );
+        break;
+      default:
+        component = null;
+    }
   }
 
   useEffect(() => {
@@ -125,8 +138,9 @@ export default function CourseAssetPreview({
 
           {prevLecture && (
             <button
-              disabled={!prevLecture}
+              disabled={!prevLecture || Boolean(prevLecture?.is_locked)}
               onClick={() => {
+                if (prevLecture?.is_locked) return;
                 setCurrentLecture(prevLecture);
                 router.push({
                   pathname: router.pathname,
@@ -149,8 +163,9 @@ export default function CourseAssetPreview({
 
           {nextLecture && (
             <button
-              disabled={!nextLecture}
+              disabled={!nextLecture || Boolean(nextLecture?.is_locked)}
               onClick={() => {
+                if (nextLecture?.is_locked) return;
                 setCurrentLecture(nextLecture);
                 router.push({
                   pathname: router.pathname,
