@@ -80,6 +80,7 @@ export default function MessagesPage() {
   const [isMediaPopupOpen, setIsMediaPopupOpen] = useState(false);
   const [isFilesPopupOpen, setIsFilesPopupOpen] = useState(false);
   const [customizeModal, setCustomizeModal] = useState(null);
+  const [incomingCall, setIncomingCall] = useState(null);
 
   const activeConversation = useMemo(
     () =>
@@ -152,6 +153,74 @@ export default function MessagesPage() {
       )
       .map((m) => m.id);
   }, [chatMessages, messageSearchQuery]);
+
+  const buildVideoCallUrl = useCallback(
+    (
+      conversationId,
+      roomId,
+      callId,
+      hasVideo = true,
+      initializeVideo = true,
+      isE2eeMandated = true,
+    ) => {
+      const convId = String(conversationId || "").trim();
+      const room = String(roomId || "").trim();
+      const id = String(callId || "").trim();
+      if (!convId || !room || !id || typeof window === "undefined") return "";
+      const base = window.location.origin;
+      const params = new URLSearchParams({
+        conversationId: convId,
+        call_id: id,
+        has_video: hasVideo ? "true" : "false",
+        initialize_video: initializeVideo ? "true" : "false",
+        is_e2ee_mandated: isE2eeMandated ? "true" : "false",
+      });
+      return `${base}/messages/call/${encodeURIComponent(room)}?${params.toString()}`;
+    },
+    [],
+  );
+
+  const joinVideoCall = useCallback((callUrl, conversationId) => {
+    const url = String(callUrl || "").trim();
+    if (!url || typeof window === "undefined") return;
+    if (conversationId) setActiveConversationId(String(conversationId));
+    window.open(url, "_blank", "noopener,noreferrer");
+    setIncomingCall(null);
+  }, []);
+
+  const handleStartVideoCall = useCallback(() => {
+    if (!activeConversationId) return;
+    const roomId = `ROOM:${activeConversationId}`;
+    const callId = String(Math.floor(Date.now() / 1000));
+    const hasVideo = true;
+    const initializeVideo = true;
+    const isE2eeMandated = true;
+    const callUrl = buildVideoCallUrl(
+      activeConversationId,
+      roomId,
+      callId,
+      hasVideo,
+      initializeVideo,
+      isE2eeMandated,
+    );
+    if (!callUrl) return;
+    window.open(callUrl, "_blank", "noopener,noreferrer");
+
+    if (socketRef.current) {
+      socketRef.current.emit(
+        "chat:call:start",
+        {
+          conversationId: activeConversationId,
+          roomId,
+          callId,
+          hasVideo,
+          initializeVideo,
+          isE2eeMandated,
+        },
+        () => {},
+      );
+    }
+  }, [activeConversationId, buildVideoCallUrl]);
 
   const loadConversations = useCallback(async () => {
     if (!profile?.id) return;
@@ -611,6 +680,38 @@ export default function MessagesPage() {
       }));
     });
 
+    socket.on("chat:call:incoming", (payload) => {
+      const conversationId = String(payload?.conversationId || "").trim();
+      if (!conversationId) return;
+      const roomId = String(payload?.roomId || "").trim() || `ROOM:${conversationId}`;
+      const callId =
+        String(payload?.callId || "").trim() ||
+        String(Math.floor(Date.now() / 1000));
+      const hasVideo = Boolean(payload?.hasVideo ?? true);
+      const initializeVideo = Boolean(payload?.initializeVideo ?? hasVideo);
+      const isE2eeMandated = Boolean(payload?.isE2eeMandated ?? true);
+      const fallbackName = payload?.fromUser?.username || "User";
+      const callerName =
+        [payload?.fromUser?.firstName, payload?.fromUser?.lastName]
+          .filter(Boolean)
+          .join(" ")
+          .trim() || fallbackName;
+      const callUrl = buildVideoCallUrl(
+        conversationId,
+        roomId,
+        callId,
+        hasVideo,
+        initializeVideo,
+        isE2eeMandated,
+      );
+
+      setIncomingCall({
+        conversationId,
+        callUrl,
+        callerName,
+      });
+    });
+
     return () => {
       socket.disconnect();
       if (socketRef.current === socket) socketRef.current = null;
@@ -619,6 +720,7 @@ export default function MessagesPage() {
   }, [
     activeConversationId,
     apiBase,
+    buildVideoCallUrl,
     loadConversations,
     previewRoomId,
     profile?.id,
@@ -968,6 +1070,7 @@ export default function MessagesPage() {
           handleSend={handleSend}
           defaultEmoji={defaultEmoji}
           sending={sending}
+          onStartVideoCall={handleStartVideoCall}
         />
 
         <ChatRightPanel
@@ -988,6 +1091,35 @@ export default function MessagesPage() {
           setIsFilesPopupOpen={setIsFilesPopupOpen}
         />
       </div>
+
+      {incomingCall?.callUrl ? (
+        <div className="fixed bottom-4 right-4 z-[90] w-[320px] rounded-xl border border-slate-200 bg-white p-4 shadow-xl">
+          <p className="text-sm font-semibold text-slate-900">
+            Incoming video call
+          </p>
+          <p className="mt-1 text-sm text-slate-600">
+            {incomingCall.callerName} is calling.
+          </p>
+          <div className="mt-3 flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() =>
+                joinVideoCall(incomingCall.callUrl, incomingCall.conversationId)
+              }
+              className="rounded-md bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
+            >
+              Join
+            </button>
+            <button
+              type="button"
+              onClick={() => setIncomingCall(null)}
+              className="rounded-md border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+            >
+              Dismiss
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       <MessageOverlays
         isPinnedPopupOpen={isPinnedPopupOpen}

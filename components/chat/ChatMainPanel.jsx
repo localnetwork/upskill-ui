@@ -53,6 +53,7 @@ export default function ChatMainPanel({
   handleSend,
   defaultEmoji,
   sending,
+  onStartVideoCall,
 }) {
   return (
     <main className="rounded-xl bg-white shadow-sm overflow-hidden flex flex-col">
@@ -83,7 +84,9 @@ export default function ChatMainPanel({
                     <EditableName
                       value={activePeerLabel}
                       placeholder={formatName(activePeer)}
-                      onSave={(newName) => handleSaveNickname(activePeer.id, newName)}
+                      onSave={(newName) =>
+                        handleSaveNickname(activePeer.id, newName)
+                      }
                     />
                   ) : (
                     activeConversationTitle
@@ -94,9 +97,20 @@ export default function ChatMainPanel({
                 </p>
               </div>
             </div>
-            <IconCircleButton className="h-9 w-9 text-[#a21caf] hover:bg-fuchsia-50">
-              <Info className="h-5 w-5" />
-            </IconCircleButton>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={onStartVideoCall}
+                disabled={!activeConversationId || isPreviewMode}
+                className="grid h-9 w-9 place-items-center rounded-full text-[#a21caf] hover:bg-fuchsia-50 disabled:opacity-40"
+                title="Start video call"
+              >
+                <Video className="video-icon h-5 w-5" />
+              </button>
+              <IconCircleButton className="h-9 w-9 text-[#a21caf] hover:bg-fuchsia-50">
+                <Info className="h-5 w-5" />
+              </IconCircleButton>
+            </div>
           </div>
 
           <MessageThread
@@ -165,7 +179,9 @@ export default function ChatMainPanel({
                 type="file"
                 accept="image/*,video/*"
                 className="hidden"
-                onChange={(event) => uploadAttachment(event.target.files?.[0] || null)}
+                onChange={(event) =>
+                  uploadAttachment(event.target.files?.[0] || null)
+                }
               />
               <IconCircleButton
                 className="h-auto w-auto p-1 text-blue-600 hover:bg-blue-50"
