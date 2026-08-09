@@ -79,6 +79,7 @@ export default function MessagesPage() {
     mediaFiles: false,
     privacy: false,
   });
+  const [isRightPanelVisible, setIsRightPanelVisible] = useState(true);
   const [isPinnedPopupOpen, setIsPinnedPopupOpen] = useState(false);
   const [isMediaPopupOpen, setIsMediaPopupOpen] = useState(false);
   const [isFilesPopupOpen, setIsFilesPopupOpen] = useState(false);
@@ -1267,7 +1268,7 @@ export default function MessagesPage() {
     <div className="bg-[#e8effd] min-h-[calc(100vh-72px)] p-2 lg:p-3">
       <div
         className={`grid h-[calc(100vh-96px)] grid-cols-1 gap-2 ${
-          activeConversationId
+          activeConversationId && isRightPanelVisible
             ? "lg:grid-cols-[460px_1fr_400px]"
             : "lg:grid-cols-[460px_1fr]"
         }`}
@@ -1355,10 +1356,14 @@ export default function MessagesPage() {
             onJoinCallFromNote={handleJoinCallFromSystemNote}
             mobileView={mobileThreadOpen}
             onBackToList={handleBackToConversationList}
+            isRightPanelVisible={isRightPanelVisible}
+            onToggleRightPanel={() =>
+              setIsRightPanelVisible((previous) => !previous)
+            }
           />
         </div>
 
-        {activeConversationId ? (
+        {activeConversationId && isRightPanelVisible ? (
           <ChatRightPanel
             chatPhotoUrl={chatPhotoUrl}
             activeConversationTitle={activeConversationTitle}

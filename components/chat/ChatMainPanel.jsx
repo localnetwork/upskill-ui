@@ -58,6 +58,8 @@ export default function ChatMainPanel({
   onJoinCallFromNote,
   onBackToList,
   mobileView = false,
+  isRightPanelVisible = true,
+  onToggleRightPanel,
 }) {
   return (
     <main className="rounded-[28px] lg:rounded-xl bg-white shadow-sm overflow-hidden flex flex-col h-full min-h-0">
@@ -123,7 +125,15 @@ export default function ChatMainPanel({
               >
                 <Video className="video-icon h-5 w-5" />
               </button>
-              <IconCircleButton className="hidden lg:grid h-9 w-9 text-[#a21caf] hover:bg-fuchsia-50">
+              <IconCircleButton
+                onClick={onToggleRightPanel}
+                className={`hidden lg:grid h-9 w-9 hover:bg-fuchsia-50 ${
+                  isRightPanelVisible
+                    ? "bg-fuchsia-50 text-[#a21caf]"
+                    : "text-[#a21caf]"
+                }`}
+                title={isRightPanelVisible ? "Hide details" : "Show details"}
+              >
                 <Info className="h-5 w-5" />
               </IconCircleButton>
             </div>

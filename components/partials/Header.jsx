@@ -3,19 +3,29 @@ import Logo from "../icons/Logo";
 // import Cart from "../icons/Cart";
 import { useRef, useEffect, useState, useCallback } from "react";
 import dynamic from "next/dynamic";
+import { useRouter } from "next/router";
 import persistentStore from "@/lib/store/persistentStore";
 import globalStore from "@/lib/store/globalStore";
 import UserNav from "../entities/user/UserNav";
 import UserResendNotif from "../entities/user/UserResendNotif";
 import UserNotifications from "../entities/user/UserNotifications";
 import Image from "next/image";
-import { Bell, ChevronDown, MessageCircle, ShoppingCart } from "lucide-react";
+import {
+  Bell,
+  ChevronDown,
+  Menu,
+  MessageCircle,
+  Phone,
+  PhoneOff,
+  ShoppingCart,
+} from "lucide-react";
 import ExploreDropdown from "../dropdowns/ExploreDropdown";
 import BaseApi from "@/lib/api/_base.api";
 import { io } from "socket.io-client";
 import { parseCookies } from "nookies";
 import { getAuthTokenFromCookieMap } from "@/lib/services/authToken";
 import HeaderSearchAutocomplete from "./HeaderSearchAutocomplete";
+import MobileNav from "./MobileNav";
 
 const UserCartCount = dynamic(() => import("../entities/user/UserCartCount"), {
   ssr: false,
@@ -26,6 +36,7 @@ const CartDrawer = dynamic(() => import("../entities/cart/CartDrawer"), {
 });
 
 export default function Header() {
+  const router = useRouter();
   const profile = persistentStore((state) => state.profile);
   const roleList = Array.isArray(profile?.roles) ? profile.roles : [];
   const isLearner = roleList.includes("LEARNER");
@@ -42,8 +53,62 @@ export default function Header() {
   const [chatUnreadCount, setChatUnreadCount] = useState(0);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+  const burgerRef = useRef(null);
+  const [incomingCall, setIncomingCall] = useState(null);
 
   const socketRef = useRef(null);
+  const hideGlobalCallOverlay = String(router.pathname || "").startsWith(
+    "/messages",
+  );
+
+  const buildVideoCallUrl = useCallback(
+    (
+      conversationId,
+      roomId,
+      callId,
+      hasVideo = true,
+      initializeVideo = true,
+      isE2eeMandated = true,
+    ) => {
+      const convId = String(conversationId || "").trim();
+      const room = String(roomId || "").trim();
+      const id = String(callId || "").trim();
+      if (!convId || !room || !id || typeof window === "undefined") return "";
+      const base = window.location.origin;
+      const params = new URLSearchParams({
+        conversationId: convId,
+        call_id: id,
+        has_video: hasVideo ? "true" : "false",
+        initialize_video: initializeVideo ? "true" : "false",
+        is_e2ee_mandated: isE2eeMandated ? "true" : "false",
+      });
+      return `${base}/messages/call/${encodeURIComponent(room)}?${params.toString()}`;
+    },
+    [],
+  );
+
+  const acceptIncomingCall = useCallback(() => {
+    const url = String(incomingCall?.callUrl || "").trim();
+    if (!url || typeof window === "undefined") return;
+    window.open(url, "_blank", "noopener,noreferrer");
+    setIncomingCall(null);
+  }, [incomingCall?.callUrl]);
+
+  const rejectIncomingCall = useCallback(() => {
+    if (socketRef.current && incomingCall?.conversationId) {
+      socketRef.current.emit(
+        "chat:call:end",
+        {
+          conversationId: incomingCall.conversationId,
+          roomId: incomingCall.roomId,
+          callId: incomingCall.callId,
+        },
+        () => {},
+      );
+    }
+    setIncomingCall(null);
+  }, [incomingCall]);
 
   const refreshNotifications = useCallback(async () => {
     if (!profile) {
@@ -165,6 +230,68 @@ export default function Header() {
       refreshChatUnread();
       refreshRecentMessages();
     });
+    socket.on("chat:call:incoming", (payload) => {
+      const conversationId = String(payload?.conversationId || "").trim();
+      if (!conversationId) return;
+      const roomId =
+        String(payload?.roomId || "").trim() || `ROOM:${conversationId}`;
+      const callId =
+        String(payload?.callId || "").trim() ||
+        String(Math.floor(Date.now() / 1000));
+      const hasVideo = Boolean(payload?.hasVideo ?? true);
+      const initializeVideo = Boolean(payload?.initializeVideo ?? hasVideo);
+      const isE2eeMandated = Boolean(payload?.isE2eeMandated ?? true);
+      const fallbackName = payload?.fromUser?.username || "User";
+      const callerName =
+        [payload?.fromUser?.firstName, payload?.fromUser?.lastName]
+          .filter(Boolean)
+          .join(" ")
+          .trim() || fallbackName;
+      const rawCallerPhotoPath = String(
+        payload?.fromUser?.photoPath ||
+          payload?.fromUser?.user_picture?.path ||
+          "",
+      ).trim();
+      const callerPhotoPath = rawCallerPhotoPath
+        ? rawCallerPhotoPath.startsWith("http://") ||
+          rawCallerPhotoPath.startsWith("https://")
+          ? rawCallerPhotoPath
+          : `${process.env.NEXT_PUBLIC_API_DOMAIN || ""}${rawCallerPhotoPath}`
+        : "";
+      const callUrl = buildVideoCallUrl(
+        conversationId,
+        roomId,
+        callId,
+        hasVideo,
+        initializeVideo,
+        isE2eeMandated,
+      );
+
+      setIncomingCall({
+        conversationId,
+        roomId,
+        callId,
+        callUrl,
+        callerName,
+        callerPhotoPath,
+      });
+    });
+
+    socket.on("chat:call:ended-notice", (payload) => {
+      const conversationId = String(payload?.conversationId || "").trim();
+      const callId = String(payload?.callId || "").trim();
+      setIncomingCall((previous) => {
+        if (!previous) return previous;
+        if (
+          conversationId &&
+          String(previous.conversationId || "") !== conversationId
+        ) {
+          return previous;
+        }
+        if (callId && String(previous.callId || "") !== callId) return previous;
+        return null;
+      });
+    });
 
     return () => {
       socket.disconnect();
@@ -208,6 +335,25 @@ export default function Header() {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [isChatOpen]);
+
+  // Close mobile nav when Escape is pressed
+  useEffect(() => {
+    if (!isMobileNavOpen) return;
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        setIsMobileNavOpen(false);
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isMobileNavOpen]);
+
+  // Restore focus to the burger button after the mobile nav closes
+  useEffect(() => {
+    if (!isMobileNavOpen && burgerRef.current) {
+      burgerRef.current.focus();
+    }
+  }, [isMobileNavOpen]);
 
   const handleNotificationClick = async (notification) => {
     if (!notification?.id) return;
@@ -393,7 +539,7 @@ export default function Header() {
                 {/* Drawer */}
                 {cartDrawerOpen && <CartDrawer />}
                 {!profile && (
-                  <div>
+                  <div className="hidden md:block">
                     <Link
                       href="/register?mode=instructor"
                       className="text-sm font-bold text-slate-700 px-4 py-2 hover:bg-gray-100 rounded-lg"
@@ -402,9 +548,9 @@ export default function Header() {
                     </Link>
                   </div>
                 )}
-                <div className="h-6 w-px bg-slate-200 hidden sm:block"></div>
+                <div className="h-6 w-px bg-slate-200 hidden md:block"></div>
                 {!profile ? (
-                  <nav>
+                  <nav className="hidden md:flex">
                     <ul className="flex space-x-4 items-center">
                       <li>
                         <Link
@@ -428,10 +574,83 @@ export default function Header() {
                   <UserNav />
                 )}
               </div>
+
+              <button
+                ref={burgerRef}
+                type="button"
+                onClick={() => setIsMobileNavOpen(true)}
+                aria-label="Open menu"
+                aria-expanded={isMobileNavOpen}
+                aria-controls="mobile-nav"
+                className="md:hidden p-1 -mr-1 text-slate-700 hover:text-primary transition-colors cursor-pointer"
+              >
+                <Menu size={26} />
+              </button>
             </div>
           </div>
         </div>
       </header>
+
+      <MobileNav
+        open={isMobileNavOpen}
+        onClose={() => setIsMobileNavOpen(false)}
+      />
+
+      {!hideGlobalCallOverlay && incomingCall?.callUrl ? (
+        <div className="fixed inset-0 z-[95] overflow-hidden">
+          <div
+            className="absolute inset-0 scale-110 bg-cover bg-center blur-2xl"
+            style={
+              incomingCall.callerPhotoPath
+                ? { backgroundImage: `url("${incomingCall.callerPhotoPath}")` }
+                : undefined
+            }
+          />
+          <div className="absolute inset-0 bg-black/55" />
+          <div className="relative flex h-full flex-col items-center justify-between px-6 py-14 text-white">
+            <div />
+            <div className="text-center">
+              {incomingCall.callerPhotoPath ? (
+                <img
+                  src={incomingCall.callerPhotoPath}
+                  alt={incomingCall.callerName || "Caller"}
+                  className="mx-auto h-28 w-28 rounded-full border-2 border-white/40 object-cover shadow-2xl"
+                />
+              ) : (
+                <div className="mx-auto flex h-28 w-28 items-center justify-center rounded-full border-2 border-white/40 bg-white/20 text-3xl font-semibold">
+                  {(incomingCall.callerName || "C").slice(0, 1).toUpperCase()}
+                </div>
+              )}
+              <p className="mt-5 text-4xl font-semibold drop-shadow-md">
+                {incomingCall.callerName}
+              </p>
+              <p className="mt-1 text-lg text-slate-200">Incoming video call</p>
+            </div>
+            <div className="flex items-start justify-center gap-12">
+              <button
+                type="button"
+                onClick={rejectIncomingCall}
+                className="flex flex-col items-center gap-2"
+              >
+                <span className="grid h-16 w-16 place-items-center rounded-full bg-white/20 backdrop-blur">
+                  <PhoneOff className="h-7 w-7 text-white" />
+                </span>
+                <span className="text-base font-medium text-slate-100">Reject</span>
+              </button>
+              <button
+                type="button"
+                onClick={acceptIncomingCall}
+                className="flex flex-col items-center gap-2"
+              >
+                <span className="grid h-16 w-16 place-items-center rounded-full bg-emerald-500 shadow-[0_8px_30px_rgba(16,185,129,0.5)]">
+                  <Phone className="h-7 w-7 text-white" />
+                </span>
+                <span className="text-base font-medium text-slate-100">Accept</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </>
   );
 }

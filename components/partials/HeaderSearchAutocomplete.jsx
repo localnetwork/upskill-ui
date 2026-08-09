@@ -20,7 +20,7 @@ function asArray(value) {
   return Array.isArray(value) ? value : [];
 }
 
-export default function HeaderSearchAutocomplete() {
+export default function HeaderSearchAutocomplete({ className }) {
   const router = useRouter();
   const containerRef = useRef(null);
   const [query, setQuery] = useState("");
@@ -68,6 +68,7 @@ export default function HeaderSearchAutocomplete() {
     };
     const handleEscape = (event) => {
       if (event.key === "Escape") {
+        event.stopPropagation();
         setIsOpen(false);
       }
     };
@@ -97,7 +98,7 @@ export default function HeaderSearchAutocomplete() {
   };
 
   return (
-    <div className="relative w-48 lg:w-64" ref={containerRef}>
+    <div className={`relative ${className || "w-48 lg:w-64"}`} ref={containerRef}>
       <Search
         className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg"
         size={15}
