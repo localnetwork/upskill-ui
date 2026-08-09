@@ -1,7 +1,7 @@
 import InstructorLayout from "@/components/partials/InstructorLayout";
 import BaseApi from "@/lib/api/_base.api";
 import { useRouter } from "next/router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import Spinner from "@/components/icons/Spinner";
 import {
@@ -31,6 +31,45 @@ export default function AIDraftCoursePage() {
 
   const canSubmit = String(prompt || "").trim().length >= 20 && !isGenerating;
 
+  const syncProgressFromJob = useCallback((job = {}) => {
+    setGenerationProgress({
+      step: String(job?.step || ""),
+      message: String(job?.message || ""),
+      progressPercent: Number(job?.progressPercent || 0),
+      preview: job?.preview || null,
+      draftProgress: job?.draftProgress || null,
+    });
+  }, []);
+
+  useEffect(() => {
+    if (isGenerating || draftJobId) return undefined;
+
+    let cancelled = false;
+    const resumeLatestJob = async () => {
+      try {
+        const response = await BaseApi.get(
+          `${process.env.NEXT_PUBLIC_API_URL}/courses/ai-draft/jobs/latest`,
+        );
+        const job = response?.data?.data || null;
+        const jobId = String(job?.id || "").trim();
+        if (cancelled || !jobId) return;
+
+        if (job?.status === "queued" || job?.status === "running") {
+          setGenerationResult(null);
+          setDraftJobId(jobId);
+          syncProgressFromJob(job);
+          setIsGenerating(true);
+        }
+      } catch (_error) {}
+    };
+
+    resumeLatestJob();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [draftJobId, isGenerating, syncProgressFromJob]);
+
   useEffect(() => {
     if (!isGenerating || !draftJobId) return undefined;
 
@@ -44,13 +83,7 @@ export default function AIDraftCoursePage() {
           `${process.env.NEXT_PUBLIC_API_URL}/courses/ai-draft/jobs/${draftJobId}`,
         );
         const job = response?.data?.data || {};
-        setGenerationProgress({
-          step: String(job?.step || ""),
-          message: String(job?.message || ""),
-          progressPercent: Number(job?.progressPercent || 0),
-          preview: job?.preview || null,
-          draftProgress: job?.draftProgress || null,
-        });
+        syncProgressFromJob(job);
 
         if (job?.status === "completed") {
           setIsGenerating(false);
@@ -89,7 +122,7 @@ export default function AIDraftCoursePage() {
       stopped = true;
       clearInterval(timer);
     };
-  }, [isGenerating, draftJobId, router]);
+  }, [isGenerating, draftJobId, router, syncProgressFromJob]);
 
   const progressPreview = generationProgress.preview || {};
   const previewSections = Array.isArray(progressPreview.sections)

@@ -3,6 +3,7 @@ import Select from "@/components/forms/Select";
 import { Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/router";
+import toast from "react-hot-toast";
 
 const TYPE_OPTIONS = [
   { label: "All Types", value: "ALL" },
@@ -22,6 +23,8 @@ const STATUS_OPTIONS = [
 
 const KIND_OPTIONS = [
   { label: "All Notifications", value: "ALL" },
+  { label: "Friend Requests", value: "FRIEND_REQUEST" },
+  { label: "Friend Request Responses", value: "FRIEND_REQUEST_RESPONSE" },
   { label: "Welcome Message", value: "COURSE_WELCOME_MESSAGE" },
   {
     label: "Congratulations Message",
@@ -45,6 +48,8 @@ function toRelativeTime(dateValue) {
 
 function notificationTypeLabel(notification) {
   const kind = notification?.metadata?.notificationKind;
+  if (kind === "FRIEND_REQUEST") return "Friend Request";
+  if (kind === "FRIEND_REQUEST_RESPONSE") return "Friend Request";
   if (kind === "COURSE_WELCOME_MESSAGE") return "Welcome";
   if (kind === "COURSE_CONGRATULATIONS_MESSAGE") return "Congratulations";
   if (kind === "COURSE_NEW_ENROLLMENT") return "New Enrollment";
@@ -68,6 +73,14 @@ function resolveNotificationMessage(notification) {
     : `${baseMessage} Reason: ${note}`;
 }
 
+function isPendingFriendRequest(notification) {
+  return (
+    notification?.metadata?.notificationKind === "FRIEND_REQUEST" &&
+    notification?.metadata?.requestStatus === "PENDING" &&
+    Boolean(notification?.metadata?.friendRequestId)
+  );
+}
+
 export default function NotificationsPage() {
   const router = useRouter();
   const [searchInput, setSearchInput] = useState("");
@@ -77,6 +90,7 @@ export default function NotificationsPage() {
   const [kind, setKind] = useState("ALL");
   const [page, setPage] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
+  const [activeNotificationId, setActiveNotificationId] = useState("");
   const [notifications, setNotifications] = useState([]);
   const [pagination, setPagination] = useState({
     page: 1,
@@ -165,6 +179,49 @@ export default function NotificationsPage() {
     }
 
     router.push(`/notifications/${notification.id}`);
+  };
+
+  const handleFriendRequestAction = async (notification, action) => {
+    const requestId = notification?.metadata?.friendRequestId;
+    if (!requestId) return;
+
+    setActiveNotificationId(notification.id);
+
+    try {
+      await BaseApi.post(
+        `${process.env.NEXT_PUBLIC_API_URL}/users/friend-requests/respond/${requestId}`,
+        { action },
+      );
+
+      setNotifications((prev) =>
+        prev.map((item) =>
+          item.id === notification.id
+            ? {
+                ...item,
+                readAt: item.readAt || new Date().toISOString(),
+                metadata: {
+                  ...(item.metadata || {}),
+                  requestStatus: action === "ACCEPT" ? "ACCEPTED" : "DECLINED",
+                },
+              }
+            : item,
+        ),
+      );
+
+      toast.success(
+        action === "ACCEPT"
+          ? "Friend request accepted."
+          : "Friend request declined.",
+      );
+    } catch (error) {
+      toast.error(
+        error?.data?.message ||
+          error?.response?.data?.message ||
+          "Failed to update friend request.",
+      );
+    } finally {
+      setActiveNotificationId("");
+    }
   };
 
   return (
@@ -276,6 +333,32 @@ export default function NotificationsPage() {
                     {toRelativeTime(notification.createdAt)}
                   </span>
                 </div>
+                {isPendingFriendRequest(notification) ? (
+                  <div className="mt-3 flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleFriendRequestAction(notification, "ACCEPT");
+                      }}
+                      disabled={activeNotificationId === notification.id}
+                      className="px-3 py-1.5 text-[12px] font-semibold rounded-md bg-primary text-white hover:opacity-90 disabled:opacity-60"
+                    >
+                      Confirm
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleFriendRequestAction(notification, "DECLINE");
+                      }}
+                      disabled={activeNotificationId === notification.id}
+                      className="px-3 py-1.5 text-[12px] font-semibold rounded-md border border-[#cbd5e1] text-[#334155] hover:bg-[#f8fafc] disabled:opacity-60"
+                    >
+                      Decline
+                    </button>
+                  </div>
+                ) : null}
               </div>
             </article>
           ))

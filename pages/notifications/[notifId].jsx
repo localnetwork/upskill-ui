@@ -2,6 +2,7 @@ import BaseApi from "@/lib/api/_base.api";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
 
 function formatDate(value) {
   if (!value) return "—";
@@ -30,11 +31,20 @@ function resolveNotificationMessage(notification) {
     : `${baseMessage}\nReason: ${note}`;
 }
 
+function isPendingFriendRequest(notification) {
+  return (
+    notification?.metadata?.notificationKind === "FRIEND_REQUEST" &&
+    notification?.metadata?.requestStatus === "PENDING" &&
+    Boolean(notification?.metadata?.friendRequestId)
+  );
+}
+
 export default function NotificationDetailPage() {
   const router = useRouter();
   const { notifId } = router.query;
   const [notification, setNotification] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isActionLoading, setIsActionLoading] = useState(false);
 
   useEffect(() => {
     if (!notifId || Array.isArray(notifId)) return;
@@ -65,6 +75,43 @@ export default function NotificationDetailPage() {
     fetchNotification();
   }, [notifId]);
 
+  const handleFriendRequestAction = async (action) => {
+    const requestId = notification?.metadata?.friendRequestId;
+    if (!requestId || isActionLoading) return;
+
+    setIsActionLoading(true);
+    try {
+      await BaseApi.post(
+        `${process.env.NEXT_PUBLIC_API_URL}/users/friend-requests/respond/${requestId}`,
+        { action },
+      );
+      setNotification((prev) =>
+        prev
+          ? {
+              ...prev,
+              metadata: {
+                ...(prev.metadata || {}),
+                requestStatus: action === "ACCEPT" ? "ACCEPTED" : "DECLINED",
+              },
+            }
+          : prev,
+      );
+      toast.success(
+        action === "ACCEPT"
+          ? "Friend request accepted."
+          : "Friend request declined.",
+      );
+    } catch (error) {
+      toast.error(
+        error?.data?.message ||
+          error?.response?.data?.message ||
+          "Failed to update friend request.",
+      );
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
   return (
     <main className="mt-16 px-4 pt-4 max-w-3xl mx-auto">
       <div className="mb-6">
@@ -92,6 +139,26 @@ export default function NotificationDetailPage() {
           <div className="mt-5 text-[15px] leading-relaxed text-[#334155] whitespace-pre-wrap">
             {resolveNotificationMessage(notification)}
           </div>
+          {isPendingFriendRequest(notification) ? (
+            <div className="mt-5 flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => handleFriendRequestAction("ACCEPT")}
+                disabled={isActionLoading}
+                className="px-4 py-2 rounded-md bg-primary text-white text-sm font-semibold hover:opacity-90 disabled:opacity-60"
+              >
+                Confirm
+              </button>
+              <button
+                type="button"
+                onClick={() => handleFriendRequestAction("DECLINE")}
+                disabled={isActionLoading}
+                className="px-4 py-2 rounded-md border border-[#cbd5e1] text-[#334155] text-sm font-semibold hover:bg-[#f8fafc] disabled:opacity-60"
+              >
+                Decline
+              </button>
+            </div>
+          ) : null}
         </article>
       )}
     </main>

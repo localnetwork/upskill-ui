@@ -37,12 +37,13 @@ export default function MessageThread({
   loadingMoreMessages,
   showScrollToBottom,
   setShowScrollToBottom,
+  onJoinCallFromNote,
 }) {
   return (
     <div
       ref={messageContainerRef}
       onScroll={handleMessageContainerScroll}
-      className={`relative flex-1 overflow-y-auto p-4 ${
+      className={`relative flex-1 min-h-0 overflow-y-auto p-4 ${
         activeConversation?.myBackgroundPath ? "" : "bg-white"
       }`}
       style={
@@ -70,7 +71,15 @@ export default function MessageThread({
         ) : (
           chatMessages.map((message) => {
             if (message.type === "SYSTEM" || message.messageType === "SYSTEM") {
-              return <SystemNote key={message.id} message={message} />;
+              return (
+                <SystemNote
+                  key={message.id}
+                  message={{
+                    ...message,
+                    onJoinCall: () => onJoinCallFromNote?.(message),
+                  }}
+                />
+              );
             }
             const mine = message.senderId === profile?.id;
 

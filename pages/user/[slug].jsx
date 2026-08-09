@@ -38,8 +38,6 @@ export default function PublicProfile({ profile }) {
   const [expanded, setExpanded] = useState(false);
   const [visibleBio, setVisibleBio] = useState("");
 
-  console.log("profile", profile);
-
   useEffect(() => {
     if (profile?.biography) {
       // Split by <p> tags and keep first 3 paragraphs
@@ -49,7 +47,6 @@ export default function PublicProfile({ profile }) {
         .map((p) => (p.endsWith("</p>") ? p : `${p}</p>`));
 
       const firstThree = paragraphs.slice(0, 3).join("");
-      const full = paragraphs.join("");
 
       setVisibleBio(firstThree);
     }

@@ -14,6 +14,8 @@ function toRelativeTime(dateValue) {
 
 function getNotificationTypeLabel(notification) {
   const kind = notification?.metadata?.notificationKind;
+  if (kind === "FRIEND_REQUEST") return "Friend Request";
+  if (kind === "FRIEND_REQUEST_RESPONSE") return "Friend Request";
   if (kind === "COURSE_WELCOME_MESSAGE") return "Welcome";
   if (kind === "COURSE_CONGRATULATIONS_MESSAGE") return "Congratulations";
   if (kind === "COURSE_NEW_ENROLLMENT") return "New Enrollment";

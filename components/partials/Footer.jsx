@@ -9,7 +9,7 @@ const Footer = () => {
           <div>
             <Link href="/" className="inline-flex">
               <Image
-                src="/logo.png"
+                src="/new-logo.png"
                 alt="Upskill Logo"
                 width={150}
                 height={50}
@@ -23,20 +23,31 @@ const Footer = () => {
           </div>
 
           <div>
-            <h4 className="text-sm font-semibold tracking-wide text-white">Explore</h4>
+            <h4 className="text-sm font-semibold tracking-wide text-white">
+              Explore
+            </h4>
             <ul className="mt-4 space-y-3 text-sm text-white/65">
               <li>
-                <Link className="transition-colors hover:text-white" href="/courses">
+                <Link
+                  className="transition-colors hover:text-white"
+                  href="/courses"
+                >
                   Courses
                 </Link>
               </li>
               <li>
-                <Link className="transition-colors hover:text-white" href="/courses">
+                <Link
+                  className="transition-colors hover:text-white"
+                  href="/courses"
+                >
                   Categories
                 </Link>
               </li>
               <li>
-                <Link className="transition-colors hover:text-white" href="/my-courses/learning">
+                <Link
+                  className="transition-colors hover:text-white"
+                  href="/my-courses/learning"
+                >
                   Learning dashboard
                 </Link>
               </li>
@@ -44,15 +55,23 @@ const Footer = () => {
           </div>
 
           <div>
-            <h4 className="text-sm font-semibold tracking-wide text-white">Company</h4>
+            <h4 className="text-sm font-semibold tracking-wide text-white">
+              Company
+            </h4>
             <ul className="mt-4 space-y-3 text-sm text-white/65">
               <li>
-                <Link className="transition-colors hover:text-white" href="/about">
+                <Link
+                  className="transition-colors hover:text-white"
+                  href="/about"
+                >
                   About
                 </Link>
               </li>
               <li>
-                <Link className="transition-colors hover:text-white" href="/contact-us">
+                <Link
+                  className="transition-colors hover:text-white"
+                  href="/contact-us"
+                >
                   Contact
                 </Link>
               </li>
@@ -68,20 +87,31 @@ const Footer = () => {
           </div>
 
           <div>
-            <h4 className="text-sm font-semibold tracking-wide text-white">Support</h4>
+            <h4 className="text-sm font-semibold tracking-wide text-white">
+              Support
+            </h4>
             <ul className="mt-4 space-y-3 text-sm text-white/65">
               <li>
-                <Link className="transition-colors hover:text-white" href="/settings/security">
+                <Link
+                  className="transition-colors hover:text-white"
+                  href="/settings/security"
+                >
                   Account security
                 </Link>
               </li>
               <li>
-                <Link className="transition-colors hover:text-white" href="/notifications">
+                <Link
+                  className="transition-colors hover:text-white"
+                  href="/notifications"
+                >
                   Notifications
                 </Link>
               </li>
               <li>
-                <Link className="transition-colors hover:text-white" href="/settings/activity-log">
+                <Link
+                  className="transition-colors hover:text-white"
+                  href="/settings/activity-log"
+                >
                   Activity log
                 </Link>
               </li>
@@ -90,15 +120,23 @@ const Footer = () => {
         </div>
 
         <div className="mt-6 flex flex-col gap-3 text-xs text-white/55 md:flex-row md:items-center md:justify-between">
-          <p>© {new Date().getFullYear()} Upskill Learning. All rights reserved.</p>
+          <p>
+            © {new Date().getFullYear()} Upskill Learning. All rights reserved.
+          </p>
           <div className="flex items-center gap-4">
             <Link href="/about" className="transition-colors hover:text-white">
               Privacy
             </Link>
-            <Link href="/contact-us" className="transition-colors hover:text-white">
+            <Link
+              href="/contact-us"
+              className="transition-colors hover:text-white"
+            >
               Terms
             </Link>
-            <Link href="/contact-us" className="transition-colors hover:text-white">
+            <Link
+              href="/contact-us"
+              className="transition-colors hover:text-white"
+            >
               Support
             </Link>
           </div>

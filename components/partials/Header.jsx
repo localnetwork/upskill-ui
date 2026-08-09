@@ -297,7 +297,7 @@ export default function Header() {
                           recentMessages.map((conversation) => (
                             <Link
                               key={conversation.id}
-                              href={`/messages?conversationId=${encodeURIComponent(conversation.id)}`}
+                              href={`/messages/t/${encodeURIComponent(conversation.id)}`}
                               onClick={() => setIsChatOpen(false)}
                               className="block rounded-md border border-slate-200 px-3 py-2 hover:bg-slate-50"
                             >

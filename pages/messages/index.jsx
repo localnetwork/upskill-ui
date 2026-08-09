@@ -15,6 +15,7 @@ import { useRouter } from "next/router";
 import { parseCookies } from "nookies";
 import { getAuthTokenFromCookieMap } from "@/lib/services/authToken";
 import toast from "react-hot-toast";
+import { Phone, PhoneOff } from "lucide-react";
 import MessageOverlays from "@/components/chat/MessageOverlays";
 import ChatSidebar from "@/components/chat/ChatSidebar";
 import ChatMainPanel from "@/components/chat/ChatMainPanel";
@@ -34,6 +35,8 @@ export default function MessagesPage() {
   const topSentinelRef = useRef(null);
   const scrollAnchorRef = useRef({ prevHeight: 0, shouldRestore: false });
   const isNearBottomRef = useRef(true);
+  const ringtoneContextRef = useRef(null);
+  const ringtoneIntervalRef = useRef(null);
 
   const [conversations, setConversations] = useState([]);
   const [loadingConversations, setLoadingConversations] = useState(false);
@@ -81,6 +84,11 @@ export default function MessagesPage() {
   const [isFilesPopupOpen, setIsFilesPopupOpen] = useState(false);
   const [customizeModal, setCustomizeModal] = useState(null);
   const [incomingCall, setIncomingCall] = useState(null);
+  const routeConversationId = useMemo(() => {
+    const raw = router.query?.conversationId;
+    if (Array.isArray(raw)) return String(raw[0] || "").trim();
+    return String(raw || "").trim();
+  }, [router.query?.conversationId]);
 
   const activeConversation = useMemo(
     () =>
@@ -108,6 +116,7 @@ export default function MessagesPage() {
     (isPreviewMode
       ? activePeerLabel
       : activeConversation?.title || "Conversation");
+  const mobileThreadOpen = Boolean(activeConversationId || isPreviewMode);
   const pinScopeKey = activeConversationId || previewRoomId || "draft";
   const pinnedMessageIds = pinnedByScope[pinScopeKey] || [];
   const themeClass =
@@ -183,10 +192,165 @@ export default function MessagesPage() {
   const joinVideoCall = useCallback((callUrl, conversationId) => {
     const url = String(callUrl || "").trim();
     if (!url || typeof window === "undefined") return;
-    if (conversationId) setActiveConversationId(String(conversationId));
+    if (ringtoneIntervalRef.current) {
+      clearInterval(ringtoneIntervalRef.current);
+      ringtoneIntervalRef.current = null;
+    }
+    if (
+      ringtoneContextRef.current &&
+      ringtoneContextRef.current.state !== "closed"
+    ) {
+      ringtoneContextRef.current.suspend().catch(() => {});
+    }
+    if (conversationId) {
+      const nextConversationId = String(conversationId).trim();
+      setActiveConversationId(nextConversationId);
+      if (routeConversationId !== nextConversationId) {
+        router.push(
+          `/messages/t/${encodeURIComponent(nextConversationId)}`,
+          undefined,
+          { shallow: true },
+        );
+      }
+    }
     window.open(url, "_blank", "noopener,noreferrer");
     setIncomingCall(null);
+  }, [routeConversationId, router]);
+
+  const rejectIncomingCall = useCallback(() => {
+    if (socketRef.current && incomingCall?.conversationId) {
+      socketRef.current.emit(
+        "chat:call:end",
+        {
+          conversationId: incomingCall.conversationId,
+          roomId: incomingCall.roomId,
+          callId: incomingCall.callId,
+        },
+        () => {},
+      );
+    }
+    setIncomingCall(null);
+  }, [incomingCall]);
+
+  const stopRingtone = useCallback(() => {
+    if (ringtoneIntervalRef.current) {
+      clearInterval(ringtoneIntervalRef.current);
+      ringtoneIntervalRef.current = null;
+    }
+    if (
+      ringtoneContextRef.current &&
+      ringtoneContextRef.current.state !== "closed"
+    ) {
+      ringtoneContextRef.current.suspend().catch(() => {});
+    }
   }, []);
+
+  const playRingtonePulse = useCallback(async () => {
+    if (typeof window === "undefined") return;
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return;
+
+    if (!ringtoneContextRef.current) {
+      ringtoneContextRef.current = new AudioCtx();
+    }
+    const ctx = ringtoneContextRef.current;
+    if (!ctx) return;
+
+    if (ctx.state === "suspended") {
+      await ctx.resume().catch(() => {});
+    }
+    if (ctx.state !== "running") return;
+
+    const startAt = ctx.currentTime;
+    const tone = (frequency, offset, duration = 0.16, gainValue = 0.08) => {
+      const oscillator = ctx.createOscillator();
+      const gain = ctx.createGain();
+      oscillator.type = "sine";
+      oscillator.frequency.value = frequency;
+      gain.gain.setValueAtTime(0.0001, startAt + offset);
+      gain.gain.exponentialRampToValueAtTime(gainValue, startAt + offset + 0.02);
+      gain.gain.exponentialRampToValueAtTime(
+        0.0001,
+        startAt + offset + duration,
+      );
+      oscillator.connect(gain);
+      gain.connect(ctx.destination);
+      oscillator.start(startAt + offset);
+      oscillator.stop(startAt + offset + duration + 0.02);
+    };
+
+    tone(880, 0);
+    tone(660, 0.22);
+  }, []);
+
+  const startRingtone = useCallback(() => {
+    stopRingtone();
+    playRingtonePulse();
+    ringtoneIntervalRef.current = setInterval(() => {
+      playRingtonePulse();
+    }, 1600);
+  }, [playRingtonePulse, stopRingtone]);
+
+  useEffect(() => {
+    if (incomingCall?.callUrl) {
+      startRingtone();
+      return () => stopRingtone();
+    }
+    stopRingtone();
+    return undefined;
+  }, [incomingCall?.callUrl, startRingtone, stopRingtone]);
+
+  const handleJoinCallFromSystemNote = useCallback(
+    (message) => {
+      const callUrl = String(message?.metadata?.callUrl || "").trim();
+      const conversationId = String(
+        message?.conversationId || activeConversationId || "",
+      ).trim();
+      if (!callUrl) return;
+      joinVideoCall(callUrl, conversationId);
+    },
+    [activeConversationId, joinVideoCall],
+  );
+
+  const appendCallSystemNote = useCallback(
+    ({
+      noteId,
+      conversationId,
+      body,
+      kind,
+      callUrl = null,
+      roomId = null,
+      callId = null,
+    }) => {
+      if (!conversationId || conversationId !== activeConversationId) return;
+      setMessages((previous) => {
+        if (noteId && previous.some((item) => String(item.id) === String(noteId))) {
+          return previous;
+        }
+        return [
+          ...previous,
+          {
+            id: noteId || `call-note-${Date.now()}`,
+            conversationId,
+            senderId: null,
+            body,
+            mediaPath: null,
+            mediaType: null,
+            createdAt: new Date().toISOString(),
+            messageType: "SYSTEM",
+            type: "SYSTEM",
+            metadata: {
+              kind,
+              callUrl,
+              roomId,
+              callId,
+            },
+          },
+        ];
+      });
+    },
+    [activeConversationId],
+  );
 
   const handleStartVideoCall = useCallback(() => {
     if (!activeConversationId) return;
@@ -204,6 +368,15 @@ export default function MessagesPage() {
       isE2eeMandated,
     );
     if (!callUrl) return;
+    appendCallSystemNote({
+      noteId: `call-start-${activeConversationId}-${callId}`,
+      conversationId: activeConversationId,
+      body: "Video call started",
+      kind: "call_started",
+      callUrl,
+      roomId,
+      callId,
+    });
     window.open(callUrl, "_blank", "noopener,noreferrer");
 
     if (socketRef.current) {
@@ -220,7 +393,7 @@ export default function MessagesPage() {
         () => {},
       );
     }
-  }, [activeConversationId, buildVideoCallUrl]);
+  }, [activeConversationId, appendCallSystemNote, buildVideoCallUrl]);
 
   const loadConversations = useCallback(async () => {
     if (!profile?.id) return;
@@ -248,21 +421,20 @@ export default function MessagesPage() {
       }
       setPresenceMap((previous) => ({ ...previous, ...nextPresence }));
 
-      const requestedConversationId = String(
-        router.query?.conversationId || "",
-      ).trim();
+      const requestedConversationId = routeConversationId;
       if (
         requestedConversationId &&
         rows.some((item) => item.id === requestedConversationId)
       ) {
         setActiveConversationId(requestedConversationId);
-      } else if (!activeConversationId && rows[0]?.id) {
-        setActiveConversationId(rows[0].id);
+      } else if (requestedConversationId) {
+        setActiveConversationId(requestedConversationId);
       } else if (
         activeConversationId &&
-        !rows.some((conversation) => conversation.id === activeConversationId)
+        !rows.some((conversation) => conversation.id === activeConversationId) &&
+        activeConversationId !== requestedConversationId
       ) {
-        setActiveConversationId(rows[0]?.id || "");
+        setActiveConversationId("");
       }
     } catch (_error) {
       setConversations([]);
@@ -274,8 +446,17 @@ export default function MessagesPage() {
     apiBase,
     conversationSearch,
     profile?.id,
-    router.query?.conversationId,
+    routeConversationId,
   ]);
+
+  useEffect(() => {
+    if (!routeConversationId) return;
+    if (routeConversationId === activeConversationId) return;
+    setSelectedUserForConversation(null);
+    setPreviewRoomId("");
+    setPreviewMessages([]);
+    setActiveConversationId(routeConversationId);
+  }, [activeConversationId, routeConversationId]);
 
   const loadMessages = useCallback(
     async (conversationId, page = 1) => {
@@ -696,6 +877,17 @@ export default function MessagesPage() {
           .filter(Boolean)
           .join(" ")
           .trim() || fallbackName;
+      const rawCallerPhotoPath = String(
+        payload?.fromUser?.photoPath ||
+          payload?.fromUser?.user_picture?.path ||
+          "",
+      ).trim();
+      const callerPhotoPath = rawCallerPhotoPath
+        ? rawCallerPhotoPath.startsWith("http://") ||
+          rawCallerPhotoPath.startsWith("https://")
+          ? rawCallerPhotoPath
+          : `${process.env.NEXT_PUBLIC_API_DOMAIN || ""}${rawCallerPhotoPath}`
+        : "";
       const callUrl = buildVideoCallUrl(
         conversationId,
         roomId,
@@ -705,10 +897,58 @@ export default function MessagesPage() {
         isE2eeMandated,
       );
 
+      appendCallSystemNote({
+        noteId: `call-start-${conversationId}-${callId}`,
+        conversationId,
+        body: `${callerName} started a video call`,
+        kind: "call_started",
+        callUrl,
+        roomId,
+        callId,
+      });
+
       setIncomingCall({
         conversationId,
+        roomId,
         callUrl,
         callerName,
+        callerPhotoPath,
+        callId,
+      });
+    });
+
+    socket.on("chat:call:ended-notice", (payload) => {
+      const conversationId = String(payload?.conversationId || "").trim();
+      if (!conversationId) return;
+      const roomId = String(payload?.roomId || "").trim();
+      const callId = String(payload?.callId || "").trim();
+      const reason = String(payload?.reason || "").trim();
+      const fallbackName = payload?.endedByUser?.username || "User";
+      const endedByName =
+        [payload?.endedByUser?.firstName, payload?.endedByUser?.lastName]
+          .filter(Boolean)
+          .join(" ")
+          .trim() || fallbackName;
+      const endedBody =
+        reason === "inactivity"
+          ? "Call ended due to inactivity"
+          : reason === "no_join"
+            ? "Call ended because no one joined"
+            : `${endedByName} ended the call`;
+      appendCallSystemNote({
+        noteId: `call-end-${conversationId}-${callId || Date.now()}`,
+        conversationId,
+        body: endedBody,
+        kind: "call_ended",
+        roomId,
+        callId,
+      });
+      setIncomingCall((previous) => {
+        if (!previous) return previous;
+        if (String(previous.conversationId || "") !== conversationId)
+          return previous;
+        if (callId && String(previous.callId || "") !== callId) return previous;
+        return null;
       });
     });
 
@@ -720,6 +960,7 @@ export default function MessagesPage() {
   }, [
     activeConversationId,
     apiBase,
+    appendCallSystemNote,
     buildVideoCallUrl,
     loadConversations,
     previewRoomId,
@@ -755,7 +996,15 @@ export default function MessagesPage() {
       setPreviewRoomId("");
       setPreviewMessages([]);
       await loadConversations();
-      if (conversationId) setActiveConversationId(conversationId);
+      if (conversationId) {
+        const nextConversationId = String(conversationId).trim();
+        setActiveConversationId(nextConversationId);
+        router.push(
+          `/messages/t/${encodeURIComponent(nextConversationId)}`,
+          undefined,
+          { shallow: true },
+        );
+      }
     } catch (_error) {}
   };
 
@@ -1006,14 +1255,44 @@ export default function MessagesPage() {
     }
   };
 
+  const handleBackToConversationList = () => {
+    setActiveConversationId("");
+    setSelectedUserForConversation(null);
+    setPreviewRoomId("");
+    setPreviewMessages([]);
+    router.push("/messages", undefined, { shallow: true });
+  };
+
   return (
-    <div className="bg-[#f0f2f5] min-h-[calc(100vh-72px)] p-2 lg:p-3">
-      <div className="grid h-[calc(100vh-96px)] grid-cols-1 gap-2 lg:grid-cols-[460px_1fr_400px]">
+    <div className="bg-[#e8effd] min-h-[calc(100vh-72px)] p-2 lg:p-3">
+      <div
+        className={`grid h-[calc(100vh-96px)] grid-cols-1 gap-2 ${
+          activeConversationId
+            ? "lg:grid-cols-[460px_1fr_400px]"
+            : "lg:grid-cols-[460px_1fr]"
+        }`}
+      >
         <ChatSidebar
           conversationSearch={conversationSearch}
           setConversationSearch={setConversationSearch}
           conversations={conversations}
-          setActiveConversationId={setActiveConversationId}
+          setActiveConversationId={(nextConversationId) => {
+            const normalizedConversationId = String(nextConversationId || "").trim();
+            setActiveConversationId(normalizedConversationId);
+            if (!normalizedConversationId) {
+              if (router.pathname !== "/messages") {
+                router.push("/messages", undefined, { shallow: true });
+              }
+              return;
+            }
+            if (routeConversationId !== normalizedConversationId) {
+              router.push(
+                `/messages/t/${encodeURIComponent(normalizedConversationId)}`,
+                undefined,
+                { shallow: true },
+              );
+            }
+          }}
           userSearch={userSearch}
           setUserSearch={setUserSearch}
           setSelectedUserForConversation={setSelectedUserForConversation}
@@ -1028,95 +1307,132 @@ export default function MessagesPage() {
           activeConversationId={activeConversationId}
           setPreviewRoomId={setPreviewRoomId}
           presenceMap={presenceMap}
+          isMobileThreadOpen={mobileThreadOpen}
         />
 
-        <ChatMainPanel
-          activeConversationId={activeConversationId}
-          isPreviewMode={isPreviewMode}
-          activePeer={activePeer}
-          activeConversation={activeConversation}
-          activePeerLabel={activePeerLabel}
-          handleSaveNickname={handleSaveNickname}
-          activeConversationTitle={activeConversationTitle}
-          activePeerOnline={activePeerOnline}
-          messageContainerRef={messageContainerRef}
-          topSentinelRef={topSentinelRef}
-          endRef={endRef}
-          handleMessageContainerScroll={handleMessageContainerScroll}
-          loadingMessages={loadingMessages}
-          chatMessages={chatMessages}
-          profile={profile}
-          matchingMessageIds={matchingMessageIds}
-          messageSearchIndex={messageSearchIndex}
-          messageSearchActive={messageSearchActive}
-          themeClass={themeClass}
-          mediaMessages={mediaMessages}
-          setMediaViewerIndex={setMediaViewerIndex}
-          actionMenuMessageId={actionMenuMessageId}
-          setActionMenuMessageId={setActionMenuMessageId}
-          setRemoveDialogMessage={setRemoveDialogMessage}
-          handleTogglePin={handleTogglePin}
-          pinnedMessageIds={pinnedMessageIds}
-          loadingMoreMessages={loadingMoreMessages}
-          showScrollToBottom={showScrollToBottom}
-          setShowScrollToBottom={setShowScrollToBottom}
-          attachment={attachment}
-          setAttachment={setAttachment}
-          fileInputRef={fileInputRef}
-          uploadAttachment={uploadAttachment}
-          uploading={uploading}
-          composerText={composerText}
-          setComposerText={setComposerText}
-          handleSend={handleSend}
-          defaultEmoji={defaultEmoji}
-          sending={sending}
-          onStartVideoCall={handleStartVideoCall}
-        />
+        <div className={`${mobileThreadOpen ? "block" : "hidden"} lg:block h-full min-h-0`}>
+          <ChatMainPanel
+            activeConversationId={activeConversationId}
+            isPreviewMode={isPreviewMode}
+            activePeer={activePeer}
+            activeConversation={activeConversation}
+            activePeerLabel={activePeerLabel}
+            handleSaveNickname={handleSaveNickname}
+            activeConversationTitle={activeConversationTitle}
+            activePeerOnline={activePeerOnline}
+            messageContainerRef={messageContainerRef}
+            topSentinelRef={topSentinelRef}
+            endRef={endRef}
+            handleMessageContainerScroll={handleMessageContainerScroll}
+            loadingMessages={loadingMessages}
+            chatMessages={chatMessages}
+            profile={profile}
+            matchingMessageIds={matchingMessageIds}
+            messageSearchIndex={messageSearchIndex}
+            messageSearchActive={messageSearchActive}
+            themeClass={themeClass}
+            mediaMessages={mediaMessages}
+            setMediaViewerIndex={setMediaViewerIndex}
+            actionMenuMessageId={actionMenuMessageId}
+            setActionMenuMessageId={setActionMenuMessageId}
+            setRemoveDialogMessage={setRemoveDialogMessage}
+            handleTogglePin={handleTogglePin}
+            pinnedMessageIds={pinnedMessageIds}
+            loadingMoreMessages={loadingMoreMessages}
+            showScrollToBottom={showScrollToBottom}
+            setShowScrollToBottom={setShowScrollToBottom}
+            attachment={attachment}
+            setAttachment={setAttachment}
+            fileInputRef={fileInputRef}
+            uploadAttachment={uploadAttachment}
+            uploading={uploading}
+            composerText={composerText}
+            setComposerText={setComposerText}
+            handleSend={handleSend}
+            defaultEmoji={defaultEmoji}
+            sending={sending}
+            onStartVideoCall={handleStartVideoCall}
+            onJoinCallFromNote={handleJoinCallFromSystemNote}
+            mobileView={mobileThreadOpen}
+            onBackToList={handleBackToConversationList}
+          />
+        </div>
 
-        <ChatRightPanel
-          chatPhotoUrl={chatPhotoUrl}
-          activeConversationTitle={activeConversationTitle}
-          messageSearchActive={messageSearchActive}
-          setMessageSearchActive={setMessageSearchActive}
-          setMessageSearchQuery={setMessageSearchQuery}
-          setMessageSearchIndex={setMessageSearchIndex}
-          messageSearchQuery={messageSearchQuery}
-          matchingMessageIds={matchingMessageIds}
-          messageSearchIndex={messageSearchIndex}
-          rightPanelExpanded={rightPanelExpanded}
-          setRightPanelExpanded={setRightPanelExpanded}
-          setIsPinnedPopupOpen={setIsPinnedPopupOpen}
-          setCustomizeModal={setCustomizeModal}
-          setIsMediaPopupOpen={setIsMediaPopupOpen}
-          setIsFilesPopupOpen={setIsFilesPopupOpen}
-        />
+        {activeConversationId ? (
+          <ChatRightPanel
+            chatPhotoUrl={chatPhotoUrl}
+            activeConversationTitle={activeConversationTitle}
+            messageSearchActive={messageSearchActive}
+            setMessageSearchActive={setMessageSearchActive}
+            setMessageSearchQuery={setMessageSearchQuery}
+            setMessageSearchIndex={setMessageSearchIndex}
+            messageSearchQuery={messageSearchQuery}
+            matchingMessageIds={matchingMessageIds}
+            messageSearchIndex={messageSearchIndex}
+            rightPanelExpanded={rightPanelExpanded}
+            setRightPanelExpanded={setRightPanelExpanded}
+            setIsPinnedPopupOpen={setIsPinnedPopupOpen}
+            setCustomizeModal={setCustomizeModal}
+            setIsMediaPopupOpen={setIsMediaPopupOpen}
+            setIsFilesPopupOpen={setIsFilesPopupOpen}
+          />
+        ) : null}
       </div>
 
       {incomingCall?.callUrl ? (
-        <div className="fixed bottom-4 right-4 z-[90] w-[320px] rounded-xl border border-slate-200 bg-white p-4 shadow-xl">
-          <p className="text-sm font-semibold text-slate-900">
-            Incoming video call
-          </p>
-          <p className="mt-1 text-sm text-slate-600">
-            {incomingCall.callerName} is calling.
-          </p>
-          <div className="mt-3 flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() =>
-                joinVideoCall(incomingCall.callUrl, incomingCall.conversationId)
-              }
-              className="rounded-md bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
-            >
-              Join
-            </button>
-            <button
-              type="button"
-              onClick={() => setIncomingCall(null)}
-              className="rounded-md border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-            >
-              Dismiss
-            </button>
+        <div className="fixed inset-0 z-[95] overflow-hidden">
+          <div
+            className="absolute inset-0 scale-110 bg-cover bg-center blur-2xl"
+            style={
+              incomingCall.callerPhotoPath
+                ? { backgroundImage: `url("${incomingCall.callerPhotoPath}")` }
+                : undefined
+            }
+          />
+          <div className="absolute inset-0 bg-black/55" />
+          <div className="relative flex h-full flex-col items-center justify-between px-6 py-14 text-white">
+            <div />
+            <div className="text-center">
+              {incomingCall.callerPhotoPath ? (
+                <img
+                  src={incomingCall.callerPhotoPath}
+                  alt={incomingCall.callerName || "Caller"}
+                  className="mx-auto h-28 w-28 rounded-full border-2 border-white/40 object-cover shadow-2xl"
+                />
+              ) : (
+                <div className="mx-auto flex h-28 w-28 items-center justify-center rounded-full border-2 border-white/40 bg-white/20 text-3xl font-semibold">
+                  {(incomingCall.callerName || "C").slice(0, 1).toUpperCase()}
+                </div>
+              )}
+              <p className="mt-5 text-4xl font-semibold drop-shadow-md">
+                {incomingCall.callerName}
+              </p>
+              <p className="mt-1 text-lg text-slate-200">Incoming video call</p>
+            </div>
+            <div className="flex items-start justify-center gap-12">
+              <button
+                type="button"
+                onClick={rejectIncomingCall}
+                className="flex flex-col items-center gap-2"
+              >
+                <span className="grid h-16 w-16 place-items-center rounded-full bg-white/20 backdrop-blur">
+                  <PhoneOff className="h-7 w-7 text-white" />
+                </span>
+                <span className="text-base font-medium text-slate-100">Reject</span>
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  joinVideoCall(incomingCall.callUrl, incomingCall.conversationId)
+                }
+                className="flex flex-col items-center gap-2"
+              >
+                <span className="grid h-16 w-16 place-items-center rounded-full bg-emerald-500 shadow-[0_8px_30px_rgba(16,185,129,0.5)]">
+                  <Phone className="h-7 w-7 text-white" />
+                </span>
+                <span className="text-base font-medium text-slate-100">Accept</span>
+              </button>
+            </div>
           </div>
         </div>
       ) : null}

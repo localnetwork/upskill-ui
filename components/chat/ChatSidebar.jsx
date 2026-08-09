@@ -26,24 +26,34 @@ export default function ChatSidebar({
   activeConversationId,
   setPreviewRoomId,
   presenceMap,
+  isMobileThreadOpen = false,
 }) {
   return (
-    <aside className="rounded-xl bg-white shadow-sm overflow-hidden">
-      <div className="flex items-center justify-between px-5 pt-4 pb-3">
-        <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 leading-none">
-          Chats
+    <aside
+      className={`rounded-[28px] bg-white shadow-sm overflow-hidden h-full ${
+        isMobileThreadOpen ? "hidden lg:block" : "block"
+      }`}
+    >
+      <div className="flex items-center justify-between px-5 pt-6 pb-3 lg:pt-4">
+        <h1 className="text-[44px] lg:text-3xl font-extrabold tracking-tight text-slate-900 leading-none">
+          Messages
         </h1>
         <div className="flex items-center gap-2">
-          <IconCircleButton className="bg-slate-100 hover:bg-slate-200">
-            <CircleEllipsis className="h-5 w-5 text-slate-700" />
+          <IconCircleButton className="bg-white border border-slate-200 hover:bg-slate-100 lg:hidden">
+            <Search className="h-5 w-5 text-slate-700" />
           </IconCircleButton>
-          <IconCircleButton className="bg-slate-100 hover:bg-slate-200">
-            <MessageCircleMore className="h-5 w-5 text-slate-700" />
-          </IconCircleButton>
+          <div className="hidden lg:flex items-center gap-2">
+            <IconCircleButton className="bg-slate-100 hover:bg-slate-200">
+              <CircleEllipsis className="h-5 w-5 text-slate-700" />
+            </IconCircleButton>
+            <IconCircleButton className="bg-slate-100 hover:bg-slate-200">
+              <MessageCircleMore className="h-5 w-5 text-slate-700" />
+            </IconCircleButton>
+          </div>
         </div>
       </div>
 
-      <div className="px-4 pb-3">
+      <div className="hidden lg:block px-4 pb-3">
         <div className="relative">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
           <input
@@ -61,7 +71,7 @@ export default function ChatSidebar({
         </div>
       </div>
 
-      <div className="px-4 pb-3 flex items-center gap-2 text-base font-semibold">
+      <div className="hidden lg:flex px-4 pb-3 items-center gap-2 text-base font-semibold">
         <button className="rounded-full bg-blue-50 px-4 py-1.5 text-blue-700">
           All
         </button>
@@ -76,7 +86,7 @@ export default function ChatSidebar({
         </button>
       </div>
 
-      <div className="px-4 pb-2">
+      <div className="hidden lg:block px-4 pb-2">
         <input
           value={userSearch}
           onChange={(event) => {
@@ -130,7 +140,7 @@ export default function ChatSidebar({
 
       <div
         ref={sidebarListRef}
-        className="h-[calc(100%-280px)] overflow-y-auto px-2 pb-2"
+        className="h-[calc(100%-92px)] lg:h-[calc(100%-280px)] overflow-y-auto px-3 pb-4"
       >
         {loadingConversations ? (
           <p className="px-2 py-3 text-sm text-slate-500">
@@ -181,14 +191,14 @@ export default function ChatSidebar({
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-2">
-                    <p className="line-clamp-1 text-lg font-semibold text-slate-900">
+                    <p className="line-clamp-1 text-xl lg:text-lg font-semibold text-slate-900">
                       {conversation.title || "Conversation"}
                     </p>
-                    <p className="text-[13px] text-slate-500">
+                    <p className="text-xs lg:text-[13px] text-slate-500">
                       {formatTimeAgo(conversation.lastMessageAt)}
                     </p>
                   </div>
-                  <p className="line-clamp-1 text-sm text-slate-600">
+                  <p className="line-clamp-1 text-base lg:text-sm text-slate-600">
                     {conversation.lastMessage?.deletedForEveryone
                       ? "Message deleted"
                       : conversation.lastMessage?.body ||
@@ -196,6 +206,11 @@ export default function ChatSidebar({
                           ? "[Attachment]"
                           : "No messages yet")}
                   </p>
+                  {Number(conversation.unreadCount || 0) > 0 ? (
+                    <span className="mt-1 inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-blue-500 px-2 text-xs font-bold text-white">
+                      {conversation.unreadCount}
+                    </span>
+                  ) : null}
                 </div>
               </div>
             </button>
