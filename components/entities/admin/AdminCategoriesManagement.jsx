@@ -1,7 +1,21 @@
 import BaseApi from "@/lib/api/_base.api";
 import SlugField from "@/components/forms/SlugField";
 import dynamic from "next/dynamic";
-import { Edit2, Plus, X } from "lucide-react";
+import {
+  BriefcaseBusiness,
+  Camera,
+  Code2,
+  Dumbbell,
+  Edit2,
+  FolderOpen,
+  GraduationCap,
+  Megaphone,
+  Music,
+  Plus,
+  SwatchBook,
+  Wallet,
+  X,
+} from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 
@@ -9,11 +23,31 @@ const TextEditor = dynamic(() => import("@/components/forms/TextEditor"), {
   ssr: false,
 });
 
+const CATEGORY_ICON_OPTIONS = [
+  { name: "Code2", component: Code2 },
+  { name: "BriefcaseBusiness", component: BriefcaseBusiness },
+  { name: "Wallet", component: Wallet },
+  { name: "SwatchBook", component: SwatchBook },
+  { name: "Megaphone", component: Megaphone },
+  { name: "Dumbbell", component: Dumbbell },
+  { name: "Camera", component: Camera },
+  { name: "Music", component: Music },
+  { name: "GraduationCap", component: GraduationCap },
+  { name: "FolderOpen", component: FolderOpen },
+];
+
+const CATEGORY_ICON_BY_NAME = CATEGORY_ICON_OPTIONS.reduce((acc, option) => {
+  acc[option.name] = option.component;
+  return acc;
+}, {});
+
 function normalizeCategoryTree(rows = []) {
   return rows.map((row) => ({
     ...row,
     title: row?.name || row?.title || "",
     parentId: row?.parentId || row?.parent_id || null,
+    icon: row?.icon || "FolderOpen",
+    color: row?.color || "#334155",
     children: normalizeCategoryTree(row?.children || []),
   }));
 }
@@ -25,6 +59,8 @@ function flattenTree(rows = [], depth = 0, parentTitle = null, acc = []) {
       title: row.title,
       slug: row.slug,
       image: row.image || "",
+      icon: row.icon || "FolderOpen",
+      color: row.color || "#334155",
       depth,
       parentId: row.parentId,
       parentTitle,
@@ -67,6 +103,8 @@ export default function AdminCategoriesManagement() {
     title: "",
     slug: "",
     image: "",
+    icon: "FolderOpen",
+    color: "#334155",
     description: "",
     parentId: "",
   });
@@ -112,7 +150,15 @@ export default function AdminCategoriesManagement() {
       isValid: false,
       message: "",
     });
-    setFormValues({ title: "", slug: "", image: "", description: "", parentId: "" });
+    setFormValues({
+      title: "",
+      slug: "",
+      image: "",
+      icon: "FolderOpen",
+      color: "#334155",
+      description: "",
+      parentId: "",
+    });
     setIsModalOpen(true);
   }, []);
 
@@ -129,6 +175,8 @@ export default function AdminCategoriesManagement() {
       title: category.title || "",
       slug: category.slug || "",
       image: category.image || "",
+      icon: category.icon || "FolderOpen",
+      color: category.color || "#334155",
       description: category.description || category.category_description || "",
       parentId: category.parentId || "",
     });
@@ -245,6 +293,8 @@ export default function AdminCategoriesManagement() {
           title,
           slug,
           image: String(formValues.image || "").trim() || null,
+          icon: String(formValues.icon || "").trim() || null,
+          color: String(formValues.color || "").trim() || null,
           description: String(formValues.description || "").trim() || null,
           parentId: formValues.parentId || null,
         };
@@ -313,6 +363,12 @@ export default function AdminCategoriesManagement() {
                     Title
                   </th>
                   <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Icon
+                  </th>
+                  <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Color
+                  </th>
+                  <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
                     Slug
                   </th>
                   <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
@@ -338,6 +394,30 @@ export default function AdminCategoriesManagement() {
                           <span className="text-slate-300">└</span>
                         ) : null}
                         <span>{row.title}</span>
+                      </div>
+                    </td>
+                    <td className="px-5 py-4 text-sm text-slate-600">
+                      <div className="flex items-center gap-2">
+                        {(() => {
+                          const CategoryIcon =
+                            CATEGORY_ICON_BY_NAME[row.icon] || FolderOpen;
+                          return (
+                            <CategoryIcon
+                              className="h-4 w-4"
+                              style={{ color: row.color || "#334155" }}
+                            />
+                          );
+                        })()}
+                        <span className="text-xs">{row.icon || "FolderOpen"}</span>
+                      </div>
+                    </td>
+                    <td className="px-5 py-4 text-sm text-slate-600">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className="h-4 w-4 rounded-full border border-slate-200"
+                          style={{ backgroundColor: row.color || "#334155" }}
+                        />
+                        <span className="text-xs">{row.color || "#334155"}</span>
                       </div>
                     </td>
                     <td className="px-5 py-4 text-sm text-slate-600">{row.slug}</td>
@@ -375,7 +455,7 @@ export default function AdminCategoriesManagement() {
 
                 {!rows.length ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-8 text-center text-sm text-slate-500">
+                    <td colSpan={7} className="px-6 py-8 text-center text-sm text-slate-500">
                       {isLoading ? "Loading categories..." : "No categories found."}
                     </td>
                   </tr>
@@ -435,6 +515,41 @@ export default function AdminCategoriesManagement() {
                 onStatusChange={setSlugStatus}
                 checkAvailability={checkCategorySlugAvailability}
               />
+
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Icon
+                  </label>
+                  <select
+                    value={formValues.icon}
+                    onChange={(event) =>
+                      setFormValues((prev) => ({ ...prev, icon: event.target.value }))
+                    }
+                    className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none"
+                  >
+                    {CATEGORY_ICON_OPTIONS.map((option) => (
+                      <option key={option.name} value={option.name}>
+                        {option.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Color
+                  </label>
+                  <input
+                    type="color"
+                    value={formValues.color || "#334155"}
+                    onChange={(event) =>
+                      setFormValues((prev) => ({ ...prev, color: event.target.value }))
+                    }
+                    className="h-[38px] w-full cursor-pointer rounded-md border border-slate-300 bg-white p-1"
+                  />
+                </div>
+              </div>
 
               <div>
                 <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">

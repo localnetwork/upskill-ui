@@ -40,6 +40,35 @@ function safeParseMaybeJson(value) {
   }
 }
 
+function normalizeQuizQuestionsForPreview(rawQuestions) {
+  const list = Array.isArray(rawQuestions) ? rawQuestions : [];
+  return list.map((question, index) => {
+    const text =
+      String(
+        question?.question ||
+          question?.prompt ||
+          question?.title ||
+          question?.text ||
+          "",
+      ).trim() || `Question ${index + 1}`;
+    const choices = Array.isArray(question?.choices)
+      ? question.choices
+      : Array.isArray(question?.options)
+        ? question.options.map((option) =>
+            typeof option === "object"
+              ? option?.text || option?.label || option?.value || ""
+              : option,
+          )
+        : [];
+
+    return {
+      ...question,
+      question: text,
+      choices: choices.map((choice) => String(choice || "").trim()).filter(Boolean),
+    };
+  });
+}
+
 function normalizeSections(rawSections = []) {
   return (Array.isArray(rawSections) ? rawSections : []).map((section) => {
     const lessons = Array.isArray(section?.lessons) ? section.lessons : [];
@@ -68,9 +97,11 @@ function normalizeSections(rawSections = []) {
           curriculum?.asset ||
           (curriculum?.type === "QUIZ"
             ? {
-                questions: Array.isArray(safeParseMaybeJson(curriculum?.quizQuestions))
-                  ? safeParseMaybeJson(curriculum?.quizQuestions)
-                  : safeParseMaybeJson(curriculum?.quizQuestions)?.questions || [],
+                questions: normalizeQuizQuestionsForPreview(
+                  Array.isArray(safeParseMaybeJson(curriculum?.quizQuestions))
+                    ? safeParseMaybeJson(curriculum?.quizQuestions)
+                    : safeParseMaybeJson(curriculum?.quizQuestions)?.questions || [],
+                ),
               }
             : curriculum?.type === "CODING_EXERCISE"
               ? {
@@ -133,9 +164,9 @@ function LecturePreview({ lecture }) {
   }
 
   if (lecture.curriculum_resource_type === "quiz") {
-    const questions = Array.isArray(lecture?.asset?.questions)
-      ? lecture.asset.questions
-      : [];
+    const questions = normalizeQuizQuestionsForPreview(
+      Array.isArray(lecture?.asset?.questions) ? lecture.asset.questions : [],
+    );
     return (
       <div className="w-full h-[500px] bg-white p-6 overflow-y-auto">
         <div className="max-w-3xl mx-auto">
@@ -149,7 +180,7 @@ function LecturePreview({ lecture }) {
                   className="rounded-lg border border-slate-200 p-4"
                 >
                   <p className="text-sm font-semibold text-slate-800">
-                    {index + 1}. {question?.question || "Untitled question"}
+                    {index + 1}. {question?.question || `Question ${index + 1}`}
                   </p>
                   {Array.isArray(question?.choices) && question.choices.length ? (
                     <ul className="mt-2 text-sm text-slate-600 list-disc pl-5 space-y-1">

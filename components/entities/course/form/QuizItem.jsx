@@ -18,6 +18,7 @@ function createQuestion(type = "multiple_choice") {
     acceptedAnswers:
       type === "fill_in_the_blanks" || type === "short_answer" ? [""] : [],
     correctAnswer: type === "true_false" ? true : null,
+    hint: "",
     explanation: "",
   };
 }
@@ -137,6 +138,22 @@ export default function QuizItem({ quiz, onClose, onSave }) {
             onChange={(e) => updateQuestion(question.id, { prompt: e.target.value })}
             className="border rounded w-full p-2 text-sm"
             placeholder="Question prompt"
+          />
+
+          <textarea
+            value={question.hint || ""}
+            onChange={(e) => updateQuestion(question.id, { hint: e.target.value })}
+            className="border rounded w-full p-2 text-sm"
+            placeholder="Hint (optional, shown when learner clicks Hint)"
+          />
+
+          <textarea
+            value={question.explanation || ""}
+            onChange={(e) =>
+              updateQuestion(question.id, { explanation: e.target.value })
+            }
+            className="border rounded w-full p-2 text-sm"
+            placeholder="Explanation (optional, shown after validation)"
           />
 
           {question.type === "multiple_choice" && (

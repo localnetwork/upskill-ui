@@ -76,13 +76,6 @@ export default function HomePageExperience() {
       <HomeHeroSection />
       <HomePopular />
       <HomepageSkillsTransform />
-      {/* <CompanyLogosSection />
-      <FeaturedCoursesSection />
-      <PopularSkillsSection /> 
-      <StudentSuccessSection />
-      <CategoriesSection />
-      <CertificationPrepSection />
-      <FinalCTA /> */}
     </div>
   );
 }

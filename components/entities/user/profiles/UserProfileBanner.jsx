@@ -14,7 +14,7 @@ import {
   Twitter,
   Youtube,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Tiktok from "@/components/icons/Tiktok";
 
 function getErrorMessage(error, fallback) {
@@ -44,36 +44,40 @@ export default function UserProfileBanner({ profile }) {
     currentProfile?.id && profile?.id && !isOwnProfile,
   );
 
+  const fetchFriendshipStatus = useCallback(async () => {
+    if (!canManageFriendship) return;
+    setIsFriendshipLoading(true);
+    try {
+      const response = await BaseApi.get(
+        `${process.env.NEXT_PUBLIC_API_URL}/users/friend-requests/status/${profile.id}`,
+      );
+      setFriendship(
+        response?.data?.data || {
+          relationship: "NONE",
+          requestId: null,
+        },
+      );
+    } catch (_error) {
+      setFriendship({ relationship: "NONE", requestId: null });
+    } finally {
+      setIsFriendshipLoading(false);
+    }
+  }, [canManageFriendship, profile?.id]);
+
+  useEffect(() => {
+    fetchFriendshipStatus();
+  }, [fetchFriendshipStatus]);
+
   useEffect(() => {
     if (!canManageFriendship) return;
-
-    let active = true;
-    const fetchStatus = async () => {
-      setIsFriendshipLoading(true);
-      try {
-        const response = await BaseApi.get(
-          `${process.env.NEXT_PUBLIC_API_URL}/users/friend-requests/status/${profile.id}`,
-        );
-        if (!active) return;
-        setFriendship(
-          response?.data?.data || {
-            relationship: "NONE",
-            requestId: null,
-          },
-        );
-      } catch (_error) {
-        if (!active) return;
-        setFriendship({ relationship: "NONE", requestId: null });
-      } finally {
-        if (active) setIsFriendshipLoading(false);
-      }
+    const onFocus = () => {
+      fetchFriendshipStatus();
     };
-
-    fetchStatus();
+    window.addEventListener("focus", onFocus);
     return () => {
-      active = false;
+      window.removeEventListener("focus", onFocus);
     };
-  }, [canManageFriendship, profile?.id]);
+  }, [canManageFriendship, fetchFriendshipStatus]);
 
   const extractedRoleNames =
     profile?.roles || [] ? profile?.roles.map((role) => role.role_name) : [];
@@ -110,6 +114,23 @@ export default function UserProfileBanner({ profile }) {
     }
   };
 
+  const unfriendUser = async () => {
+    if (!profile?.id || isFriendActionLoading) return;
+    setIsFriendActionLoading(true);
+    try {
+      const response = await BaseApi.post(
+        `${process.env.NEXT_PUBLIC_API_URL}/users/friend-requests/unfriend/${profile.id}`,
+      );
+      setFriendship(response?.data?.data || { relationship: "NONE" });
+      await fetchFriendshipStatus();
+      toast.success("Unfriended successfully.");
+    } catch (error) {
+      toast.error(getErrorMessage(error, "Failed to unfriend user."));
+    } finally {
+      setIsFriendActionLoading(false);
+    }
+  };
+
   const respondToFriendRequest = async (action) => {
     if (!friendship?.requestId || isFriendActionLoading) return;
     setIsFriendActionLoading(true);
@@ -119,6 +140,7 @@ export default function UserProfileBanner({ profile }) {
         { action },
       );
       setFriendship(response?.data?.data || { relationship: "NONE" });
+      await fetchFriendshipStatus();
       toast.success(
         action === "ACCEPT"
           ? "Friend request accepted."
@@ -148,7 +170,7 @@ export default function UserProfileBanner({ profile }) {
               </div>
             )}
           </div>
-          <div className="absolute flex flex-col items-center justify-center top-0 right-0 card test bg-white shadow-md max-w-[450px] min-w-[350px] p-[30px] rounded-lg min-h-[250px]">
+          <div className="absolute flex flex-col items-center justify-center top-0 right-0 card test bg-white shadow-md max-w-[400px] min-w-[350px] p-[30px] rounded-lg min-h-[250px]">
             <UserAvatar
               className="w-[130px] h-[128px] text-[40px]"
               profile={profile}
@@ -283,10 +305,11 @@ export default function UserProfileBanner({ profile }) {
                 {friendship.relationship === "FRIENDS" ? (
                   <button
                     type="button"
-                    disabled
-                    className="py-[10px] border border-[#94a3b8] text-[#475569] bg-[#f8fafc] font-bold w-full rounded-[10px]"
+                    disabled={isFriendActionLoading || isFriendshipLoading}
+                    onClick={unfriendUser}
+                    className="py-[10px] border border-[#ef4444] text-[#ef4444] hover:bg-[#fff1f2] font-bold w-full rounded-[10px] disabled:opacity-60"
                   >
-                    Friends
+                    {isFriendActionLoading ? "Processing..." : "Unfriend"}
                   </button>
                 ) : friendship.relationship === "REQUEST_SENT" ? (
                   <button
@@ -295,7 +318,9 @@ export default function UserProfileBanner({ profile }) {
                     onClick={cancelFriendRequest}
                     className="py-[10px] border border-[#3588FC] hover:bg-[#F0F6FF] font-bold text-[#3588FC] w-full rounded-[10px] disabled:opacity-60"
                   >
-                    {isFriendActionLoading ? "Processing..." : "Cancel Friend Request"}
+                    {isFriendActionLoading
+                      ? "Processing..."
+                      : "Cancel Friend Request"}
                   </button>
                 ) : friendship.relationship === "REQUEST_RECEIVED" ? (
                   <div className="grid grid-cols-2 gap-3">

@@ -3,7 +3,16 @@ import UserProfileInstructorCourses from "@/components/entities/user/profiles/Us
 import CourseItemCard from "@/components/entities/course/CourseItemCard";
 import BaseApi from "@/lib/api/_base.api";
 import Link from "next/link";
-import { BadgeCheck, ChevronDown, Medal, ShieldCheck } from "lucide-react";
+import {
+  BadgeCheck,
+  ChevronDown,
+  Medal,
+  ShieldCheck,
+  Users,
+  MessageSquare,
+  BookOpen,
+  Star,
+} from "lucide-react";
 import { useRouter } from "next/router";
 import { useEffect, useMemo, useState } from "react";
 
@@ -98,33 +107,72 @@ export default function PublicProfile({ profile }) {
       <div className="container">
         <div className="pt-[30px] pb-[50px]">
           {isInstructor && (
-            <div className="mb-10 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-[900px]">
-              <div className="border rounded-md p-4">
-                <div className="font-semibold text-[24px]">
-                  {Number(educatorStats?.total_learners || 0)}
-                </div>
-                <div className="text-[13px] text-gray-600">Total learners</div>
-              </div>
-              <div className="border rounded-md p-4">
-                <div className="font-semibold text-[24px]">
-                  {Number(educatorStats?.total_reviews || 0)}
-                </div>
-                <div className="text-[13px] text-gray-600">Reviews</div>
-              </div>
-              <div className="border rounded-md p-4">
-                <div className="font-semibold text-[24px]">
-                  {Number(educatorStats?.published_courses || 0)}
-                </div>
-                <div className="text-[13px] text-gray-600">
-                  Published courses
-                </div>
-              </div>
-              <div className="border rounded-md p-4">
-                <div className="font-semibold text-[24px]">
-                  {Number(educatorStats?.average_rating || 0).toFixed(2)}
-                </div>
-                <div className="text-[13px] text-gray-600">Average rating</div>
-              </div>
+            <div className="mb-10 grid max-w-[800px] grid-cols-2 gap-4 md:grid-cols-4">
+              {[
+                {
+                  label: "Total learners",
+                  value: Number(educatorStats?.total_learners || 0),
+                  icon: Users,
+                  iconColor: "text-blue-600",
+                  iconBg: "bg-blue-50",
+                  border: "border-blue-100",
+                },
+                {
+                  label: "Reviews",
+                  value: Number(educatorStats?.total_reviews || 0),
+                  icon: MessageSquare,
+                  iconColor: "text-purple-600",
+                  iconBg: "bg-purple-50",
+                  border: "border-purple-100",
+                },
+                {
+                  label: "Published courses",
+                  value: Number(educatorStats?.published_courses || 0),
+                  icon: BookOpen,
+                  iconColor: "text-emerald-600",
+                  iconBg: "bg-emerald-50",
+                  border: "border-emerald-100",
+                },
+                {
+                  label: "Average rating",
+                  value: Number(educatorStats?.average_rating || 0).toFixed(2),
+                  icon: Star,
+                  iconColor: "text-amber-600",
+                  iconBg: "bg-amber-50",
+                  border: "border-amber-100",
+                },
+              ].map((stat) => {
+                const Icon = stat.icon;
+
+                return (
+                  <div
+                    key={stat.label}
+                    className={`group rounded-xl border ${stat.border} bg-white p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <div className="text-[26px] font-bold leading-none tracking-tight text-gray-900">
+                          {stat.value}
+                        </div>
+
+                        <div className="mt-2 text-[13px] font-medium text-gray-500">
+                          {stat.label}
+                        </div>
+                      </div>
+
+                      <div
+                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${stat.iconBg}`}
+                      >
+                        <Icon
+                          size={20}
+                          strokeWidth={2}
+                          className={stat.iconColor}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
 

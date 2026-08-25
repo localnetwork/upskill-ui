@@ -211,9 +211,9 @@ export default function CourseLearnAIAssistantDrawer({
           </button>
         </div>
 
-        <div className="px-4 py-3 border-b border-slate-200">
+        <div className="px-4 py-3 border-b border-slate-200 shrink-0">
           <p className="text-[12px] text-slate-500 mb-2">Suggested topics</p>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 max-h-[120px] overflow-y-auto pr-1">
             {localSuggestedTopics.map((topic) => (
               <button
                 key={topic}

@@ -35,7 +35,7 @@ export default function SecureVideo({
       const cookies = parseCookies();
       const token = getAuthTokenFromCookieMap(cookies);
       if (!token) {
-        if (mounted) setIframeUrl("");
+        if (mounted) setIframeUrl(fallbackEmbedUrl || "");
         return;
       }
 
@@ -60,11 +60,11 @@ export default function SecureVideo({
         const payload = await response.json();
         const signedEmbedUrl = String(payload?.data?.embed_url || "").trim();
         if (mounted) {
-          setIframeUrl(signedEmbedUrl || "");
+          setIframeUrl(signedEmbedUrl || fallbackEmbedUrl || "");
         }
       } catch (_error) {
         if (mounted) {
-          setIframeUrl("");
+          setIframeUrl(fallbackEmbedUrl || "");
         }
       } finally {
         if (mounted) {

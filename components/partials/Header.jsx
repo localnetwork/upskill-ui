@@ -368,6 +368,28 @@ export default function Header() {
     refreshNotifications();
   };
 
+  const handleFriendRequestActionComplete = useCallback(
+    (notificationId, action) => {
+      setNotifications((prev) =>
+        prev.map((item) =>
+          item.id === notificationId
+            ? {
+                ...item,
+                readAt: item.readAt || new Date().toISOString(),
+                metadata: {
+                  ...(item.metadata || {}),
+                  requestStatus: action === "ACCEPT" ? "ACCEPTED" : "DECLINED",
+                },
+              }
+            : item,
+        ),
+      );
+      setUnreadCount((prev) => Math.max(0, prev - 1));
+      refreshNotifications();
+    },
+    [refreshNotifications],
+  );
+
   return (
     <>
       {profile && profile.verified === 0 && <UserResendNotif />}
@@ -515,6 +537,9 @@ export default function Header() {
                         notifications={notifications}
                         unreadCount={unreadCount}
                         onNotificationClick={handleNotificationClick}
+                        onFriendRequestActionComplete={
+                          handleFriendRequestActionComplete
+                        }
                       />
                     </div>
                   )}

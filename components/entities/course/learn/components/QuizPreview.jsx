@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import BaseApi from "@/lib/api/_base.api";
 import QuizActionBar from "./QuizPreview/QuizActionBar";
 import QuizCompletionSummary from "./QuizPreview/QuizCompletionSummary";
@@ -30,6 +30,7 @@ export default function QuizPreview({ lecture, setCourse }) {
 
   const currentQuestion = questions[currentIndex];
   const currentQuestionKey = getQuestionKey(currentQuestion, currentIndex);
+  const previousQuestionKeyRef = useRef(currentQuestionKey);
   const currentResult =
     attempt?.state?.questionResults?.[currentQuestionKey] || null;
   const hintAlreadyUsed = Boolean(
@@ -124,8 +125,14 @@ export default function QuizPreview({ lecture, setCourse }) {
     const savedAnswer = attempt?.state?.answers?.[key];
     setCurrentAnswer(savedAnswer ?? "");
     setValidationResult(attempt?.state?.questionResults?.[key] || null);
-    setHintText("");
   }, [currentIndex, attempt, questions]);
+
+  useEffect(() => {
+    if (previousQuestionKeyRef.current !== currentQuestionKey) {
+      previousQuestionKeyRef.current = currentQuestionKey;
+      setHintText("");
+    }
+  }, [currentQuestionKey]);
 
   useEffect(() => {
     if (!attempt?.state?.passed) return;
@@ -172,6 +179,7 @@ export default function QuizPreview({ lecture, setCourse }) {
 
     try {
       setIsHintLoading(true);
+      setError("");
       const response = await BaseApi.post(
         `${process.env.NEXT_PUBLIC_API_URL}/course-curriculums/${lecture.id}/quiz-attempt/hint`,
         {
@@ -182,11 +190,14 @@ export default function QuizPreview({ lecture, setCourse }) {
       setAttempt((prev) => {
         if (!prev) return prev;
         const next = JSON.parse(JSON.stringify(prev));
+        next.state = next.state || {};
+        next.state.hintUsage = next.state.hintUsage || {};
         next.state.hintUsage[currentQuestionKey] = true;
         return next;
       });
     } catch (hintError) {
       console.error("Failed to load hint:", hintError);
+      setError(hintError?.data?.message || "Unable to load hint.");
     } finally {
       setIsHintLoading(false);
     }
