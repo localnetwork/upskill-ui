@@ -4,8 +4,9 @@ import { useEffect, useMemo, useState } from "react";
 import { parseCookies } from "nookies";
 import { getAuthTokenFromCookieMap } from "@/lib/services/authToken";
 import {
-  buildBunnyEmbedUrlFromPlaybackUrl,
-  extractBunnyVideoIdFromPlaybackUrl,
+  buildStreamEmbedUrlFromPlaybackUrl,
+  extractStreamVideoIdFromPlaybackUrl,
+  isAbsoluteHttpUrl,
   resolveVideoSource,
 } from "@/lib/services/videoSource";
 
@@ -18,7 +19,7 @@ export default function SecureVideo({
   const [loading, setLoading] = useState(false);
   const resolvedSrc = useMemo(() => resolveVideoSource(src), [src]);
   const fallbackEmbedUrl = useMemo(
-    () => buildBunnyEmbedUrlFromPlaybackUrl(resolvedSrc),
+    () => buildStreamEmbedUrlFromPlaybackUrl(resolvedSrc),
     [resolvedSrc],
   );
 
@@ -79,24 +80,28 @@ export default function SecureVideo({
     };
   }, [lessonId, fallbackEmbedUrl]);
 
-  const isBunnyVideo = Boolean(extractBunnyVideoIdFromPlaybackUrl(resolvedSrc));
+  const isStreamVideo = Boolean(extractStreamVideoIdFromPlaybackUrl(resolvedSrc));
+  const canRenderDirectVideo = isAbsoluteHttpUrl(resolvedSrc);
 
   if (loading) {
     return <div className="text-sm text-gray-500">Loading secure video...</div>;
   }
 
-  if (!iframeUrl && lessonId && isBunnyVideo) {
+  if (!iframeUrl && lessonId && isStreamVideo) {
     return (
       <div className="text-sm text-red-500">
-        Unable to load secured Bunny video.
+        Unable to load secured video stream.
       </div>
     );
   }
 
   if (!iframeUrl) {
+    if (canRenderDirectVideo) {
+      return <video controls className={className} src={resolvedSrc} />;
+    }
     return (
       <div className="text-sm text-red-500">
-        Unable to load Bunny video preview.
+        Unable to load video preview.
       </div>
     );
   }

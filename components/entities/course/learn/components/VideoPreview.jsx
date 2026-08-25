@@ -11,56 +11,56 @@ import "@vidstack/react/player/styles/base.css";
 import "@vidstack/react/player/styles/plyr/theme.css";
 import BaseApi from "@/lib/api/_base.api";
 import {
-  buildBunnyEmbedUrlFromPlaybackUrl,
-  extractBunnyVideoIdFromPlaybackUrl,
+  buildStreamEmbedUrlFromPlaybackUrl,
+  extractStreamVideoIdFromPlaybackUrl,
   isAbsoluteHttpUrl,
   resolveVideoSource,
 } from "@/lib/services/videoSource";
 
-const PLAYER_JS_SRC =
-  "https://assets.mediadelivery.net/playerjs/playerjs-latest.min.js";
-let playerJsLoaderPromise = null;
+const STREAM_SDK_SRC =
+  "https://embed.videodelivery.net/embed/sdk.latest.js";
+let streamSdkLoaderPromise = null;
 
-function loadBunnyPlayerJs() {
+function loadStreamPlayerSdk() {
   if (typeof window === "undefined") {
     return Promise.resolve(null);
   }
 
-  if (window.playerjs) {
-    return Promise.resolve(window.playerjs);
+  if (typeof window.Stream === "function") {
+    return Promise.resolve(window.Stream);
   }
 
-  if (playerJsLoaderPromise) {
-    return playerJsLoaderPromise;
+  if (streamSdkLoaderPromise) {
+    return streamSdkLoaderPromise;
   }
 
-  playerJsLoaderPromise = new Promise((resolve, reject) => {
+  streamSdkLoaderPromise = new Promise((resolve, reject) => {
     const existingScript = document.querySelector(
-      `script[src="${PLAYER_JS_SRC}"]`,
+      `script[src="${STREAM_SDK_SRC}"]`,
     );
 
     if (existingScript) {
-      existingScript.addEventListener("load", () => resolve(window.playerjs), {
+      existingScript.addEventListener("load", () => resolve(window.Stream), {
         once: true,
       });
       existingScript.addEventListener(
         "error",
-        () => reject(new Error("Failed to load Bunny PlayerJS")),
+        () => reject(new Error("Failed to load stream player SDK")),
         { once: true },
       );
       return;
     }
 
     const script = document.createElement("script");
-    script.src = PLAYER_JS_SRC;
+    script.src = STREAM_SDK_SRC;
     script.async = true;
-    script.onload = () => resolve(window.playerjs);
+    script.onload = () => resolve(window.Stream);
     script.onerror = () =>
-      reject(new Error("Failed to load Bunny PlayerJS"));
+      reject(new Error("Failed to load stream player SDK"));
     document.head.appendChild(script);
   });
 
-  return playerJsLoaderPromise;
+  return streamSdkLoaderPromise;
 }
 
 export default function VideoPreview({
@@ -86,8 +86,8 @@ export default function VideoPreview({
     const directVideoUrl = resolveVideoSource(
       lecture?.asset?.path || lecture?.videoUrl || "",
     );
-    const isBunnyVideo = Boolean(
-      extractBunnyVideoIdFromPlaybackUrl(directVideoUrl),
+    const isStreamVideo = Boolean(
+      extractStreamVideoIdFromPlaybackUrl(directVideoUrl),
     );
     let isMounted = true;
 
@@ -121,26 +121,33 @@ export default function VideoPreview({
               return;
             }
           } catch (streamError) {
-            if (isBunnyVideo) {
+            if (isStreamVideo) {
               throw streamError;
             }
           }
         }
 
-        if (isBunnyVideo) {
-          throw new Error("Missing secure Bunny embed URL");
+        const streamIframeUrl =
+          buildStreamEmbedUrlFromPlaybackUrl(directVideoUrl);
+        if (streamIframeUrl) {
+          if (isMounted) {
+            setIframeSrc(streamIframeUrl);
+            setMediaSrc(null);
+          }
+          return;
+        }
+
+        if (isStreamVideo) {
+          throw new Error("Missing secure stream embed URL");
         }
 
         if (!isAbsoluteHttpUrl(directVideoUrl)) {
           throw new Error("Missing video URL");
         }
 
-        const bunnyIframeUrl = buildBunnyEmbedUrlFromPlaybackUrl(directVideoUrl);
         if (isMounted) {
-          setIframeSrc(bunnyIframeUrl);
-          setMediaSrc(
-            bunnyIframeUrl ? null : [{ src: directVideoUrl, type: "video/mp4" }],
-          );
+          setIframeSrc("");
+          setMediaSrc([{ src: directVideoUrl, type: "video/mp4" }]);
         }
       } catch (err) {
         console.error("Error loading video:", err);
@@ -257,19 +264,30 @@ export default function VideoPreview({
 
     const attachIframePlaybackEvents = async () => {
       try {
-        const playerjs = await loadBunnyPlayerJs();
-        if (cancelled || !playerjs || !iframeRef.current) return;
+        const Stream = await loadStreamPlayerSdk();
+        if (
+          cancelled ||
+          typeof Stream !== "function" ||
+          !iframeRef.current ||
+          !iframeRef.current.contentWindow
+        ) {
+          return;
+        }
 
-        activePlayer = new playerjs.Player(iframeRef.current);
-        readyHandler = () => {
-          endedHandler = () => {
-            markLectureCompleted();
-          };
-          activePlayer.on("ended", endedHandler);
+        activePlayer = Stream(iframeRef.current);
+        endedHandler = () => {
+          markLectureCompleted();
         };
-        activePlayer.on("ready", readyHandler);
+        readyHandler = () => {
+          if (activePlayer?.addEventListener) {
+            activePlayer.addEventListener("ended", endedHandler);
+          }
+        };
+        if (activePlayer?.addEventListener) {
+          activePlayer.addEventListener("ready", readyHandler);
+        }
       } catch (error) {
-        console.error("Unable to attach Bunny iframe playback events:", error);
+        console.error("Unable to attach stream iframe playback events:", error);
       }
     };
 
@@ -277,16 +295,16 @@ export default function VideoPreview({
 
     return () => {
       cancelled = true;
-      if (activePlayer && endedHandler) {
+      if (activePlayer?.removeEventListener && endedHandler) {
         try {
-          activePlayer.off("ended", endedHandler);
+          activePlayer.removeEventListener("ended", endedHandler);
         } catch (_error) {
           // no-op
         }
       }
-      if (activePlayer && readyHandler) {
+      if (activePlayer?.removeEventListener && readyHandler) {
         try {
-          activePlayer.off("ready", readyHandler);
+          activePlayer.removeEventListener("ready", readyHandler);
         } catch (_error) {
           // no-op
         }

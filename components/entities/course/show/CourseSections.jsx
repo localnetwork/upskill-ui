@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import { formatReadTime } from "@/lib/services/readTimeFormatter";
 import {
-  buildBunnyEmbedUrlFromPlaybackUrl,
+  buildStreamEmbedUrlFromPlaybackUrl,
   resolveVideoSource,
 } from "@/lib/services/videoSource";
 
@@ -71,11 +71,12 @@ export default function CourseSections({ course }) {
 
     if (type === "video" && asset.path) {
       const resolvedVideoSource = resolveVideoSource(asset.path);
-      const bunnyEmbedUrl = buildBunnyEmbedUrlFromPlaybackUrl(resolvedVideoSource);
-      if (bunnyEmbedUrl) {
+      const streamEmbedUrl =
+        buildStreamEmbedUrlFromPlaybackUrl(resolvedVideoSource);
+      if (streamEmbedUrl) {
         return (
           <iframe
-            src={bunnyEmbedUrl}
+            src={streamEmbedUrl}
             className="w-full rounded-lg bg-black h-[420px]"
             allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
             allowFullScreen

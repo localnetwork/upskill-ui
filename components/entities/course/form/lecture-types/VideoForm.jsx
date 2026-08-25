@@ -46,40 +46,97 @@ export default function VideoForm({ onSave, onCancel, lecture }) {
 
   const handleOnUploadClick = async () => {
     if (!file) return;
-
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("curriculum_id", lecture.id);
-
-    if (file.duration) {
-      formData.append("duration", file.duration); // ✅ pass duration to backend
+    if (Number(file.size || 0) > 200 * 1024 * 1024) {
+      window.alert(
+        "This upload flow supports up to 200MB. Please use a smaller file or implement tus/resumable upload for larger videos.",
+      );
+      return;
     }
 
     try {
       setLoading(true);
       setProgress(0);
       setIsProcessing(false);
-      const response = await BaseApi.post(
-        process.env.NEXT_PUBLIC_API_URL + "/course-resources/videos",
-        formData,
+      const durationSeconds = Number(file.duration || 0);
+      const directUploadResponse = await BaseApi.post(
+        process.env.NEXT_PUBLIC_API_URL + "/course-resources/videos/direct-upload-url",
         {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-          onUploadProgress: (evt) => {
-            if (evt.total) {
-              const nextProgress = Math.round((evt.loaded / evt.total) * 100);
+          curriculum_id: lecture.id,
+          duration: durationSeconds > 0 ? Math.ceil(durationSeconds) : 3600,
+          file_name: file.name,
+        },
+      );
+      const uploadUrl = String(
+        directUploadResponse?.data?.data?.upload_url || "",
+      ).trim();
+      const uid = String(directUploadResponse?.data?.data?.uid || "").trim();
+      if (!uploadUrl || !uid) {
+        throw new Error("Missing Cloudflare direct upload URL or uid");
+      }
 
-              if (nextProgress >= 100) {
-                // Upload bytes are sent; API request can still be processing.
-                setProgress(95);
-                setIsProcessing(true);
-                return;
-              }
+      const cloudflareFormData = new FormData();
+      cloudflareFormData.append("file", file);
+      let uploadedToCloudflare = false;
+      try {
+        const uploadResponse = await fetch(uploadUrl, {
+          method: "POST",
+          body: cloudflareFormData,
+        });
+        if (!uploadResponse.ok) {
+          throw new Error(
+            `Cloudflare upload failed with status ${uploadResponse.status}`,
+          );
+        }
+        uploadedToCloudflare = true;
+      } catch (_directUploadError) {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("curriculum_id", lecture.id);
+        if (durationSeconds > 0) {
+          formData.append("duration", Math.ceil(durationSeconds));
+        }
 
-              setProgress(Math.min(nextProgress, 95));
-            }
+        const fallbackResponse = await BaseApi.post(
+          process.env.NEXT_PUBLIC_API_URL + "/course-resources/videos",
+          formData,
+          {
+            headers: {
+              "Content-Type": "multipart/form-data",
+            },
           },
+        );
+
+        console.log(
+          "Direct upload was blocked (likely CORS); fallback upload succeeded:",
+          fallbackResponse.data.data,
+        );
+        setVideoUploaded(true);
+        setPreview(null);
+        if (onSave) {
+          onSave({
+            ...fallbackResponse.data.data.curriculum,
+            asset: fallbackResponse.data.data.asset,
+          });
+        }
+        setFile(null);
+        return;
+      }
+
+      if (!uploadedToCloudflare) {
+        throw new Error("Cloudflare direct upload did not complete");
+      }
+      setProgress(95);
+      setIsProcessing(true);
+
+      const response = await BaseApi.post(
+        process.env.NEXT_PUBLIC_API_URL + "/course-resources/videos/complete",
+        {
+          curriculum_id: lecture.id,
+          uid,
+          duration: durationSeconds > 0 ? Math.ceil(durationSeconds) : 0,
+          original_name: file.name,
+          mime_type: file.type || "video/mp4",
+          size_in_bytes: Number(file.size || 0),
         },
       );
 
@@ -135,7 +192,7 @@ export default function VideoForm({ onSave, onCancel, lecture }) {
         <div>
           <p>
             Upload your video file here. Accepted formats: MP4, AVI, MOV. Max
-            size: 500MB.
+            size: 200MB.
           </p>
           <label
             htmlFor="video-file"

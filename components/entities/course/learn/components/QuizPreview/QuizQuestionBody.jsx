@@ -40,11 +40,15 @@ export default function QuizQuestionBody({
                   }`}
                 >
                   <span
-                    className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
-                      isChecked ? "border-primary bg-primary" : "border-[#94a3b8]"
+                    className={`min-w-6 min-h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
+                      isChecked
+                        ? "border-primary bg-primary"
+                        : "border-[#94a3b8]"
                     }`}
                   >
-                    {isChecked && <span className="w-2.5 h-2.5 bg-white rounded-full" />}
+                    {isChecked && (
+                      <span className="w-2.5 h-2.5 bg-white rounded-full" />
+                    )}
                   </span>
 
                   <span className="text-on-surface font-medium">
@@ -61,7 +65,9 @@ export default function QuizQuestionBody({
         <div className="grid grid-cols-2 gap-4">
           <label
             className={`group flex flex-col items-center justify-center gap-4 p-8 border-2 rounded-[34px] transition-all cursor-pointer active:scale-95 ${
-              String(currentAnswer) === "true" ? "border-primary" : "border-[#e2e8f0]"
+              String(currentAnswer) === "true"
+                ? "border-primary"
+                : "border-[#e2e8f0]"
             }`}
           >
             <input
@@ -84,7 +90,9 @@ export default function QuizQuestionBody({
 
             <span
               className={`font-bold transition-colors ${
-                String(currentAnswer) === "true" ? "text-primary" : "text-[#475569]"
+                String(currentAnswer) === "true"
+                  ? "text-primary"
+                  : "text-[#475569]"
               }`}
             >
               True
@@ -93,7 +101,9 @@ export default function QuizQuestionBody({
 
           <label
             className={`group flex flex-col items-center justify-center gap-4 p-8 border-2 rounded-[34px] transition-all cursor-pointer active:scale-95 ${
-              String(currentAnswer) === "false" ? "border-[#dc2626]" : "border-[#e2e8f0]"
+              String(currentAnswer) === "false"
+                ? "border-[#dc2626]"
+                : "border-[#e2e8f0]"
             }`}
           >
             <input
@@ -116,7 +126,9 @@ export default function QuizQuestionBody({
 
             <span
               className={`font-bold transition-colors ${
-                String(currentAnswer) === "false" ? "text-[#dc2626]" : "text-[#475569]"
+                String(currentAnswer) === "false"
+                  ? "text-[#dc2626]"
+                  : "text-[#475569]"
               }`}
             >
               False

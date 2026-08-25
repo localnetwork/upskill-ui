@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import Spinner from "@/components/icons/Spinner";
 import Input from "@/components/forms/Input";
 import { extractErrors } from "@/lib/services/errorsExtractor";
+import { validateEmailInline } from "@/lib/services/authInlineValidation";
 
 export default function ForgotPassword() {
   const [isLoading, setIsLoading] = useState(false);
@@ -22,8 +23,14 @@ export default function ForgotPassword() {
   const onSubmit = async (e) => {
     e.preventDefault();
     toast.dismiss();
-    setIsLoading(true);
+    const inlineErrors = validateEmailInline(payload.email);
+    if (inlineErrors) {
+      setErrors(inlineErrors);
+      return;
+    }
+
     setErrors(null);
+    setIsLoading(true);
 
     try {
       await AUTHAPI.forgotPassword(payload.email);

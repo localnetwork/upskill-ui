@@ -12,6 +12,7 @@ import Link from "next/link";
 import Input from "@/components/forms/Input";
 import Password from "@/components/forms/Password";
 import GoogleAuthButton from "@/components/auth/GoogleAuthButton";
+import { validatePasswordInline } from "@/lib/services/authInlineValidation";
 
 export default function Login({ googleClientId }) {
   const router = useRouter();
@@ -34,6 +35,13 @@ export default function Login({ googleClientId }) {
   const onLogin = async (e) => {
     toast.dismiss();
     e.preventDefault();
+    const inlineErrors = validatePasswordInline(payload.password);
+    if (inlineErrors) {
+      setErrors(inlineErrors);
+      return;
+    }
+
+    setErrors(null);
     setIsLoading(true);
     try {
       const response = await AUTHAPI.login(payload);

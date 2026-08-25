@@ -13,6 +13,7 @@ import Input from "@/components/forms/Input";
 import Password from "@/components/forms/Password";
 import Link from "next/link";
 import GoogleAuthButton from "@/components/auth/GoogleAuthButton";
+import { validatePasswordInline } from "@/lib/services/authInlineValidation";
 
 export default function Register({ googleClientId }) {
   const router = useRouter();
@@ -40,7 +41,6 @@ export default function Register({ googleClientId }) {
   const onRegister = async (e) => {
     toast.dismiss();
     e.preventDefault();
-    setIsLoading(true);
 
     const payload = {
       username: e.target.username.value,
@@ -51,6 +51,15 @@ export default function Register({ googleClientId }) {
       lastname: e.target.lastname.value,
       role: router?.query?.mode === "instructor" ? "EDUCATOR" : "LEARNER",
     };
+
+    const inlineErrors = validatePasswordInline(payload.password);
+    if (inlineErrors) {
+      setErrors(inlineErrors);
+      return;
+    }
+
+    setErrors(null);
+    setIsLoading(true);
 
     try {
       const response = await AUTHAPI.register(payload);
