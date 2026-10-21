@@ -103,6 +103,10 @@ export default function Page({ data = null, statusState = "PENDING" }) {
   const approvalUrl = checkoutData?.approvalUrl || null;
   const orderStatus = String(checkoutData?.orderStatus || "").toUpperCase();
   const paypalStatus = String(checkoutData?.paypalStatus || "").toUpperCase();
+  const providerLabel =
+    String(checkoutData?.provider || "").toUpperCase() === "XENDIT"
+      ? "Xendit"
+      : "PayPal";
   const isPaid = state === "PAID";
   const isInvalid = state === "INVALID";
   const isFailed = state === "FAILED";
@@ -263,8 +267,8 @@ export default function Page({ data = null, statusState = "PENDING" }) {
           <>
             <p className="text-[15px] text-gray-600">
               {isUnpaidOrder
-                ? "Your order is created but still unpaid. Complete payment on PayPal to finish this order."
-                : "We are waiting for payment confirmation from PayPal."}
+                ? `Your order is created but still unpaid. Complete payment on ${providerLabel} to finish this order.`
+                : `We are waiting for payment confirmation from ${providerLabel}.`}
             </p>
             <div className="text-[14px] text-gray-700 mt-3">
               <div>
@@ -272,7 +276,7 @@ export default function Page({ data = null, statusState = "PENDING" }) {
               </div>
               <div>Order Status: {checkoutData?.orderStatus || "CREATED"}</div>
               <div>
-                PayPal Status: {checkoutData?.paypalStatus || "UNKNOWN"}
+                {providerLabel} Status: {checkoutData?.paypalStatus || "UNKNOWN"}
               </div>
             </div>
             {canCompletePayment ? (
@@ -282,8 +286,8 @@ export default function Page({ data = null, statusState = "PENDING" }) {
                 className={`${isRedirectingToPayPal ? "opacity-50 cursor-not-allowed" : "cursor-pointer"} mt-4 bg-[#0056D2] px-4 py-2 rounded-md text-white font-semibold hover:bg-[#1d6de0] transition`}
               >
                 {isRedirectingToPayPal
-                  ? "Redirecting to PayPal..."
-                  : "Complete payment on PayPal"}
+                  ? `Redirecting to ${providerLabel}...`
+                  : `Complete payment on ${providerLabel}`}
               </button>
             ) : null}
             {canCancelCheckout ? (

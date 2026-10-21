@@ -3,6 +3,7 @@ import toast, { Toaster } from "react-hot-toast";
 import Modal from "./modals/Modal";
 import modalState from "@/lib/store/modalState";
 import Footer from "./Footer";
+import LearnerAIWidget from "./LearnerAIWidget";
 import { useRouter } from "next/router";
 
 export default function Layout({ children }) {
@@ -17,6 +18,7 @@ export default function Layout({ children }) {
 
       <Toaster position="top-right" reverseOrder={false} />
       {!isCallRoute ? <Footer /> : null}
+      {!isCallRoute ? <LearnerAIWidget /> : null}
       {modalInfo && <Modal />}
     </div>
   );

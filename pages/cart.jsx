@@ -7,7 +7,7 @@ import { parseCookies } from "nookies";
 import CARTAPI from "@/lib/api/cart/request";
 import cartStore from "@/lib/store/cartStore";
 import CartItemCard from "@/components/entities/cart/CartItemCard";
-import { MoveRight } from "lucide-react";
+import { MoveRight, RotateCcw, RotateCw } from "lucide-react";
 import toast from "react-hot-toast";
 
 function asCurrency(value) {
@@ -18,7 +18,9 @@ export default function Cart() {
   const profile = persistentStore((state) => state.profile);
   const cart = cartStore((state) => state.cart);
   const cartTotal = cartStore((state) => state.cartTotal);
-  const appliedCourseCoupons = cartStore((state) => state.appliedCourseCoupons || {});
+  const appliedCourseCoupons = cartStore(
+    (state) => state.appliedCourseCoupons || {},
+  );
   const isCartLoading = cartStore((state) => state.isCartLoading);
   const cookies = parseCookies();
   const router = useRouter();
@@ -66,7 +68,11 @@ export default function Cart() {
   const appliedCouponCodes = useMemo(
     () =>
       Object.values(appliedCourseCoupons || {})
-        .map((entry) => String(entry?.code || "").trim().toUpperCase())
+        .map((entry) =>
+          String(entry?.code || "")
+            .trim()
+            .toUpperCase(),
+        )
         .filter(Boolean),
     [appliedCourseCoupons],
   );
@@ -193,7 +199,8 @@ export default function Cart() {
 
                   {cart.map((item, index) => {
                     const courseId = String(item?.course?.id || "");
-                    const appliedCoupon = appliedCourseCoupons?.[courseId] || null;
+                    const appliedCoupon =
+                      appliedCourseCoupons?.[courseId] || null;
                     return (
                       <CartItemCard
                         key={item.id}
@@ -222,7 +229,9 @@ export default function Cart() {
                     <span className="text-[18px] font-semibold text-gray-500">
                       Total:
                     </span>
-                    <p className="font-semibold text-[35px]">₱{asCurrency(payableTotal)}</p>
+                    <p className="font-semibold text-[35px]">
+                      ₱{asCurrency(payableTotal)}
+                    </p>
                   </div>
                   {appliedCouponCodes.length > 0 ? (
                     <p className="text-[13px] text-gray-500 mt-2">
@@ -254,7 +263,14 @@ export default function Cart() {
                             : "hover:opacity-90"
                         }`}
                       >
-                        {isApplyingCoupon ? "Applying..." : "Apply"}
+                        {isApplyingCoupon ? (
+                          <RotateCw
+                            size={16}
+                            className="animate-spin opacity-60"
+                          />
+                        ) : (
+                          "Apply"
+                        )}
                       </button>
                     </div>
                   </div>
@@ -266,7 +282,8 @@ export default function Cart() {
                           const course = Array.isArray(cart)
                             ? cart.find(
                                 (row) =>
-                                  String(row?.course?.id || "") === String(courseId),
+                                  String(row?.course?.id || "") ===
+                                  String(courseId),
                               )?.course
                             : null;
                           return (
@@ -284,7 +301,9 @@ export default function Cart() {
                                 </span>
                                 <button
                                   type="button"
-                                  onClick={() => handleRemoveCourseCoupon(courseId)}
+                                  onClick={() =>
+                                    handleRemoveCourseCoupon(courseId)
+                                  }
                                   className="text-[#b91c1c] font-semibold hover:underline"
                                 >
                                   Remove

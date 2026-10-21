@@ -165,6 +165,7 @@ export default function Course() {
   const [notFound, setNotFound] = useState(false);
 
   const updateCart = cartStore((state) => state.setCartCount);
+  const cartItems = cartStore((state) => state.cart);
   const appliedCourseCoupons = cartStore((state) => state.appliedCourseCoupons || {});
 
   const profile = persistentStore((state) => state.profile);
@@ -205,6 +206,16 @@ export default function Course() {
   const effectiveDiscountAmount = appliedDiscountAmount;
   const effectiveCoursePrice = Math.max(0, baseCoursePrice - effectiveDiscountAmount);
   const hasDiscountedPrice = !isFreeCourse && effectiveDiscountAmount > 0;
+
+  useEffect(() => {
+    if (!course?.id || !Array.isArray(cartItems)) return;
+    const inCart = cartItems.some(
+      (item) => String(item?.course?.id || "") === String(course.id),
+    );
+    setCourse((prev) =>
+      prev ? { ...prev, is_in_cart: inCart } : prev,
+    );
+  }, [cartItems, course?.id]);
 
   const addCurrentCourseToCart = async ({ showModal = true } = {}) => {
     if (!course?.id) return false;

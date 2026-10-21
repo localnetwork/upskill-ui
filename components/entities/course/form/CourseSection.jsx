@@ -81,7 +81,10 @@ export default function CourseSection({
     const asset = curriculum?.asset || {};
 
     if (resourceType === "video") {
-      return !String(asset?.path || "").trim();
+      return (
+        !String(asset?.path || "").trim() &&
+        curriculum?.upload?.status !== "UPLOADING"
+      );
     }
     if (resourceType === "article") {
       return !String(asset?.content || "").trim();

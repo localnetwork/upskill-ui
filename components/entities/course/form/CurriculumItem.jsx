@@ -95,9 +95,10 @@ export default function CurriculumItem({
   const hasArticleContent = Boolean(
     String(currentItem?.asset?.content || "").trim(),
   );
+  const isVideoUploading = currentItem?.upload?.status === "UPLOADING";
   const hasMissingContent =
     resourceType === "video"
-      ? !hasVideoContent
+      ? !hasVideoContent && !isVideoUploading
       : resourceType === "article"
         ? !hasArticleContent
         : resourceType === "quiz"
@@ -341,6 +342,11 @@ export default function CurriculumItem({
               {hasMissingContent && (
                 <span className="ml-2 text-[11px] font-semibold uppercase tracking-wide text-red-600">
                   Missing content
+                </span>
+              )}
+              {isVideoUploading && !hasVideoContent && (
+                <span className="ml-2 text-[11px] font-semibold uppercase tracking-wide text-amber-600">
+                  Uploading…
                 </span>
               )}
               {!currentItem.isNew && (

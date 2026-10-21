@@ -18,7 +18,7 @@ export default function UserCartCount() {
   const isCartLoading = cartStore((s) => s.isCartLoading);
 
   // ✅ Call the hook returned by the static method
-  const { data: cartCount } = CARTAPI.getCartCount({
+  const { data: cartCount, mutate: mutateCartCount } = CARTAPI.getCartCount({
     render: !!profile && isLearner,
     onSuccess: (data) => {
       cartStore.setState({ cartCount: data?.count });
@@ -73,10 +73,28 @@ export default function UserCartCount() {
     });
   }, [isLoading, isValidating]);
 
+  useEffect(() => {
+    const refreshCart = () => {
+      mutateCartItems();
+      mutateCartCount();
+    };
+
+    if (typeof window !== "undefined") {
+      window.addEventListener("cart:refresh", refreshCart);
+    }
+
+    return () => {
+      if (typeof window !== "undefined") {
+        window.removeEventListener("cart:refresh", refreshCart);
+      }
+    };
+  }, [mutateCartCount, mutateCartItems]);
+
   const handleCartDrawer = () => {
     if (!isLearner) return;
     globalStore.setState({ cartDrawerOpen: !cartDrawerOpen });
-    mutate("/cart");
+    mutateCartItems();
+    mutateCartCount();
   };
 
   if (!isLearner) return null;

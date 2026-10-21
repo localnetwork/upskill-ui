@@ -2,7 +2,7 @@
 import { useMemo, useState } from "react";
 import BaseApi from "@/lib/api/_base.api";
 import Select from "@/components/forms/Select";
-
+import { Lightbulb, ListChecks, Minus, Space, ToggleLeft } from "lucide-react";
 function createQuestion(type = "multiple_choice") {
   return {
     id: `q-${Date.now()}-${Math.round(Math.random() * 10000)}`,
@@ -45,10 +45,15 @@ export default function QuizItem({ quiz, onClose, onSave }) {
         const options = Array.isArray(question.options) ? question.options : [];
         const hasEnough = options.length >= 2;
         const hasCorrect = options.some((option) => option?.isCorrect);
-        const allFilled = options.every((option) => String(option?.text || "").trim());
+        const allFilled = options.every((option) =>
+          String(option?.text || "").trim(),
+        );
         return hasEnough && hasCorrect && allFilled;
       }
-      if (question.type === "fill_in_the_blanks" || question.type === "short_answer") {
+      if (
+        question.type === "fill_in_the_blanks" ||
+        question.type === "short_answer"
+      ) {
         const answers = Array.isArray(question.acceptedAnswers)
           ? question.acceptedAnswers
           : [];
@@ -59,7 +64,11 @@ export default function QuizItem({ quiz, onClose, onSave }) {
   }, [questions]);
 
   const updateQuestion = (id, patch) => {
-    setQuestions((prev) => prev.map((question) => (question.id === id ? { ...question, ...patch } : question)));
+    setQuestions((prev) =>
+      prev.map((question) =>
+        question.id === id ? { ...question, ...patch } : question,
+      ),
+    );
   };
 
   const addQuestion = (type) => {
@@ -92,24 +101,36 @@ export default function QuizItem({ quiz, onClose, onSave }) {
   };
 
   return (
-    <div className="border p-4 rounded bg-white space-y-4">
-      <div className="flex justify-between items-center">
+    <div className="bg-surface rounded-lg border border-outline shadow-sm overflow-hidden">
+      <div className="flex justify-between items-center p-5 border-b border-outline flex justify-between items-center bg-primary-container/30">
         <p className="font-semibold">Quiz content</p>
         <button onClick={onClose}>✕</button>
       </div>
 
-      <div className="flex flex-wrap gap-2">
-        <button className="px-2 py-1 border rounded text-sm" onClick={() => addQuestion("multiple_choice")}>
-          + Multiple Choice
+      <div className="p-5 grid grid-cols-2 gap-2">
+        <button
+          className="flex items-center gap-2 px-4 py-3 rounded-DEFAULT border border-outline bg-surface text-on-surface-variant text-xs font-bold hover:border-primary transition-all"
+          onClick={() => addQuestion("multiple_choice")}
+        >
+          <ListChecks size={16} /> Multiple Choice
         </button>
-        <button className="px-2 py-1 border rounded text-sm" onClick={() => addQuestion("fill_in_the_blanks")}>
-          + Fill in the Blanks
+        <button
+          className="flex items-center gap-2 px-4 py-3 rounded-DEFAULT border border-outline bg-surface text-on-surface-variant text-xs font-bold hover:border-primary transition-all"
+          onClick={() => addQuestion("fill_in_the_blanks")}
+        >
+          <Space size={16} /> Fill in the Blanks
         </button>
-        <button className="px-2 py-1 border rounded text-sm" onClick={() => addQuestion("true_false")}>
-          + True / False
+        <button
+          className="flex items-center gap-2 px-4 py-3 rounded-DEFAULT border border-outline bg-surface text-on-surface-variant text-xs font-bold hover:border-primary transition-all"
+          onClick={() => addQuestion("true_false")}
+        >
+          <ToggleLeft size={16} /> True / False
         </button>
-        <button className="px-2 py-1 border rounded text-sm" onClick={() => addQuestion("short_answer")}>
-          + Short Answer
+        <button
+          className="flex items-center gap-2 px-4 py-3 rounded-DEFAULT border border-outline bg-surface text-on-surface-variant text-xs font-bold hover:border-primary transition-all"
+          onClick={() => addQuestion("short_answer")}
+        >
+          <Lightbulb size={16} /> Short Answer
         </button>
       </div>
 
@@ -117,14 +138,19 @@ export default function QuizItem({ quiz, onClose, onSave }) {
         <div key={question.id} className="border rounded p-3 space-y-3">
           <div className="flex justify-between items-center">
             <p className="font-semibold text-sm">Question {index + 1}</p>
-            <button className="text-red-600 text-sm" onClick={() => removeQuestion(question.id)}>
+            <button
+              className="text-red-600 text-sm"
+              onClick={() => removeQuestion(question.id)}
+            >
               Remove
             </button>
           </div>
 
           <Select
             value={question.type}
-            onChange={(e) => updateQuestion(question.id, createQuestion(e.target.value))}
+            onChange={(e) =>
+              updateQuestion(question.id, createQuestion(e.target.value))
+            }
             className="border rounded p-2 text-sm"
           >
             <option value="multiple_choice">Multiple Choice</option>
@@ -135,14 +161,18 @@ export default function QuizItem({ quiz, onClose, onSave }) {
 
           <textarea
             value={question.prompt}
-            onChange={(e) => updateQuestion(question.id, { prompt: e.target.value })}
+            onChange={(e) =>
+              updateQuestion(question.id, { prompt: e.target.value })
+            }
             className="border rounded w-full p-2 text-sm"
             placeholder="Question prompt"
           />
 
           <textarea
             value={question.hint || ""}
-            onChange={(e) => updateQuestion(question.id, { hint: e.target.value })}
+            onChange={(e) =>
+              updateQuestion(question.id, { hint: e.target.value })
+            }
             className="border rounded w-full p-2 text-sm"
             placeholder="Hint (optional, shown when learner clicks Hint)"
           />
@@ -159,13 +189,19 @@ export default function QuizItem({ quiz, onClose, onSave }) {
           {question.type === "multiple_choice" && (
             <div className="space-y-2">
               {(question.options || []).map((option, optionIndex) => (
-                <div key={`${question.id}-option-${optionIndex}`} className="flex gap-2">
+                <div
+                  key={`${question.id}-option-${optionIndex}`}
+                  className="flex gap-2"
+                >
                   <input
                     type="checkbox"
                     checked={Boolean(option.isCorrect)}
                     onChange={(e) => {
                       const options = [...(question.options || [])];
-                      options[optionIndex] = { ...options[optionIndex], isCorrect: e.target.checked };
+                      options[optionIndex] = {
+                        ...options[optionIndex],
+                        isCorrect: e.target.checked,
+                      };
                       updateQuestion(question.id, { options });
                     }}
                   />
@@ -176,7 +212,10 @@ export default function QuizItem({ quiz, onClose, onSave }) {
                     placeholder={`Option ${optionIndex + 1}`}
                     onChange={(e) => {
                       const options = [...(question.options || [])];
-                      options[optionIndex] = { ...options[optionIndex], text: e.target.value };
+                      options[optionIndex] = {
+                        ...options[optionIndex],
+                        text: e.target.value,
+                      };
                       updateQuestion(question.id, { options });
                     }}
                   />
@@ -186,7 +225,10 @@ export default function QuizItem({ quiz, onClose, onSave }) {
                 className="px-2 py-1 border rounded text-xs"
                 onClick={() =>
                   updateQuestion(question.id, {
-                    options: [...(question.options || []), { text: "", isCorrect: false }],
+                    options: [
+                      ...(question.options || []),
+                      { text: "", isCorrect: false },
+                    ],
                   })
                 }
               >
@@ -201,7 +243,9 @@ export default function QuizItem({ quiz, onClose, onSave }) {
                 <input
                   type="radio"
                   checked={question.correctAnswer === true}
-                  onChange={() => updateQuestion(question.id, { correctAnswer: true })}
+                  onChange={() =>
+                    updateQuestion(question.id, { correctAnswer: true })
+                  }
                 />
                 True
               </label>
@@ -209,14 +253,17 @@ export default function QuizItem({ quiz, onClose, onSave }) {
                 <input
                   type="radio"
                   checked={question.correctAnswer === false}
-                  onChange={() => updateQuestion(question.id, { correctAnswer: false })}
+                  onChange={() =>
+                    updateQuestion(question.id, { correctAnswer: false })
+                  }
                 />
                 False
               </label>
             </div>
           )}
 
-          {(question.type === "fill_in_the_blanks" || question.type === "short_answer") && (
+          {(question.type === "fill_in_the_blanks" ||
+            question.type === "short_answer") && (
             <div className="space-y-2">
               {(question.acceptedAnswers || []).map((answer, answerIndex) => (
                 <input
@@ -226,7 +273,9 @@ export default function QuizItem({ quiz, onClose, onSave }) {
                   className="border rounded w-full p-2 text-sm"
                   placeholder={`Accepted answer ${answerIndex + 1}`}
                   onChange={(e) => {
-                    const acceptedAnswers = [...(question.acceptedAnswers || [])];
+                    const acceptedAnswers = [
+                      ...(question.acceptedAnswers || []),
+                    ];
                     acceptedAnswers[answerIndex] = e.target.value;
                     updateQuestion(question.id, { acceptedAnswers });
                   }}
@@ -248,7 +297,10 @@ export default function QuizItem({ quiz, onClose, onSave }) {
       ))}
 
       <div className="flex justify-end gap-2">
-        <button onClick={onClose} className="px-4 py-2 bg-gray-300 text-gray-800 rounded">
+        <button
+          onClick={onClose}
+          className="px-4 py-2 bg-gray-300 text-gray-800 rounded"
+        >
           Cancel
         </button>
         <button

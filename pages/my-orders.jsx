@@ -382,6 +382,13 @@ export default function MyOrdersPage() {
                           {orderItems.length}{" "}
                           {orderItems.length === 1 ? "Course" : "Courses"}
                         </span>
+
+                        {order?.paymentMethod ? (
+                          <>
+                            <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+                            <span>Payment: {order.paymentMethod}</span>
+                          </>
+                        ) : null}
                       </div>
                     </div>
                   </div>

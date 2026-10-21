@@ -354,6 +354,7 @@ export default function PayoutSettingsPage() {
   const [isConnectingPaypal, setIsConnectingPaypal] = useState(false);
   const [isRequestingPayout, setIsRequestingPayout] = useState(false);
   const [activePayout, setActivePayout] = useState(null);
+  const [payoutActionId, setPayoutActionId] = useState("");
   const [isRequestConfirmOpen, setIsRequestConfirmOpen] = useState(false);
   const [earningsRange, setEarningsRange] = useState("6m");
   const [customStartDate, setCustomStartDate] = useState("");
@@ -711,6 +712,29 @@ export default function PayoutSettingsPage() {
 
   const closePayoutDetails = () => setActivePayout(null);
 
+  const handlePayoutRecovery = async (action, payoutId) => {
+    if (payoutActionId) return;
+    setPayoutActionId(payoutId);
+    try {
+      if (action === "retry") {
+        await PAYOUTAPI.retryPayout(payoutId);
+        toast.success("Payout retried and submitted to PayPal.");
+      } else {
+        await PAYOUTAPI.returnPayout(payoutId);
+        toast.success("Amount returned to your available balance.");
+      }
+      setActivePayout(null);
+    } catch (error) {
+      toast.error(
+        error?.data?.message ||
+          (action === "retry" ? "Failed to retry payout." : "Failed to return amount."),
+      );
+    } finally {
+      await Promise.all([mutateSummary(), mutatePayouts()]);
+      setPayoutActionId("");
+    }
+  };
+
   return (
     <InstructorLayout>
       <div className="mx-auto w-full max-w-6xl space-y-8">
@@ -1058,7 +1082,15 @@ export default function PayoutSettingsPage() {
               </button>
             </div>
 
-            <div className="grid grid-cols-1 gap-4 border-b border-slate-200 px-6 py-4 md:grid-cols-4">
+            <div className="grid grid-cols-1 gap-4 border-b border-slate-200 px-6 py-4 md:grid-cols-5">
+              <div>
+                <p className="text-xs uppercase tracking-wide text-slate-500">
+                  PayPal email
+                </p>
+                <p className="mt-1 break-all text-sm font-semibold text-on-surface">
+                  {summary?.payoutAccount?.paypalEmail || "Not connected"}
+                </p>
+              </div>
               <div>
                 <p className="text-xs uppercase tracking-wide text-slate-500">
                   Requested
@@ -1086,6 +1118,34 @@ export default function PayoutSettingsPage() {
                 </p>
               </div>
             </div>
+
+            {String(activePayout.status || "").toUpperCase() === "FAILED" ? (
+              <div className="border-b border-slate-200 bg-orange-50 px-6 py-4">
+                <p className="text-sm text-orange-800">
+                  This payout failed and the amount was not received. You can retry
+                  sending it to your PayPal account, or return the amount to your
+                  available balance.
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    disabled={Boolean(payoutActionId)}
+                    onClick={() => handlePayoutRecovery("retry", activePayout.id)}
+                    className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                  >
+                    {payoutActionId === activePayout.id ? "Processing..." : "Retry payout"}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={Boolean(payoutActionId)}
+                    onClick={() => handlePayoutRecovery("return", activePayout.id)}
+                    className="rounded-full border border-[#cbd5e1] bg-white px-4 py-2 text-sm font-semibold text-[#334155] hover:bg-slate-50 disabled:opacity-60"
+                  >
+                    Return amount to balance
+                  </button>
+                </div>
+              </div>
+            ) : null}
 
             <div className="border-b border-slate-200 px-6 py-4">
               <h4 className="text-sm font-semibold uppercase tracking-wide text-slate-600">

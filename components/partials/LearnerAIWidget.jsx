@@ -1,6 +1,7 @@
 "use client";
 
 import BaseApi from "@/lib/api/_base.api";
+import cartStore from "@/lib/store/cartStore";
 import persistentStore from "@/lib/store/persistentStore";
 import Link from "next/link";
 import { MessageCircle, Send, Sparkles, X } from "lucide-react";
@@ -41,20 +42,86 @@ export default function LearnerAIWidget() {
       content:
         "Hi! I can search published courses, manage your cart, check enrollment/cart status, and recommend courses based on your activity.",
       courses: [],
+      instructors: [],
     },
   ]);
+  const [conversationId, setConversationId] = useState("");
+  const [historyLoaded, setHistoryLoaded] = useState(false);
   const listRef = useRef(null);
+  const defaultAssistantMessage =
+    "Hi! I can search published courses, manage your cart, check enrollment/cart status, and recommend courses based on your activity.";
+
+  const refreshCartSnapshot = async () => {
+    try {
+      const response = await BaseApi.get(
+        `${process.env.NEXT_PUBLIC_API_URL}/cart`,
+      );
+      const payload = response?.data?.data || {};
+      const nextItems = Array.isArray(payload?.cartItems) ? payload.cartItems : [];
+      cartStore.setState({
+        cart: nextItems,
+        cartTotal:
+          payload?.cartTotal == null ? null : Number(payload.cartTotal),
+      });
+    } catch (_error) {}
+  };
 
   useEffect(() => {
     if (!listRef.current) return;
     listRef.current.scrollTop = listRef.current.scrollHeight;
   }, [messages, open]);
 
+  useEffect(() => {
+    if (!open || historyLoaded || !isLearner) return;
+
+    let isMounted = true;
+    const loadHistory = async () => {
+      try {
+        const response = await BaseApi.get(
+          `${process.env.NEXT_PUBLIC_API_URL}/courses/learner-assistant/history`,
+        );
+        const payload = response?.data?.data || {};
+        const historyRows = Array.isArray(payload?.messages)
+          ? payload.messages
+              .filter((row) => row?.content && row?.role)
+              .map((row) => ({
+                role: row.role === "user" ? "user" : "assistant",
+                content: String(row.content || ""),
+                courses: Array.isArray(row?.payload?.courses)
+                  ? row.payload.courses
+                  : [],
+                instructors: Array.isArray(row?.payload?.instructors)
+                  ? row.payload.instructors
+                  : [],
+              }))
+          : [];
+        if (!isMounted) return;
+        if (String(payload?.conversation_id || "").trim()) {
+          setConversationId(String(payload.conversation_id));
+        }
+        if (historyRows.length) {
+          setMessages(historyRows.slice(-24));
+        }
+      } catch (_error) {
+      } finally {
+        if (isMounted) setHistoryLoaded(true);
+      }
+    };
+
+    loadHistory();
+    return () => {
+      isMounted = false;
+    };
+  }, [open, historyLoaded, isLearner]);
+
   const sendMessage = async (rawMessage, extraPayload = {}) => {
     const text = String(rawMessage || "").trim();
     if (!text || isSending) return;
 
-    setMessages((prev) => [...prev, { role: "user", content: text, courses: [] }]);
+    setMessages((prev) => [
+      ...prev,
+      { role: "user", content: text, courses: [], instructors: [] },
+    ]);
     setInput("");
     setIsSending(true);
 
@@ -63,6 +130,7 @@ export default function LearnerAIWidget() {
         `${process.env.NEXT_PUBLIC_API_URL}/courses/learner-assistant`,
         {
           message: text,
+          conversation_id: conversationId || undefined,
           ...extraPayload,
           messages: messages
             .slice(-8)
@@ -71,12 +139,23 @@ export default function LearnerAIWidget() {
       );
 
       const payload = response?.data?.data || {};
+      if (String(payload?.conversation_id || "").trim()) {
+        setConversationId(String(payload.conversation_id));
+      }
+      if (payload?.cart_count !== undefined) {
+        cartStore.setState({ cartCount: Number(payload.cart_count || 0) });
+        await refreshCartSnapshot();
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new Event("cart:refresh"));
+        }
+      }
       setMessages((prev) => [
         ...prev,
         {
           role: "assistant",
           content: String(payload?.reply || "I couldn't generate a response."),
           courses: Array.isArray(payload?.courses) ? payload.courses : [],
+          instructors: Array.isArray(payload?.instructors) ? payload.instructors : [],
         },
       ]);
     } catch (error) {
@@ -86,7 +165,7 @@ export default function LearnerAIWidget() {
         "Assistant is unavailable right now.";
       setMessages((prev) => [
         ...prev,
-        { role: "assistant", content: message, courses: [] },
+        { role: "assistant", content: message, courses: [], instructors: [] },
       ]);
     } finally {
       setIsSending(false);
@@ -96,6 +175,29 @@ export default function LearnerAIWidget() {
   const handleSubmit = async (event) => {
     event.preventDefault();
     await sendMessage(input);
+  };
+
+  const clearConversation = async () => {
+    try {
+      const response = await BaseApi.post(
+        `${process.env.NEXT_PUBLIC_API_URL}/courses/learner-assistant/clear`,
+        {
+          conversation_id: conversationId || undefined,
+        },
+      );
+      const nextConversationId = String(
+        response?.data?.data?.conversation_id || "",
+      ).trim();
+      setConversationId(nextConversationId);
+      setMessages([
+        {
+          role: "assistant",
+          content: defaultAssistantMessage,
+          courses: [],
+          instructors: [],
+        },
+      ]);
+    } catch (_error) {}
   };
 
   const handleCourseAction = async (action, course) => {
@@ -131,6 +233,13 @@ export default function LearnerAIWidget() {
           <div className="flex items-center gap-2 border-b border-slate-200 px-4 py-3">
             <Sparkles size={16} className="text-[#0056D2]" />
             <p className="text-sm font-semibold text-slate-800">Learner AI Assistant</p>
+            <button
+              type="button"
+              onClick={clearConversation}
+              className="ml-auto text-[11px] rounded-full border border-slate-300 px-2 py-1 text-slate-600 hover:bg-slate-50"
+            >
+              Clear
+            </button>
           </div>
 
           <div className="px-3 py-2 border-b border-slate-100 flex flex-wrap gap-2">
@@ -172,6 +281,11 @@ export default function LearnerAIWidget() {
                         <p className="text-xs text-slate-500 mt-0.5">
                           {course?.category?.title || "General"} • {formatPrice(course)}
                         </p>
+                        {course?.educator?.display_name ? (
+                          <p className="text-xs text-slate-500 mt-0.5">
+                            by {course.educator.display_name}
+                          </p>
+                        ) : null}
                         <div className="mt-2 flex items-center gap-2">
                           <Link
                             href={`/courses/${course.slug}`}
@@ -179,30 +293,73 @@ export default function LearnerAIWidget() {
                           >
                             View
                           </Link>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleCourseAction(
+                                course.is_in_cart ? "remove" : "add",
+                                course,
+                              )
+                            }
+                            className="text-[11px] rounded-full border border-slate-300 px-2 py-1 text-slate-700 hover:bg-slate-50"
+                          >
+                            {course.is_in_cart ? "Remove from cart" : "Add to cart"}
+                          </button>
                           {course.is_enrolled ? (
                             <span className="text-[11px] rounded-full bg-emerald-50 px-2 py-1 text-emerald-700">
                               Enrolled
                             </span>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                handleCourseAction(
-                                  course.is_in_cart ? "remove" : "add",
-                                  course,
-                                )
-                              }
-                              className="text-[11px] rounded-full border border-slate-300 px-2 py-1 text-slate-700 hover:bg-slate-50"
-                            >
-                              {course.is_in_cart ? "Remove from cart" : "Add to cart"}
-                            </button>
-                          )}
+                          ) : null}
                           <button
                             type="button"
                             onClick={() => handleCourseAction("status", course)}
                             className="text-[11px] rounded-full border border-slate-300 px-2 py-1 text-slate-700 hover:bg-slate-50"
                           >
                             Check status
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+
+                {message.role === "assistant" &&
+                Array.isArray(message.instructors) &&
+                message.instructors.length ? (
+                  <div className="space-y-2">
+                    {message.instructors.map((instructor) => (
+                      <div
+                        key={instructor.id}
+                        className="rounded-lg border border-slate-200 bg-white p-2.5"
+                      >
+                        <p className="text-sm font-semibold text-slate-900">
+                          {instructor.display_name}
+                        </p>
+                        {instructor.headline ? (
+                          <p className="text-xs text-slate-500 mt-0.5">
+                            {instructor.headline}
+                          </p>
+                        ) : null}
+                        <p className="text-xs text-slate-500 mt-0.5">
+                          {instructor.published_courses_count} published course(s)
+                        </p>
+                        <div className="mt-2 flex items-center gap-2">
+                          <Link
+                            href={`/user/${instructor.username}`}
+                            className="text-xs font-semibold text-[#0056D2]"
+                          >
+                            View profile
+                          </Link>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              sendMessage(
+                                `Show courses by instructor ${instructor.display_name}`,
+                              )
+                            }
+                            className="text-[11px] rounded-full border border-slate-300 px-2 py-1 text-slate-700 hover:bg-slate-50"
+                          >
+                            Show courses
                           </button>
                         </div>
                       </div>

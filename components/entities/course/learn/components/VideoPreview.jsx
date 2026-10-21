@@ -209,8 +209,10 @@ export default function VideoPreview({
         process.env.NEXT_PUBLIC_API_URL + "/course-curriculums/add-progress",
         { course_id: course.id, curriculum_id: lecture.id },
       );
+      return true;
     } catch (error) {
       console.error("Error adding progress:", error);
+      return false;
     }
   };
 
@@ -220,7 +222,11 @@ export default function VideoPreview({
     }
 
     completedLectureRef.current = lecture?.id || "";
-    await addProgress();
+    const saved = await addProgress();
+    if (!saved) {
+      completedLectureRef.current = "";
+      return;
+    }
 
     setCourse((prev) => {
       if (!prev) return prev;
@@ -237,6 +243,9 @@ export default function VideoPreview({
 
     if (nextLecture) setCountdown(5);
   };
+
+  const markCompletedRef = useRef(null);
+  markCompletedRef.current = markLectureCompleted;
 
   const handleEnded = async () => {
     const videoEl = playerRef.current?.el?.querySelector("video");
@@ -258,9 +267,10 @@ export default function VideoPreview({
     if (!iframeSrc || !lecture?.id) return;
 
     let activePlayer = null;
-    let readyHandler = null;
     let endedHandler = null;
     let cancelled = false;
+
+    if (loading) return;
 
     const attachIframePlaybackEvents = async () => {
       try {
@@ -276,15 +286,11 @@ export default function VideoPreview({
 
         activePlayer = Stream(iframeRef.current);
         endedHandler = () => {
-          markLectureCompleted();
+          markCompletedRef.current?.();
         };
-        readyHandler = () => {
-          if (activePlayer?.addEventListener) {
-            activePlayer.addEventListener("ended", endedHandler);
-          }
-        };
+        // Attach immediately; "ready" may already have fired before we subscribed.
         if (activePlayer?.addEventListener) {
-          activePlayer.addEventListener("ready", readyHandler);
+          activePlayer.addEventListener("ended", endedHandler);
         }
       } catch (error) {
         console.error("Unable to attach stream iframe playback events:", error);
@@ -302,15 +308,8 @@ export default function VideoPreview({
           // no-op
         }
       }
-      if (activePlayer?.removeEventListener && readyHandler) {
-        try {
-          activePlayer.removeEventListener("ready", readyHandler);
-        } catch (_error) {
-          // no-op
-        }
-      }
     };
-  }, [iframeSrc, lecture?.id]);
+  }, [iframeSrc, lecture?.id, loading]);
 
   useEffect(() => {
     if (countdown === null) return;

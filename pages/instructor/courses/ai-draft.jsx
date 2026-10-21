@@ -4,6 +4,7 @@ import { useRouter } from "next/router";
 import { useCallback, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import Spinner from "@/components/icons/Spinner";
+import useCourseLanguages from "@/lib/hooks/useCourseLanguages";
 import {
   CheckCircle2,
   ChevronDown,
@@ -15,6 +16,16 @@ import {
 
 export default function AIDraftCoursePage() {
   const router = useRouter();
+  const languageOptions = useCourseLanguages();
+
+  useEffect(() => {
+    if (!languageOptions.some((option) => option.value === language)) {
+      const english = languageOptions.find((option) =>
+        option.value.toLowerCase().startsWith("english"),
+      );
+      setLanguage((english || languageOptions[0]).value);
+    }
+  }, [languageOptions]);
   const [prompt, setPrompt] = useState("");
   const [language, setLanguage] = useState("English");
   const [instructionalLevel, setInstructionalLevel] = useState("");
@@ -244,11 +255,11 @@ export default function AIDraftCoursePage() {
                     onChange={(event) => setLanguage(event.target.value)}
                     className="w-full appearance-none px-6 py-4 bg-[#f8fafc] border border-outline rounded-full focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all font-bold text-on-surface cursor-pointer"
                   >
-                    <option value="English">English (United States)</option>
-                    <option value="Español">Español</option>
-                    <option value="Français">Français</option>
-                    <option value="Deutsch">Deutsch</option>
-                    <option value="日本語">日本語</option>
+                    {languageOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
                   </select>
 
                   <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none">

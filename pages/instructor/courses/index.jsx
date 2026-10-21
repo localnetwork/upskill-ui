@@ -4,7 +4,8 @@ import Select from "@/components/forms/Select";
 import InstructorLayout from "@/components/partials/InstructorLayout";
 import BaseApi from "@/lib/api/_base.api";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { ChevronDown } from "lucide-react";
 import persistentStore from "@/lib/store/persistentStore";
 import { useRouter } from "next/router";
 import toast from "react-hot-toast";
@@ -13,6 +14,25 @@ export default function Page() {
   const router = useRouter();
   const profile = persistentStore((state) => state.profile);
   const [levels, setLevels] = useState([]);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setIsMenuOpen(false);
+      }
+    };
+    const handleEscape = (event) => {
+      if (event.key === "Escape") setIsMenuOpen(false);
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, []);
 
   const [params, setParams] = useState({
     title: "",
@@ -191,20 +211,59 @@ export default function Page() {
             </button>
           </form>
 
-          <div className="flex items-center gap-2">
-            <Link
-              href="/instructor/courses/ai-draft"
-              className="flex shadow-md bg-[#0f172a] text-white font-semibold px-[18px] py-[10px] rounded-[10px] items-center gap-[8px] hover:opacity-90"
-            >
-              <span aria-hidden>✨</span>
-              Draft with AI
-            </Link>
-            <Link
-              href="/instructor/courses/create"
-              className="flex shadow-md bg-[#0056D2] text-white font-semibold px-[30px] py-[10px] rounded-[10px] items-center gap-[10px] hover:opacity-90"
+          <div className="relative" ref={menuRef}>
+            <button
+              type="button"
+              aria-haspopup="menu"
+              aria-expanded={isMenuOpen}
+              onClick={() => setIsMenuOpen((open) => !open)}
+              className="flex shadow-md bg-[#0056D2] text-white font-semibold px-[24px] py-[10px] rounded-[10px] items-center gap-[10px] hover:opacity-90"
             >
               New Course
-            </Link>
+              <ChevronDown
+                size={18}
+                className={`transition-transform ${isMenuOpen ? "rotate-180" : ""}`}
+              />
+            </button>
+            {isMenuOpen && (
+              <div
+                role="menu"
+                className="absolute right-0 mt-2 w-64 bg-white border border-gray-200 rounded-xl shadow-lg z-20 overflow-hidden"
+              >
+                <Link
+                  role="menuitem"
+                  href="/instructor/courses/create"
+                  className="block px-4 py-3 text-sm hover:bg-gray-50"
+                >
+                  <span className="font-semibold block">Create manually</span>
+                  <span className="text-xs text-gray-500">
+                    Start from a blank course
+                  </span>
+                </Link>
+                <Link
+                  role="menuitem"
+                  href="/instructor/courses/ai-draft"
+                  className="block px-4 py-3 text-sm hover:bg-gray-50 border-t"
+                >
+                  <span className="font-semibold block">✨ Draft with AI</span>
+                  <span className="text-xs text-gray-500">
+                    Generate one course from a brief
+                  </span>
+                </Link>
+                <Link
+                  role="menuitem"
+                  href="/instructor/courses/bulk-ai-draft"
+                  className="block px-4 py-3 text-sm hover:bg-gray-50 border-t"
+                >
+                  <span className="font-semibold block">
+                    ✨ Bulk draft with AI
+                  </span>
+                  <span className="text-xs text-gray-500">
+                    Generate several draft courses at once
+                  </span>
+                </Link>
+              </div>
+            )}
           </div>
         </div>
 

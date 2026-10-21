@@ -12,6 +12,7 @@ import Link from "next/link";
 import BaseApi from "@/lib/api/_base.api";
 import { mutate } from "swr";
 import modalState from "@/lib/store/modalState";
+import cartStore from "@/lib/store/cartStore";
 import toast from "react-hot-toast";
 import persistentStore from "@/lib/store/persistentStore";
 import { trackAnalyticsEvent } from "@/lib/services/analytics";
@@ -30,6 +31,7 @@ export default function CourseCard({ course }) {
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const profile = persistentStore((state) => state.profile);
+  const cartItems = cartStore((state) => state.cart);
 
   useEffect(() => {
     setMounted(true);
@@ -39,6 +41,14 @@ export default function CourseCard({ course }) {
     setIsInCart(toBoolean(course?.is_in_cart));
     setIsEnrolled(toBoolean(course?.is_enrolled));
   }, [course?.is_in_cart, course?.is_enrolled]);
+
+  useEffect(() => {
+    if (!course?.id || !Array.isArray(cartItems)) return;
+    const inCart = cartItems.some(
+      (item) => String(item?.course?.id || "") === String(course.id),
+    );
+    setIsInCart(inCart);
+  }, [cartItems, course?.id]);
 
   const learnings = useMemo(
     () => course?.goals?.what_you_will_learn_data || [],
