@@ -159,7 +159,7 @@ export default function MobileNav({ open, onClose }) {
               <Link
                 href="/login"
                 onClick={onClose}
-                className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-50 transition-colors text-sm font-semibold text-slate-700"
+                className="flex items-center justify-center bg-slate-100 gap-3 px-4 py-3 rounded-lg hover:bg-gray-50 transition-colors text-sm font-semibold text-slate-700"
               >
                 <LogIn size={20} className="text-slate-500" /> Login
               </Link>

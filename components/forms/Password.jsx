@@ -9,6 +9,7 @@ export default function Password({
   placeholder,
   error,
   payload,
+  onBlur: onBlurProp,
 }) {
   const [isFocused, setIsFocused] = useState({});
 
@@ -18,6 +19,7 @@ export default function Password({
 
   const onBlur = (e) => {
     setIsFocused((prev) => ({ ...prev, [e.target.name]: false }));
+    onBlurProp?.(e);
   };
 
   const [showPassword, setShowPassword] = useState(false); // 👁️ Toggle state

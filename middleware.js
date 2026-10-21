@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { jwtVerify } from "jose";
 
-const secretKey = new TextEncoder().encode(process.env.NEXT_PUBLIC_JWT_SECRET);
+const secretKey = new TextEncoder().encode(process.env.JWT_SECRET);
 const accessTokenCookieNames = Array.from(
   new Set(
     [process.env.NEXT_PUBLIC_TOKEN, "upskill-token", "app_token"].filter(

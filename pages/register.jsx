@@ -13,7 +13,7 @@ import Input from "@/components/forms/Input";
 import Password from "@/components/forms/Password";
 import Link from "next/link";
 import GoogleAuthButton from "@/components/auth/GoogleAuthButton";
-import { validatePasswordInline } from "@/lib/services/authInlineValidation";
+import { validateAuthField, validateAuthForm } from "@/lib/services/authInlineValidation";
 
 export default function Register({ googleClientId }) {
   const router = useRouter();
@@ -25,12 +25,37 @@ export default function Register({ googleClientId }) {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [selectedRole, setSelectedRole] = useState("3"); // default Student
   const [payload, setPayload] = useState({});
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [touched, setTouched] = useState({});
 
   const [isFocused, setIsFocused] = useState(false);
 
-  const onChange = (e) => {
-    setPayload({ ...payload, [e.target.name]: e.target.value });
+  const validateField = (name, values, isTouched = touched) => {
+    if (!isTouched[name]) return;
+    setFieldErrors((prev) => ({
+      ...prev,
+      [name]: validateAuthField("register", name, values),
+    }));
   };
+
+  const onChange = (e) => {
+    const { name, value } = e.target;
+    const values = { ...payload, [name]: value };
+    setPayload(values);
+    setErrors(null);
+    validateField(name, values);
+    if (name === "password") validateField("confirm_password", values);
+  };
+
+  const onBlur = (e) => {
+    const { name } = e.target;
+    const nextTouched = { ...touched, [name]: true };
+    setTouched(nextTouched);
+    validateField(name, payload, nextTouched);
+  };
+
+  const errorFor = (field) =>
+    fieldErrors[field] || extractErrors(errors, field);
 
   const onFocus = (e) => {
     setIsFocused({
@@ -42,8 +67,21 @@ export default function Register({ googleClientId }) {
     toast.dismiss();
     e.preventDefault();
 
-    const payload = {
-      username: e.target.username.value,
+    const inlineErrors = validateAuthForm("register", payload);
+    if (inlineErrors) {
+      setFieldErrors(inlineErrors);
+      setTouched({
+        username: true,
+        email: true,
+        firstname: true,
+        lastname: true,
+        password: true,
+        confirm_password: true,
+      });
+      return;
+    }
+
+    const body = {
       email: e.target.email.value,
       password: e.target.password.value,
       confirm_password: e.target.confirm_password.value,
@@ -52,17 +90,12 @@ export default function Register({ googleClientId }) {
       role: router?.query?.mode === "instructor" ? "EDUCATOR" : "LEARNER",
     };
 
-    const inlineErrors = validatePasswordInline(payload.password);
-    if (inlineErrors) {
-      setErrors(inlineErrors);
-      return;
-    }
-
+    setFieldErrors({});
     setErrors(null);
     setIsLoading(true);
 
     try {
-      const response = await AUTHAPI.register(payload);
+      const response = await AUTHAPI.register(body);
       persistentStore.setState({ profile: response?.data?.user });
       router.push("/");
     } catch (error) {
@@ -172,7 +205,8 @@ export default function Register({ googleClientId }) {
                   value={payload.username || ""}
                   onChange={onChange}
                   onFocus={onFocus}
-                  error={extractErrors(errors, "username")}
+                  onBlur={onBlur}
+                  error={errorFor("username")}
                 />
 
                 <Input
@@ -182,7 +216,8 @@ export default function Register({ googleClientId }) {
                   value={payload.email || ""}
                   onChange={onChange}
                   onFocus={onFocus}
-                  error={extractErrors(errors, "email")}
+                  onBlur={onBlur}
+                  error={errorFor("email")}
                 />
 
                 <Input
@@ -192,7 +227,8 @@ export default function Register({ googleClientId }) {
                   value={payload.firstname || ""}
                   onChange={onChange}
                   onFocus={onFocus}
-                  error={extractErrors(errors, "firstname")}
+                  onBlur={onBlur}
+                  error={errorFor("firstname")}
                 />
 
                 <Input
@@ -202,7 +238,8 @@ export default function Register({ googleClientId }) {
                   value={payload.lastname || ""}
                   onChange={onChange}
                   onFocus={onFocus}
-                  error={extractErrors(errors, "lastname")}
+                  onBlur={onBlur}
+                  error={errorFor("lastname")}
                 />
 
                 <Password
@@ -212,7 +249,8 @@ export default function Register({ googleClientId }) {
                   value={payload.password || ""}
                   onChange={onChange}
                   onFocus={onFocus}
-                  error={extractErrors(errors, "password")}
+                  onBlur={onBlur}
+                  error={errorFor("password")}
                 />
                 <Password
                   id="confirm_password"
@@ -221,7 +259,8 @@ export default function Register({ googleClientId }) {
                   value={payload.confirm_password || ""}
                   onChange={onChange}
                   onFocus={onFocus}
-                  error={extractErrors(errors, "confirm_password")}
+                  onBlur={onBlur}
+                  error={errorFor("confirm_password")}
                 />
               </div>
 

@@ -2,6 +2,8 @@ import BaseApi from "@/lib/api/_base.api";
 import { Send, Sparkles, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import toast from "react-hot-toast";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 function normalizeSuggestedTopics(course) {
   const sections = Array.isArray(course?.sections) ? course.sections : [];
@@ -27,105 +29,68 @@ function normalizeSuggestedTopics(course) {
   return output.slice(0, 14);
 }
 
-function parseMessageBlocks(content) {
-  const lines = String(content || "")
-    .replace(/\r\n/g, "\n")
-    .split("\n");
-  const blocks = [];
-  let currentParagraph = [];
-  let currentList = null;
-
-  const flushParagraph = () => {
-    if (currentParagraph.length === 0) return;
-    blocks.push({
-      type: "paragraph",
-      text: currentParagraph.join(" ").trim(),
-    });
-    currentParagraph = [];
+function buildMarkdownComponents(isUser) {
+  const link = isUser ? "underline text-white" : "underline text-[#0056D2]";
+  return {
+    p: (props) => <p className="my-2 first:mt-0 last:mb-0" {...props} />,
+    h1: (props) => <h3 className="mt-3 mb-1 text-[15px] font-bold" {...props} />,
+    h2: (props) => <h3 className="mt-3 mb-1 text-[15px] font-bold" {...props} />,
+    h3: (props) => <h4 className="mt-3 mb-1 text-[14px] font-semibold" {...props} />,
+    h4: (props) => <h4 className="mt-2 mb-1 font-semibold" {...props} />,
+    ul: (props) => <ul className="my-2 list-disc pl-5 space-y-1" {...props} />,
+    ol: (props) => <ol className="my-2 list-decimal pl-5 space-y-1" {...props} />,
+    a: (props) => (
+      <a className={link} target="_blank" rel="noopener noreferrer" {...props} />
+    ),
+    blockquote: (props) => (
+      <blockquote className="my-2 border-l-4 border-slate-300 pl-3 italic opacity-90" {...props} />
+    ),
+    hr: () => <hr className="my-3 border-slate-200" />,
+    pre: (props) => (
+      <pre className="my-2 overflow-x-auto rounded-lg bg-[#16161D] p-3 text-[12px] text-slate-100" {...props} />
+    ),
+    code: ({ className, children, ...props }) =>
+      className ? (
+        <code className={`${className} font-mono`} {...props}>
+          {children}
+        </code>
+      ) : (
+        <code
+          className={`rounded px-1 py-0.5 font-mono text-[12px] ${
+            isUser ? "bg-white/20" : "bg-slate-100 text-slate-800"
+          }`}
+          {...props}
+        >
+          {children}
+        </code>
+      ),
+    table: (props) => (
+      <div className="my-2 overflow-x-auto">
+        <table className="min-w-full border-collapse text-[12px]" {...props} />
+      </div>
+    ),
+    th: (props) => (
+      <th className="border border-slate-300 bg-slate-100 px-2 py-1 text-left font-semibold text-slate-800" {...props} />
+    ),
+    td: (props) => <td className="border border-slate-300 px-2 py-1" {...props} />,
   };
-
-  const flushList = () => {
-    if (!currentList || currentList.items.length === 0) return;
-    blocks.push(currentList);
-    currentList = null;
-  };
-
-  for (const line of lines) {
-    const trimmed = line.trim();
-    if (!trimmed) {
-      flushParagraph();
-      flushList();
-      continue;
-    }
-
-    const bulletMatch = trimmed.match(/^[-*]\s+(.+)$/);
-    const orderedMatch = trimmed.match(/^(\d+)\.\s+(.+)$/);
-    if (bulletMatch) {
-      flushParagraph();
-      if (!currentList || currentList.type !== "ul") {
-        flushList();
-        currentList = { type: "ul", items: [] };
-      }
-      currentList.items.push(bulletMatch[1].trim());
-      continue;
-    }
-
-    if (orderedMatch) {
-      flushParagraph();
-      if (!currentList || currentList.type !== "ol") {
-        flushList();
-        currentList = { type: "ol", items: [] };
-      }
-      currentList.items.push(orderedMatch[2].trim());
-      continue;
-    }
-
-    flushList();
-    currentParagraph.push(trimmed);
-  }
-
-  flushParagraph();
-  flushList();
-  return blocks;
 }
 
 function MessageContent({ content, isUser }) {
-  const blocks = parseMessageBlocks(content);
-  const textClass = isUser ? "text-white" : "text-slate-700";
-  const listClass = isUser ? "text-white/95" : "text-slate-700";
+  const components = useMemo(() => buildMarkdownComponents(isUser), [isUser]);
 
   return (
-    <div className="space-y-2 leading-relaxed">
-      {blocks.length === 0 ? <p className={textClass}>{content}</p> : null}
-      {blocks.map((block, index) => {
-        if (block.type === "paragraph") {
-          return (
-            <p key={`p-${index}`} className={textClass}>
-              {block.text}
-            </p>
-          );
-        }
-        if (block.type === "ul") {
-          return (
-            <ul key={`ul-${index}`} className={`list-disc pl-5 space-y-1 ${listClass}`}>
-              {block.items.map((item, itemIndex) => (
-                <li key={`uli-${index}-${itemIndex}`}>{item}</li>
-              ))}
-            </ul>
-          );
-        }
-        return (
-          <ol key={`ol-${index}`} className={`list-decimal pl-5 space-y-1 ${listClass}`}>
-            {block.items.map((item, itemIndex) => (
-              <li key={`oli-${index}-${itemIndex}`}>{item}</li>
-            ))}
-          </ol>
-        );
-      })}
+    <div
+      className={`leading-relaxed break-words ${
+        isUser ? "text-white" : "text-slate-700"
+      }`}
+    >
+      <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
+        {String(content || "")}
+      </ReactMarkdown>
     </div>
   );
 }
-
 export default function CourseLearnAIAssistantDrawer({
   open,
   onClose,

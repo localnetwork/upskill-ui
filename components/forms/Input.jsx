@@ -8,6 +8,7 @@ export default function Input({
   placeholder,
   error,
   payload,
+  onBlur: onBlurProp,
 }) {
   const [isFocused, setIsFocused] = useState({});
 
@@ -17,6 +18,7 @@ export default function Input({
 
   const onBlur = (e) => {
     setIsFocused((prev) => ({ ...prev, [e.target.name]: false }));
+    onBlurProp?.(e);
   };
 
   return (

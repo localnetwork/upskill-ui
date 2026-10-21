@@ -48,6 +48,18 @@ export default function CourseAssetPreview({
   };
   const prevLecture = findPreviousLecture();
   const nextLecture = findNextLecture();
+  const isCodingLecture =
+    lecture?.curriculum_resource_type === "coding_exercise" &&
+    !lecture?.is_locked;
+
+  const goToLecture = (target) => {
+    if (!target || target?.is_locked) return;
+    setCurrentLecture(target);
+    router.push({
+      pathname: router.pathname,
+      query: { ...router.query, lecture: target?.uuid },
+    });
+  };
   const isLockedLecture = Boolean(lecture?.is_locked);
   // Determine which component to render
   let component = null;
@@ -94,6 +106,9 @@ export default function CourseAssetPreview({
             course={course}
             lecture={lecture}
             setCourse={setCourse}
+            prevLecture={prevLecture}
+            nextLecture={nextLecture}
+            onNavigate={goToLecture}
           />
         );
         break;
@@ -126,7 +141,13 @@ export default function CourseAssetPreview({
 
   return (
     <div
-      className={`w-full bg-[#16161D] relative ${lecture?.curriculum_resource_type === "quiz" ? "h-[600px]" : "h-[500px]"}`}
+      className={`w-full bg-[#16161D] relative ${
+        isCodingLecture
+          ? "h-[calc(100vh-60px)] min-h-[640px]"
+          : lecture?.curriculum_resource_type === "quiz"
+            ? "h-[600px]"
+            : "h-[500px]"
+      }`}
     >
       {isLoading ? (
         <span className="preloader absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
@@ -136,7 +157,7 @@ export default function CourseAssetPreview({
         <>
           {/* PREV LECTURE */}
 
-          {prevLecture && (
+          {prevLecture && !isCodingLecture && (
             <button
               disabled={!prevLecture || Boolean(prevLecture?.is_locked)}
               onClick={() => {
@@ -161,7 +182,7 @@ export default function CourseAssetPreview({
           )}
           <Tooltip id="prev-tooltip" />
 
-          {nextLecture && (
+          {nextLecture && !isCodingLecture && (
             <button
               disabled={!nextLecture || Boolean(nextLecture?.is_locked)}
               onClick={() => {

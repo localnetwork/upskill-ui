@@ -71,7 +71,7 @@ Create `.env.local` in the project root:
 | `NEXT_PUBLIC_API_URL` | Yes | Base API URL used by frontend requests (example: `http://localhost:4000/api`) |
 | `NEXT_PUBLIC_API_DOMAIN` | Yes | API domain used for media URLs and Next image allowlist (example: `http://localhost:4000`) |
 | `NEXT_PUBLIC_TOKEN` | Yes | Auth token cookie key (example: `upskill-token`) |
-| `NEXT_PUBLIC_JWT_SECRET` | Yes | JWT secret used by middleware verification |
+| `JWT_SECRET` | Yes | JWT secret used by middleware verification (server-only, never prefix with `NEXT_PUBLIC_`) |
 | `NEXT_PUBLIC_REFRESH_TOKEN` | Optional | Refresh token cookie key override |
 | `NEXT_PUBLIC_TINYMCE_API_KEY` | Optional | TinyMCE API key for rich text editors |
 | `NEXT_PUBLIC_PAYPAL_CLIENT_ID` | Optional | PayPal client ID used in payout settings UI |

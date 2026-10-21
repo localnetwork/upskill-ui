@@ -1,10 +1,10 @@
 import CourseLearnSidebar from "@/components/entities/course/learn/CourseLearnSidebar";
 import BaseApi from "@/lib/api/_base.api";
 import { setContext } from "@/lib/api/interceptor";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/router";
 import CourseAssetPreview from "@/components/entities/course/learn/CourseAssetPreview";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, List as ListIcon } from "lucide-react";
 import Link from "next/link";
 import CourseOverview from "@/components/entities/course/learn/CourseOverview";
 import learnTabs from "@/lib/menu/learnNavTabs.json";
@@ -190,6 +190,18 @@ export default function Page({ data }) {
     setCurrentTab(tabId);
   };
 
+  // Coding exercises get the full width; the course outline collapses and can be reopened.
+  const isCodingLecture = currentLecture?.curriculum_resource_type === "coding_exercise";
+  const wasCodingRef = useRef(false);
+  useEffect(() => {
+    if (isCodingLecture && !wasCodingRef.current) {
+      setPanelStatus("closed");
+    } else if (!isCodingLecture && wasCodingRef.current) {
+      setPanelStatus("open");
+    }
+    wasCodingRef.current = isCodingLecture;
+  }, [isCodingLecture]);
+
   return (
     <div>
       <div className="stripbar bg-[#16161D] px-[30px] h-[60px] flex items-center text-white border-b border-[#ddd]">
@@ -205,6 +217,16 @@ export default function Page({ data }) {
               {data?.course?.title || "Course Title"}
             </h2>
           </div>
+          <button
+            type="button"
+            onClick={() =>
+              setPanelStatus((status) => (status === "closed" ? "open" : "closed"))
+            }
+            className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-white/30 text-sm hover:bg-white/10"
+          >
+            <ListIcon size={16} />
+            {panelStatus === "closed" ? "Show course content" : "Hide course content"}
+          </button>
         </div>
       </div>
       <div className="flex flex-wrap">

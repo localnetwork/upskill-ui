@@ -7,87 +7,98 @@ import { useCallback, useState } from "react";
 import Spinner from "@/components/icons/Spinner";
 import { extractErrors } from "@/lib/services/errorsExtractor";
 import toast from "react-hot-toast";
-import { EyeIcon, EyeOffIcon } from "lucide-react";
 import Link from "next/link";
 import Input from "@/components/forms/Input";
 import Password from "@/components/forms/Password";
 import GoogleAuthButton from "@/components/auth/GoogleAuthButton";
-import { validatePasswordInline } from "@/lib/services/authInlineValidation";
+import { validateAuthField, validateAuthForm } from "@/lib/services/authInlineValidation";
 
 export default function Login({ googleClientId }) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState(null);
-  const [showPassword, setShowPassword] = useState(false);
   const [payload, setPayload] = useState({});
-  const [isFocused, setIsFocused] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [touched, setTouched] = useState({});
 
-  const onChange = (e) => {
-    setPayload({ ...payload, [e.target.name]: e.target.value });
+  const validateField = (name, values, isTouched = touched) => {
+    if (!isTouched[name]) return;
+    setFieldErrors((prev) => ({
+      ...prev,
+      [name]: validateAuthField("login", name, values),
+    }));
   };
 
+  const onChange = (e) => {
+    const { name, value } = e.target;
+    const values = { ...payload, [name]: value };
+    setPayload(values);
+    setErrors(null);
+    validateField(name, values);
+  };
+
+  const onBlur = (e) => {
+    const { name } = e.target;
+    const nextTouched = { ...touched, [name]: true };
+    setTouched(nextTouched);
+    validateField(name, payload, nextTouched);
+  };
+
+  const errorFor = (field) =>
+    fieldErrors[field] || extractErrors(errors, field);
+
   const onFocus = (e) => {
-    setIsFocused({
-      [e.target.name]: true,
-    });
+    // Preserve compatibility with your existing form components.
   };
 
   const onLogin = async (e) => {
-    toast.dismiss();
     e.preventDefault();
-    const inlineErrors = validatePasswordInline(payload.password);
+    toast.dismiss();
+
+    const inlineErrors = validateAuthForm("login", payload);
+
     if (inlineErrors) {
-      setErrors(inlineErrors);
+      setFieldErrors(inlineErrors);
+      setTouched({ username: true, password: true });
       return;
     }
 
+    setFieldErrors({});
     setErrors(null);
     setIsLoading(true);
+
     try {
       const response = await AUTHAPI.login(payload);
 
-      // ✅ CASE 1: Requires 2FA
-      if (
-        response?.data?.requires_2fa
-      ) {
+      if (response?.data?.requires_2fa) {
         toast.success("Enter your 2FA code");
 
-        // Store temporary token for 2FA verification
         persistentStore.setState({
-          preAuthToken: response?.data?.pre_auth_token,
+          preAuthToken: response.data.pre_auth_token,
         });
 
-        // Redirect to 2FA verification page
         router.push("/verify-2fa");
         return;
       }
 
-      // ✅ CASE 2: Normal login (2FA not required or already verified)
       if (response?.data?.token && response?.data?.user) {
         persistentStore.setState({
-          profile: response?.data?.user,
-          token: response?.data?.token,
+          profile: response.data.user,
+          token: response.data.token,
           preAuthToken: null,
         });
 
         toast.success("Login successful!");
-
-        window.location.href = "/"; // Use window.location.href to force a full page reload
-        router.push("/");
+        window.location.href = "/";
         return;
       }
 
-      // ❌ Unexpected response format
       toast.error("Unexpected response from server");
     } catch (error) {
       console.error("Login error:", error);
       setErrors(error?.data?.errors);
 
-      if (error?.data?.message) {
-        toast.error(error.data.message);
-      } else {
-        toast.error("Login failed. Please try again.");
-      }
+      toast.error(error?.data?.message || "Login failed. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -106,17 +117,19 @@ export default function Login({ googleClientId }) {
 
         if (response?.data?.requires_2fa) {
           toast.success("Enter your 2FA code");
+
           persistentStore.setState({
-            preAuthToken: response?.data?.pre_auth_token,
+            preAuthToken: response.data.pre_auth_token,
           });
+
           router.push("/verify-2fa");
           return;
         }
 
         if (response?.data?.token && response?.data?.user) {
           persistentStore.setState({
-            profile: response?.data?.user,
-            token: response?.data?.token,
+            profile: response.data.user,
+            token: response.data.token,
             preAuthToken: null,
           });
 
@@ -127,39 +140,51 @@ export default function Login({ googleClientId }) {
 
         toast.error("Unexpected response from server");
       } catch (error) {
-        if (error?.data?.message) {
-          toast.error(error.data.message);
-        } else {
-          toast.error("Google login failed. Please try again.");
-        }
+        toast.error(
+          error?.data?.message || "Google login failed. Please try again.",
+        );
       } finally {
         setIsLoading(false);
       }
     },
-    [setIsLoading],
+    [router],
   );
 
   return (
-    <div className="min-h-[calc(100vh-92px)]">
-      <div className="container py-[50px]">
-        <div className="grid grid-cols-2 max-w-[1140px] mx-auto">
-          {/* LEFT IMAGE */}
-          <div className="pr-[50px] flex flex-col pt-[100px]">
-            <Image
-              src="/desktop-illustration.webp"
-              alt="Login"
-              width={1200}
-              height={800}
-            />
+    <main className="min-h-[calc(100vh-92px)] w-full overflow-x-hidden">
+      <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-10 lg:px-8 lg:py-12">
+        <div className="mx-auto grid w-full max-w-6xl grid-cols-1 items-center gap-8 md:grid-cols-2 md:gap-8 lg:gap-14">
+          {/* LEFT ILLUSTRATION */}
+          <div className="hidden items-center justify-center md:flex">
+            <div className="relative w-full max-w-xl">
+              <Image
+                src="/desktop-illustration.webp"
+                alt="Login illustration"
+                width={1200}
+                height={800}
+                priority
+                className="h-auto w-full object-contain"
+                sizes="(min-width: 1024px) 50vw, 45vw"
+              />
+            </div>
           </div>
 
           {/* RIGHT FORM */}
-          <div className="py-[50px]">
-            <h2 className="text-3xl font-bold mb-6">
-              Log in to continue your learning journey
-            </h2>
+          <div className="mx-auto w-full max-w-lg py-2 sm:py-4 md:max-w-none md:py-6 lg:py-10">
+            <div className="mb-6 sm:mb-8">
+              <h1 className="text-2xl font-bold leading-tight text-gray-900 sm:text-3xl lg:text-4xl">
+                Log in to continue your learning journey
+              </h1>
 
-            <form className="flex flex-col gap-y-[20px]" onSubmit={onLogin}>
+              <p className="mt-3 text-sm leading-6 text-gray-500 sm:text-base">
+                Welcome back! Enter your credentials to continue learning.
+              </p>
+            </div>
+
+            <form
+              className="flex flex-col gap-y-5 sm:gap-y-6"
+              onSubmit={onLogin}
+            >
               <Input
                 id="username"
                 name="username"
@@ -167,7 +192,8 @@ export default function Login({ googleClientId }) {
                 value={payload.username || ""}
                 onChange={onChange}
                 onFocus={onFocus}
-                error={extractErrors(errors, "username")}
+                onBlur={onBlur}
+                error={errorFor("username")}
               />
 
               <Password
@@ -177,59 +203,71 @@ export default function Login({ googleClientId }) {
                 value={payload.password || ""}
                 onChange={onChange}
                 onFocus={onFocus}
-                error={extractErrors(errors, "password")}
+                onBlur={onBlur}
+                error={errorFor("password")}
               />
 
-              {/* SUBMIT BUTTON */}
-              <div>
-                <button
-                  type="submit"
-                  className={`shadow-md bg-[#0056D2] w-full text-white font-semibold px-[30px] py-[10px] rounded-[8px] inline-flex justify-center items-center gap-[10px] text-[18px] text-center min-w-[150px] hover:opacity-90 cursor-pointer ${
-                    isLoading ? "opacity-70" : "hover:opacity-90 cursor-pointer"
-                  }`}
-                  disabled={isLoading}
-                >
-                  {isLoading && (
-                    <Spinner className="w-5 h-5 text-white animate-spin opacity-30" />
-                  )}
-                  Login
-                </button>
-              </div>
+              <button
+                type="submit"
+                className={`inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-lg bg-[#0056D2] px-5 py-3 text-base font-semibold text-white shadow-md transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0056D2] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70 sm:text-lg ${
+                  isLoading ? "cursor-not-allowed" : "cursor-pointer"
+                }`}
+                disabled={isLoading}
+              >
+                {isLoading && (
+                  <Spinner className="h-5 w-5 animate-spin text-white" />
+                )}
+                {isLoading ? "Please wait..." : "Login"}
+              </button>
             </form>
 
-            <div className="divider border-b border-[2px] border-[#f5f5f5] my-[40px]" />
-
-            <GoogleAuthButton
-              clientId={googleClientId}
-              onCredential={onGoogleCredential}
-              disabled={isLoading}
-              label="Continue with Google"
-              buttonText="signin_with"
-            />
-
-            <div className="divider border-b border-[2px] border-[#f5f5f5] my-[40px]" />
-
-            <div className="bg-[#F6F7F9] font-light text-[18px] px-[30px] py-[20px] mt-[20px] text-center border-b border-[#ddd]">
-              Don't have an account?{" "}
-              <Link
-                href="/register"
-                className="text-[#0056D2] underline font-bold"
-              >
-                Sign up
-              </Link>
+            {/* DIVIDER */}
+            <div className="my-7 flex items-center gap-4 sm:my-8">
+              <div className="h-px flex-1 bg-gray-200" />
+              <span className="text-xs text-gray-400 sm:text-sm">
+                OR CONTINUE WITH
+              </span>
+              <div className="h-px flex-1 bg-gray-200" />
             </div>
-            <div className="bg-[#F6F7F9] px-[30px] py-[20px] text-center">
-              <Link
-                href="/forgot-password"
-                className="text-[#0056D2] underline font-bold"
-              >
-                Forgot your password?
-              </Link>
+
+            {/* GOOGLE AUTH */}
+            <div className="w-full">
+              <GoogleAuthButton
+                clientId={googleClientId}
+                onCredential={onGoogleCredential}
+                disabled={isLoading}
+                label="Continue with Google"
+                buttonText="signin_with"
+              />
+            </div>
+
+            {/* ACCOUNT LINKS */}
+            <div className="mt-7 overflow-hidden rounded-lg border border-gray-200 sm:mt-8">
+              <div className="bg-[#F6F7F9] px-4 py-5 text-center sm:px-6">
+                <p className="text-sm leading-6 text-gray-700 sm:text-base">
+                  Don&apos;t have an account?{" "}
+                  <Link
+                    href="/register"
+                    className="font-bold text-[#0056D2] underline underline-offset-2 hover:text-blue-800"
+                  >
+                    Sign up
+                  </Link>
+                </p>
+              </div>
+
+              <div className="border-t border-gray-200 bg-white px-4 py-4 text-center sm:px-6">
+                <Link
+                  href="/forgot-password"
+                  className="inline-block text-sm font-semibold text-[#0056D2] underline underline-offset-2 hover:text-blue-800 sm:text-base"
+                >
+                  Forgot your password?
+                </Link>
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </main>
   );
 }
 

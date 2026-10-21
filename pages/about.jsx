@@ -3,177 +3,209 @@ import Image from "next/image";
 export default function About() {
   return (
     <>
-      <section className="relative min-h-[618px] flex items-center px-8 py-20 overflow-hidden">
-        <div className="max-w-7xl mx-auto w-full grid grid-cols-12 gap-8">
-          <div className="col-span-12 lg:col-span-7 z-10">
-            <h1 className="font-headline text-6xl md:text-8xl font-extrabold tracking-tighter leading-[0.9] text-on-surface mb-8">
+      {/* Hero Section */}
+      <section className="relative flex items-center overflow-hidden px-4 py-12 sm:px-6 sm:py-16 lg:min-h-[618px] lg:px-8 lg:py-20">
+        <div className="mx-auto grid w-full max-w-7xl grid-cols-1 items-center gap-10 lg:grid-cols-12 lg:gap-8">
+          <div className="relative z-10 lg:col-span-7">
+            <h1 className="mb-6 text-4xl font-extrabold leading-[0.95] tracking-tighter text-on-surface sm:text-5xl md:text-6xl lg:mb-8 lg:text-7xl xl:text-8xl">
               Empowering the Next Generation of{" "}
               <span className="text-primary">Digital Curators</span>
             </h1>
-            <p className="font-body text-xl text-secondary max-w-xl leading-relaxed">
+
+            <p className="max-w-xl text-base leading-relaxed text-secondary sm:text-lg lg:text-xl">
               Moving beyond traditional education. We are building a
               high-velocity environment where academic rigor meets modern tech
               industry speed.
             </p>
           </div>
-          <div className="col-span-12 lg:col-span-5 relative mt-12 lg:mt-0">
-            <div className="aspect-square rounded-xl overflow-hidden shadow-2xl">
+
+          <div className="relative mt-2 lg:col-span-5 lg:mt-0">
+            <div className="relative aspect-square w-full overflow-hidden rounded-xl shadow-2xl">
               <Image
                 alt="Digital Curators Team"
-                className="w-full h-full object-cover"
-                data-alt="Modern collaborative workspace with young professionals working around a large screen showing vibrant data visualizations and code"
+                className="object-cover"
                 src="/about-1.png"
-                width={500}
-                height={500}
+                fill
+                priority
+                sizes="(max-width: 1023px) 100vw, (max-width: 1279px) 42vw, 500px"
               />
             </div>
-            <div className="absolute -bottom-6 -left-6 bg-primary text-white p-8 rounded-lg shadow-xl hidden md:block">
-              <span className="font-headline font-black text-4xl block">
+
+            <div className="absolute -bottom-4 left-4 rounded-lg bg-primary p-5 text-white shadow-xl sm:-bottom-5 sm:-left-5 sm:p-6 md:-bottom-6 md:left-6 md:p-8 lg:left-0 xl:-left-6">
+              <span className="block text-3xl font-black sm:text-4xl">
                 2024
               </span>
-              <span className="font-label text-sm uppercase tracking-widest opacity-80">
+              <span className="text-xs uppercase tracking-widest opacity-80 sm:text-sm">
                 Redefining Learning
               </span>
             </div>
           </div>
         </div>
       </section>
-      <section className="bg-surface-container-low py-32 px-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid md:grid-cols-2 gap-16 items-center">
+
+      {/* Mission Section */}
+      <section className="bg-surface-container-low px-4 py-16 sm:px-6 sm:py-20 lg:px-8 lg:py-28 xl:py-32">
+        <div className="mx-auto max-w-7xl">
+          <div className="grid grid-cols-1 items-center gap-8 md:grid-cols-2 md:gap-12 lg:gap-16">
             <div>
-              <span className="text-primary font-headline font-bold uppercase tracking-[0.2em] text-sm">
+              <span className="text-sm font-bold uppercase tracking-[0.2em] text-primary">
                 Our Mission
               </span>
-              <h2 className="font-headline text-5xl font-extrabold tracking-tight mt-4 mb-8">
+
+              <h2 className="mt-4 text-3xl font-extrabold tracking-tight sm:text-4xl lg:text-5xl">
                 Bridging the Gap Between Ivory Towers and High-Growth Industry.
               </h2>
             </div>
-            <div className="space-y-6">
-              <p className="font-body text-lg text-secondary leading-relaxed">
+
+            <div className="space-y-5 sm:space-y-6">
+              <p className="text-base leading-relaxed text-secondary sm:text-lg">
                 Traditional education is too slow for the digital age. Industry
-                training is often too shallow. Upskill sits at the
-                intersection—providing the structural rigor of academic
-                institutions with the bold, aggressive clarity of modern tech.
+                training is often too shallow. Upskill sits at the intersection
+                — providing the structural rigor of academic institutions with
+                the bold, aggressive clarity of modern tech.
               </p>
-              <p className="font-body text-lg text-secondary leading-relaxed">
-                We don't just teach skills; we curate the mindset required to
-                navigate and lead in the ever-shifting digital landscape.
+
+              <p className="text-base leading-relaxed text-secondary sm:text-lg">
+                We don&apos;t just teach skills; we curate the mindset required
+                to navigate and lead in the ever-shifting digital landscape.
               </p>
             </div>
           </div>
         </div>
       </section>
-      <section className="py-32 px-8">
-        <div className="max-w-7xl mx-auto">
-          <h2 className="font-headline text-4xl font-black mb-16 tracking-tighter">
+
+      {/* Evolution Section */}
+      <section className="px-4 py-16 sm:px-6 sm:py-20 lg:px-8 lg:py-28 xl:py-32">
+        <div className="mx-auto max-w-7xl">
+          <h2 className="mb-10 text-3xl font-black tracking-tighter sm:mb-12 sm:text-4xl lg:mb-16">
             The Evolution of Upskill
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="md:col-span-2 bg-surface-container-lowest p-10 rounded-xl shadow-sm flex flex-col justify-between">
+
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-3 md:gap-6">
+            {/* Academic Roots */}
+            <div className="flex flex-col justify-between rounded-xl bg-surface-container-lowest p-6 shadow-sm sm:p-8 lg:col-span-2 lg:p-10">
               <div>
-                {/* <span
-                  className="material-symbols-outlined text-primary text-4xl mb-4"
-                  data-icon="history_edu"
-                >
-                  history_edu
-                </span> */}
-                <h3 className="font-headline text-2xl font-bold mb-4">
+                <h3 className="mb-4 text-xl font-bold sm:text-2xl">
                   Academic Roots
                 </h3>
-                <p className="text-secondary leading-relaxed max-w-md">
+
+                <p className="max-w-md leading-relaxed text-secondary">
                   Founded by a group of educators from top-tier research
                   universities, Upskill began as a project to digitize advanced
                   pedagogy for everyone.
                 </p>
               </div>
-              <div className="mt-8 border-t border-outline-variant/15 pt-8">
-                <span className="font-headline font-bold text-primary">
-                  2018 — The Spark
-                </span>
+
+              <div className="mt-8 border-t border-outline-variant/15 pt-6 sm:mt-10 sm:pt-8">
+                <span className="font-bold text-primary">2018 — The Spark</span>
               </div>
             </div>
-            <div className="bg-primary text-white p-10 rounded-xl text-on-primary flex flex-col justify-between">
-              <h3 className="font-headline text-2xl font-bold mb-4">
-                Brave Mission
-              </h3>
-              <p className="opacity-80 leading-relaxed">
-                Infusing the platform with high-velocity product thinking. Speed
-                is a feature.
-              </p>
-              <div className="mt-8 pt-8 border-t border-on-primary/10">
-                <span className="font-headline font-bold">
-                  2021 — The Pivot
-                </span>
+
+            {/* Brave Mission */}
+            <div className="flex flex-col justify-between rounded-xl bg-primary p-6 text-white sm:p-8 lg:p-10">
+              <div>
+                <h3 className="mb-4 text-xl font-bold sm:text-2xl">
+                  Brave Mission
+                </h3>
+
+                <p className="leading-relaxed opacity-80">
+                  Infusing the platform with high-velocity product thinking.
+                  Speed is a feature.
+                </p>
+              </div>
+
+              <div className="mt-8 border-t border-white/10 pt-6 sm:mt-10 sm:pt-8">
+                <span className="font-bold">2021 — The Pivot</span>
               </div>
             </div>
-            <div className="bg-[#A93802] text-[#ffcebd] p-10 rounded-xl md:col-span-3">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
+
+            {/* Today */}
+            <div className="rounded-xl bg-[#A93802] p-6 text-[#ffcebd] sm:p-8 md:col-span-3 lg:p-10">
+              <div className="flex flex-col justify-between gap-8 md:flex-row md:items-center">
                 <div className="max-w-xl">
-                  <h3 className="font-headline text-3xl font-bold mb-4">
+                  <h3 className="mb-4 text-2xl font-bold sm:text-3xl">
                     Today: The Curator Era
                   </h3>
-                  <p className="opacity-90 leading-relaxed text-lg">
-                    We are now the world's premier destination for those who
-                    seek not just a certificate, but mastery and membership in a
-                    global elite of digital practitioners.
+
+                  <p className="text-base leading-relaxed opacity-90 sm:text-lg">
+                    We are now the world&apos;s premier destination for those
+                    who seek not just a certificate, but mastery and membership
+                    in a global elite of digital practitioners.
                   </p>
                 </div>
-                <div className="flex -space-x-4">
-                  <div className="w-16 h-16 rounded-full border-4 border-surface bg-surface-dim"></div>
-                  <div className="w-16 h-16 rounded-full border-4 border-surface bg-primary"></div>
-                  <div className="w-16 h-16 rounded-full border-4 border-surface bg-secondary"></div>
+
+                <div className="flex shrink-0 -space-x-3 sm:-space-x-4">
+                  <div className="h-12 w-12 rounded-full border-4 border-surface bg-surface-dim sm:h-16 sm:w-16" />
+                  <div className="h-12 w-12 rounded-full border-4 border-surface bg-primary sm:h-16 sm:w-16" />
+                  <div className="h-12 w-12 rounded-full border-4 border-surface bg-secondary sm:h-16 sm:w-16" />
                 </div>
               </div>
             </div>
           </div>
         </div>
       </section>
-      <section className="bg-[#1C1B1B] text-[#DAE2FF] py-32 px-8">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-20">
-          <div className="text-center md:text-left">
-            <span className="font-headline text-7xl font-black text-primary-fixed block mb-2 tracking-tighter">
+
+      {/* Statistics Section */}
+      <section className="bg-[#1C1B1B] px-4 py-16 text-[#DAE2FF] sm:px-6 sm:py-20 lg:px-8 lg:py-28 xl:py-32">
+        <div className="mx-auto grid max-w-7xl grid-cols-1 gap-10 sm:grid-cols-3 sm:gap-6 lg:gap-12">
+          <div className="text-center sm:text-left">
+            <span className="mb-2 block text-5xl font-black tracking-tighter text-primary-fixed sm:text-5xl md:text-6xl lg:text-7xl">
               10M+
             </span>
-            <span className="font-label uppercase tracking-widest text-surface-variant text-sm">
+            <span className="text-xs uppercase tracking-widest text-surface-variant sm:text-sm">
               Learners Worldwide
             </span>
           </div>
-          <div className="text-center md:text-left">
-            <span className="font-headline text-7xl font-black text-primary-fixed block mb-2 tracking-tighter">
+
+          <div className="text-center sm:text-left">
+            <span className="mb-2 block text-5xl font-black tracking-tighter text-primary-fixed sm:text-5xl md:text-6xl lg:text-7xl">
               190+
             </span>
-            <span className="font-label uppercase tracking-widest text-surface-variant text-sm">
+            <span className="text-xs uppercase tracking-widest text-surface-variant sm:text-sm">
               Countries Reached
             </span>
           </div>
-          <div className="text-center md:text-left">
-            <span className="font-headline text-7xl font-black text-primary-fixed block mb-2 tracking-tighter">
+
+          <div className="text-center sm:text-left">
+            <span className="mb-2 block text-5xl font-black tracking-tighter text-primary-fixed sm:text-5xl md:text-6xl lg:text-7xl">
               2,500+
             </span>
-            <span className="font-label uppercase tracking-widest text-surface-variant text-sm">
+            <span className="text-xs uppercase tracking-widest text-surface-variant sm:text-sm">
               Expert Mentors
             </span>
           </div>
         </div>
       </section>
-      <section className="py-24 px-8 mb-20">
-        <div className="max-w-7xl mx-auto bg-primary rounded-xl p-12 md:p-20 text-center relative overflow-hidden">
+
+      {/* Call to Action */}
+      <section className="mb-10 px-4 py-12 sm:mb-16 sm:px-6 sm:py-16 lg:mb-20 lg:px-8 lg:py-24">
+        <div className="relative mx-auto max-w-7xl overflow-hidden rounded-xl bg-primary px-5 py-12 text-center sm:px-8 sm:py-16 md:px-12 md:py-20">
           <div className="relative z-10">
-            <h2 className="font-headline text-4xl md:text-6xl font-black text-white mb-8 tracking-tighter">
+            <h2 className="mb-8 text-3xl font-black tracking-tighter text-white sm:text-4xl md:text-5xl lg:text-6xl">
               Ready to curate your future?
             </h2>
-            <div className="flex flex-col md:flex-row items-center justify-center gap-4">
-              <button className="bg-[#FCF9F8] text-primary font-headline font-bold px-10 py-4 rounded-md text-lg shadow-xl hover:bg-surface-container-lowest transition-colors">
+
+            <div className="flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center sm:gap-4">
+              <button
+                type="button"
+                className="w-full rounded-md bg-[#FCF9F8] px-6 py-3.5 text-base font-bold text-primary shadow-xl transition-colors hover:bg-surface-container-lowest sm:w-auto sm:px-8 sm:py-4 sm:text-lg lg:px-10"
+              >
                 Start Your Journey Today
               </button>
-              <button className="text-white border border-on-primary/30 text-on-primary font-headline font-bold px-10 py-4 rounded-md text-lg hover:bg-on-primary/10 transition-colors">
+
+              <button
+                type="button"
+                className="w-full rounded-md border border-white/30 px-6 py-3.5 text-base font-bold text-white transition-colors hover:bg-white/10 sm:w-auto sm:px-8 sm:py-4 sm:text-lg lg:px-10"
+              >
                 View Careers
               </button>
             </div>
           </div>
-          <div className="absolute -top-24 -right-24 w-96 h-96 bg-primary-container rounded-full opacity-50 blur-3xl"></div>
-          <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-tertiary rounded-full opacity-20 blur-3xl"></div>
+
+          {/* Decorative Background Elements */}
+          <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-primary-container opacity-50 blur-3xl sm:-right-24 sm:-top-24 sm:h-80 sm:w-80 lg:h-96 lg:w-96" />
+
+          <div className="pointer-events-none absolute -bottom-20 -left-20 h-56 w-56 rounded-full bg-tertiary opacity-20 blur-3xl sm:-bottom-24 sm:-left-24 sm:h-80 sm:w-80 lg:h-96 lg:w-96" />
         </div>
       </section>
     </>
