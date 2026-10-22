@@ -4,6 +4,7 @@ import { Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/router";
 import toast from "react-hot-toast";
+import NotificationAvatar from "@/components/entities/notification/NotificationVisual";
 
 const TYPE_OPTIONS = [
   { label: "All Types", value: "ALL" },
@@ -31,6 +32,7 @@ const KIND_OPTIONS = [
     value: "COURSE_CONGRATULATIONS_MESSAGE",
   },
   { label: "New Enrollment", value: "COURSE_NEW_ENROLLMENT" },
+  { label: "Security (New Device Login)", value: "SECURITY_NEW_DEVICE_LOGIN" },
 ];
 
 function toRelativeTime(dateValue) {
@@ -53,6 +55,10 @@ function notificationTypeLabel(notification) {
   if (kind === "COURSE_WELCOME_MESSAGE") return "Welcome";
   if (kind === "COURSE_CONGRATULATIONS_MESSAGE") return "Congratulations";
   if (kind === "COURSE_NEW_ENROLLMENT") return "New Enrollment";
+  if (kind === "SECURITY_NEW_DEVICE_LOGIN") return "Security";
+  if (notification?.type === "ORDER") {
+    return notification?.metadata?.freeCheckout ? "Enrollment" : "Payment";
+  }
   return String(notification?.type || "Notification")
     .replaceAll("_", " ")
     .toLowerCase()
@@ -68,9 +74,7 @@ function resolveNotificationMessage(notification) {
     baseMessage.toLowerCase().includes("reason:") ||
     baseMessage.toLowerCase().includes(note.toLowerCase());
 
-  return messageHasReason
-    ? baseMessage
-    : `${baseMessage} Reason: ${note}`;
+  return messageHasReason ? baseMessage : `${baseMessage} Reason: ${note}`;
 }
 
 function isPendingFriendRequest(notification) {
@@ -125,9 +129,12 @@ export default function NotificationsPage() {
           },
         );
 
-        const rows = Array.isArray(response?.data?.data) ? response.data.data : [];
+        const rows = Array.isArray(response?.data?.data)
+          ? response.data.data
+          : [];
         setNotifications(rows);
-        const rawMeta = response?.data?.pagination || response?.data?.meta || {};
+        const rawMeta =
+          response?.data?.pagination || response?.data?.meta || {};
         setPagination((prev) => ({
           page: Number(rawMeta.page || prev.page || 1),
           limit: Number(rawMeta.limit || prev.limit || 10),
@@ -318,47 +325,50 @@ export default function NotificationsPage() {
               {!notification?.readAt ? (
                 <span className="absolute top-4 right-4 w-2.5 h-2.5 rounded-full bg-primary" />
               ) : null}
-              <div className="pr-6">
-                <h3 className="font-bold text-[16px] text-on-surface">
-                  {notification.title}
-                </h3>
-                <p className="text-[14px] text-[#475569] mt-1 leading-relaxed">
-                  {resolveNotificationMessage(notification)}
-                </p>
-                <div className="mt-2 flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-widest">
-                  <span className="text-primary">
-                    {notificationTypeLabel(notification)}
-                  </span>
-                  <span className="text-[#94a3b8]">
-                    {toRelativeTime(notification.createdAt)}
-                  </span>
-                </div>
-                {isPendingFriendRequest(notification) ? (
-                  <div className="mt-3 flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        handleFriendRequestAction(notification, "ACCEPT");
-                      }}
-                      disabled={activeNotificationId === notification.id}
-                      className="px-3 py-1.5 text-[12px] font-semibold rounded-md bg-primary text-white hover:opacity-90 disabled:opacity-60"
-                    >
-                      Confirm
-                    </button>
-                    <button
-                      type="button"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        handleFriendRequestAction(notification, "DECLINE");
-                      }}
-                      disabled={activeNotificationId === notification.id}
-                      className="px-3 py-1.5 text-[12px] font-semibold rounded-md border border-[#cbd5e1] text-[#334155] hover:bg-[#f8fafc] disabled:opacity-60"
-                    >
-                      Decline
-                    </button>
+              <div className="pr-6 flex items-start gap-3">
+                <NotificationAvatar notification={notification} size={44} />
+                <div className="min-w-0 flex-1">
+                  <h3 className="font-bold text-[16px] text-on-surface">
+                    {notification.title}
+                  </h3>
+                  <p className="text-[14px] text-[#475569] mt-1 leading-relaxed">
+                    {resolveNotificationMessage(notification)}
+                  </p>
+                  <div className="mt-2 flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-widest">
+                    <span className="text-primary">
+                      {notificationTypeLabel(notification)}
+                    </span>
+                    <span className="text-[#94a3b8]">
+                      {toRelativeTime(notification.createdAt)}
+                    </span>
                   </div>
-                ) : null}
+                  {isPendingFriendRequest(notification) ? (
+                    <div className="mt-3 flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          handleFriendRequestAction(notification, "ACCEPT");
+                        }}
+                        disabled={activeNotificationId === notification.id}
+                        className="px-3 py-1.5 text-[12px] font-semibold rounded-md bg-primary text-white hover:opacity-90 disabled:opacity-60"
+                      >
+                        Confirm
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          handleFriendRequestAction(notification, "DECLINE");
+                        }}
+                        disabled={activeNotificationId === notification.id}
+                        className="px-3 py-1.5 text-[12px] font-semibold rounded-md border border-[#cbd5e1] text-[#334155] hover:bg-[#f8fafc] disabled:opacity-60"
+                      >
+                        Decline
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
               </div>
             </article>
           ))

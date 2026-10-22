@@ -1,7 +1,9 @@
 import Link from "next/link";
+import { useRouter } from "next/router";
 import BaseApi from "@/lib/api/_base.api";
 import { useState } from "react";
 import toast from "react-hot-toast";
+import NotificationAvatar from "../notification/NotificationVisual";
 
 function toRelativeTime(dateValue) {
   if (!dateValue) return "Just now";
@@ -22,6 +24,10 @@ function getNotificationTypeLabel(notification) {
   if (kind === "COURSE_WELCOME_MESSAGE") return "Welcome";
   if (kind === "COURSE_CONGRATULATIONS_MESSAGE") return "Congratulations";
   if (kind === "COURSE_NEW_ENROLLMENT") return "New Enrollment";
+  if (kind === "SECURITY_NEW_DEVICE_LOGIN") return "Security";
+  if (notification?.type === "ORDER") {
+    return notification?.metadata?.freeCheckout ? "Enrollment" : "Payment";
+  }
 
   const map = {
     SYSTEM: "System",
@@ -41,6 +47,12 @@ export default function UserNotifications({
   onFriendRequestActionComplete,
 }) {
   const [activeNotificationId, setActiveNotificationId] = useState("");
+  const router = useRouter();
+
+  const openNotification = (notification) => {
+    onNotificationClick?.(notification);
+    router.push(`/notifications/${notification.id}`);
+  };
 
   const handleFriendRequestAction = async (notification, action) => {
     const requestId = notification?.metadata?.friendRequestId;
@@ -80,24 +92,24 @@ export default function UserNotifications({
         notifications.map((notification) => (
           <article
             key={notification.id}
+            role="link"
+            tabIndex={0}
+            onClick={() => openNotification(notification)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") openNotification(notification);
+            }}
             className={`flex items-center gap-2 py-2 px-1 hover:bg-[#f5f5f5] rounded cursor-pointer ${
               notification?.readAt ? "" : "bg-blue-50/60"
             }`}
           >
-            <div className="grid grid-cols-3">
-              <div className="col-span-1">
-                <span className="rounded-full text-white select-none overflow-hidden w-[30px] h-[30px] bg-[#3588FC] flex items-center justify-center text-[10px] font-bold">
-                  {getNotificationTypeLabel(notification).slice(0, 1)}
-                </span>
+            <div className="flex items-center gap-2 w-full">
+              <div className="flex-shrink-0">
+                <NotificationAvatar notification={notification} size={34} />
               </div>
-              <div className="col-span-2 text-[12px]">
-                <Link
-                  href={`/notifications/${notification.id}`}
-                  className="font-semibold line-clamp-1 block"
-                  onClick={() => onNotificationClick?.(notification)}
-                >
+              <div className="flex-1 min-w-0 text-[12px]">
+                <span className="font-semibold line-clamp-1 block">
                   {notification.title}
-                </Link>
+                </span>
                 <p className="text-[10px] text-gray-700 line-clamp-1">
                   {notification.message}
                 </p>
@@ -105,7 +117,8 @@ export default function UserNotifications({
                   {getNotificationTypeLabel(notification)} •{" "}
                   {toRelativeTime(notification.createdAt)}
                 </p>
-                {notification?.metadata?.notificationKind === "FRIEND_REQUEST" &&
+                {notification?.metadata?.notificationKind ===
+                  "FRIEND_REQUEST" &&
                 notification?.metadata?.requestStatus === "PENDING" &&
                 notification?.metadata?.friendRequestId ? (
                   <div className="mt-2 flex items-center gap-2">
@@ -113,9 +126,10 @@ export default function UserNotifications({
                       type="button"
                       disabled={activeNotificationId === notification.id}
                       className="px-2 py-1 text-[10px] font-semibold rounded-md bg-primary text-white hover:opacity-90 disabled:opacity-60"
-                      onClick={() =>
-                        handleFriendRequestAction(notification, "ACCEPT")
-                      }
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleFriendRequestAction(notification, "ACCEPT");
+                      }}
                     >
                       Confirm
                     </button>
@@ -123,9 +137,10 @@ export default function UserNotifications({
                       type="button"
                       disabled={activeNotificationId === notification.id}
                       className="px-2 py-1 text-[10px] font-semibold rounded-md border border-[#cbd5e1] text-[#334155] hover:bg-[#f8fafc] disabled:opacity-60"
-                      onClick={() =>
-                        handleFriendRequestAction(notification, "DECLINE")
-                      }
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleFriendRequestAction(notification, "DECLINE");
+                      }}
                     >
                       Decline
                     </button>

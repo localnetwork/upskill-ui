@@ -4,6 +4,7 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  Download,
   ImageOff,
   Info,
   Search,
@@ -134,6 +135,28 @@ export default function MyOrdersPage() {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [expandedOrderIds, setExpandedOrderIds] = useState([]);
+  const [downloadingId, setDownloadingId] = useState(null);
+
+  const handleDownloadInvoice = async (orderId) => {
+    setDownloadingId(orderId);
+    try {
+      const response = await ORDERAPI.downloadInvoice(orderId);
+      const url = window.URL.createObjectURL(
+        new Blob([response.data], { type: "application/pdf" }),
+      );
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `invoice-${orderId.slice(-10).toUpperCase()}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (_error) {
+      window.alert("Unable to download the invoice. Please try again.");
+    } finally {
+      setDownloadingId(null);
+    }
+  };
 
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
@@ -466,6 +489,22 @@ export default function MyOrdersPage() {
                         );
                       })}
 
+                      {orderStatus === "PAID" ? (
+                        <div className="flex justify-end">
+                          <button
+                            type="button"
+                            onClick={() => handleDownloadInvoice(orderId)}
+                            disabled={downloadingId === orderId}
+                            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-white text-sm font-bold hover:opacity-90 transition disabled:opacity-60"
+                          >
+                            <Download size={16} />
+                            {downloadingId === orderId
+                              ? "Preparing..."
+                              : "Download invoice"}
+                          </button>
+                        </div>
+                      ) : null}
+
                       {isCancelled ? (
                         <div className="p-4 bg-red-50 rounded-xl flex items-center gap-4 border border-red-100">
                           <Info size={18} className="text-red-500" />
@@ -508,7 +547,7 @@ export default function MyOrdersPage() {
             <button
               key={`page-${itemPage}`}
               onClick={() => setPage(itemPage)}
-              className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition-colors ${itemPage === currentPage ? "bg-primary text-on-primary shadow-sm" : "border border-outline text-slate-600 hover:bg-slate-50"}`}
+              className={`w-10 h-10 rounded-full flex text-white items-center justify-center font-bold transition-colors ${itemPage === currentPage ? "bg-primary text-on-primary shadow-sm" : "border border-outline text-slate-600 hover:bg-slate-50"}`}
             >
               {itemPage}
             </button>
@@ -517,7 +556,7 @@ export default function MyOrdersPage() {
           <button
             disabled={currentPage >= totalPages || isLoading}
             onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
-            className="w-10 h-10 rounded-full flex items-center justify-center border border-outline text-slate-600 hover:bg-slate-50 transition-colors disabled:opacity-30"
+            className="w-10 h-10 rounded-full flex items-center justify-center border border-outline text-white hover:bg-slate-50 transition-colors disabled:opacity-30"
           >
             <ChevronRight size={18} />
           </button>

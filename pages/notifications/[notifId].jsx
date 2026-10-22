@@ -3,19 +3,7 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-
-function formatDate(value) {
-  if (!value) return "—";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "—";
-  return date.toLocaleString("en-US", {
-    month: "short",
-    day: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
+import NotificationDetails from "@/components/entities/notification/NotificationDetails";
 
 function resolveNotificationMessage(notification) {
   const baseMessage = String(notification?.message || "").trim();
@@ -26,17 +14,7 @@ function resolveNotificationMessage(notification) {
     baseMessage.toLowerCase().includes("reason:") ||
     baseMessage.toLowerCase().includes(note.toLowerCase());
 
-  return messageHasReason
-    ? baseMessage
-    : `${baseMessage}\nReason: ${note}`;
-}
-
-function isPendingFriendRequest(notification) {
-  return (
-    notification?.metadata?.notificationKind === "FRIEND_REQUEST" &&
-    notification?.metadata?.requestStatus === "PENDING" &&
-    Boolean(notification?.metadata?.friendRequestId)
-  );
+  return messageHasReason ? baseMessage : `${baseMessage}\nReason: ${note}`;
 }
 
 export default function NotificationDetailPage() {
@@ -115,7 +93,10 @@ export default function NotificationDetailPage() {
   return (
     <main className="mt-16 px-4 pt-4 max-w-3xl mx-auto">
       <div className="mb-6">
-        <Link href="/notifications" className="text-sm text-primary hover:underline">
+        <Link
+          href="/notifications"
+          className="text-sm text-primary hover:underline"
+        >
           ← Back to notifications
         </Link>
       </div>
@@ -133,33 +114,12 @@ export default function NotificationDetailPage() {
           Notification not found.
         </div>
       ) : (
-        <article className="border border-[#e2e8f0] rounded-lg p-6 bg-white">
-          <h1 className="text-2xl font-bold text-on-surface">{notification.title}</h1>
-          <p className="text-xs text-[#64748b] mt-2">{formatDate(notification.createdAt)}</p>
-          <div className="mt-5 text-[15px] leading-relaxed text-[#334155] whitespace-pre-wrap">
-            {resolveNotificationMessage(notification)}
-          </div>
-          {isPendingFriendRequest(notification) ? (
-            <div className="mt-5 flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => handleFriendRequestAction("ACCEPT")}
-                disabled={isActionLoading}
-                className="px-4 py-2 rounded-md bg-primary text-white text-sm font-semibold hover:opacity-90 disabled:opacity-60"
-              >
-                Confirm
-              </button>
-              <button
-                type="button"
-                onClick={() => handleFriendRequestAction("DECLINE")}
-                disabled={isActionLoading}
-                className="px-4 py-2 rounded-md border border-[#cbd5e1] text-[#334155] text-sm font-semibold hover:bg-[#f8fafc] disabled:opacity-60"
-              >
-                Decline
-              </button>
-            </div>
-          ) : null}
-        </article>
+        <NotificationDetails
+          notification={notification}
+          message={resolveNotificationMessage(notification)}
+          onFriendRequestAction={handleFriendRequestAction}
+          isActionLoading={isActionLoading}
+        />
       )}
     </main>
   );

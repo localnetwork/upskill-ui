@@ -1,4 +1,6 @@
+import FeaturedCourse from "@/components/entities/categories/show/FeaturedCourse";
 import PopularEducators from "@/components/entities/categories/show/PopularEducators";
+import TopicsCarousel from "@/components/entities/categories/show/TopicsCarousel";
 import BaseApi from "@/lib/api/_base.api";
 
 function asNumber(value) {
@@ -15,9 +17,28 @@ export async function getServerSideProps(context) {
       process.env.NEXT_PUBLIC_API_URL + `/categories/${id}`,
     );
 
+    let topics = [];
+    try {
+      const topicsResponse = await BaseApi.get(
+        process.env.NEXT_PUBLIC_API_URL + "/tags",
+        { params: { categoryId: response.data?.id, limit: 100 } },
+      );
+      topics = (topicsResponse?.data?.data || [])
+        .sort(
+          (a, b) => Number(b.course_count || 0) - Number(a.course_count || 0),
+        )
+        .map((item) => ({
+          id: item.id,
+          slug: item.slug,
+          title: item.title || item.name,
+          course_count: Number(item.course_count || 0),
+        }));
+    } catch (_error) {}
+
     return {
       props: {
         category: response.data,
+        topics,
       },
     };
   } catch (error) {
@@ -26,7 +47,7 @@ export async function getServerSideProps(context) {
   }
 }
 
-export default function Page({ category }) {
+export default function Page({ category, topics = [] }) {
   const expertCourses = asNumber(category?.expert_courses);
   const totalEnrolled = asNumber(category?.total_enrolled);
 
@@ -65,6 +86,10 @@ export default function Page({ category }) {
           </div>
         </div>
       </section>
+
+      <FeaturedCourse categorySlug={category?.slug} />
+
+      <TopicsCarousel title="Popular topics" topics={topics} />
 
       <PopularEducators category={category} />
     </>

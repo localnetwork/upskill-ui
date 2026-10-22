@@ -1,4 +1,7 @@
 import PopularEducators from "@/components/entities/categories/show/PopularEducators";
+import FeaturedCourse from "@/components/entities/categories/show/FeaturedCourse";
+import TopicCourses from "@/components/entities/categories/show/TopicCourses";
+import TopicsCarousel from "@/components/entities/categories/show/TopicsCarousel";
 import BaseApi from "@/lib/api/_base.api";
 
 function asNumber(value) {
@@ -14,9 +17,33 @@ export async function getServerSideProps(context) {
       `${process.env.NEXT_PUBLIC_API_URL}/tags/${encodeURIComponent(slug)}`,
     );
 
+    const topic = response?.data || null;
+    let relatedTopics = [];
+    const categoryId = topic?.category_id || topic?.categoryId;
+    if (categoryId) {
+      try {
+        const related = await BaseApi.get(
+          `${process.env.NEXT_PUBLIC_API_URL}/tags`,
+          { params: { categoryId, limit: 100 } },
+        );
+        relatedTopics = (related?.data?.data || [])
+          .filter((item) => item.id !== topic.id)
+          .sort(
+            (a, b) => Number(b.course_count || 0) - Number(a.course_count || 0),
+          )
+          .map((item) => ({
+            id: item.id,
+            slug: item.slug,
+            title: item.title || item.name,
+            course_count: Number(item.course_count || 0),
+          }));
+      } catch (_error) {}
+    }
+
     return {
       props: {
-        topic: response?.data || null,
+        topic,
+        relatedTopics,
       },
     };
   } catch (_error) {
@@ -24,7 +51,7 @@ export async function getServerSideProps(context) {
   }
 }
 
-export default function TopicPage({ topic }) {
+export default function TopicPage({ topic, relatedTopics = [] }) {
   const expertCourses = asNumber(topic?.expert_courses);
   const totalEnrolled = asNumber(topic?.total_enrolled);
 
@@ -62,6 +89,15 @@ export default function TopicPage({ topic }) {
           </div>
         </div>
       </section>
+
+      <TopicsCarousel
+        title={`${topic?.title} students also learn`}
+        topics={relatedTopics}
+      />
+
+      <FeaturedCourse topicSlug={topic?.slug} />
+
+      <TopicCourses topic={topic} />
 
       <PopularEducators category={topic} />
     </>
