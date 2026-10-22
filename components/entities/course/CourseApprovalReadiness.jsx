@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { useMemo } from "react";
 import { AlertTriangle } from "lucide-react";
+import modalState from "@/lib/store/modalState";
 
 function stripHtml(value) {
   return String(value || "")
@@ -233,13 +234,85 @@ function getScoreTone(score) {
   };
 }
 
-export default function CourseApprovalReadiness({ course }) {
-  const { checks, completedCount, totalCount, score } = useMemo(
+export function ApprovalReadinessDetails({
+  course,
+  onNavigate,
+  className = "",
+}) {
+  const { checks, score } = useMemo(
     () => getApprovalReadinessSummary(course),
     [course],
   );
   const baseUuid = course?.uuid || course?.id || "";
-  const { totalMissingCurriculums, sectionIssues } = useMemo(
+  const { sectionIssues } = useMemo(
+    () => buildMissingCurriculumSummary(course),
+    [course],
+  );
+  const tone = getScoreTone(score);
+
+  return (
+  <div className={className}>
+    <p className={`inline-flex px-3 py-1 rounded-full text-xs font-bold ${tone.badge}`}>
+      {score}% complete
+    </p>
+    <div className="mt-3 grid md:grid-cols-2 gap-2">
+      {checks.map((item) => (
+        <Link
+          key={item.key}
+          href={item.href}
+                    onClick={onNavigate}
+          className="flex items-center justify-between gap-3 rounded-lg border border-[#e2e8f0] px-3 py-2 hover:bg-[#f8fafc]"
+        >
+          <span className="text-sm text-on-surface">{item.label}</span>
+          <span
+            className={`text-xs font-bold px-2 py-1 rounded-full ${
+              item.done
+                ? "bg-emerald-100 text-emerald-700"
+                : "bg-amber-100 text-amber-700"
+            }`}
+          >
+            {item.done ? "Done" : "Needed"}
+          </span>
+        </Link>
+      ))}
+    </div>
+
+    {sectionIssues.length > 0 && (
+      <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3">
+        <p className="flex items-center gap-2 text-sm font-semibold text-red-700">
+          <AlertTriangle size={14} />
+          Sections that still need curriculum content
+        </p>
+        <div className="mt-2 space-y-2">
+          {sectionIssues.map((section) => (
+            <Link
+              key={section.id}
+              href={`/instructor/courses/${baseUuid}/curriculum`}
+                        onClick={onNavigate}
+              className="flex items-center justify-between rounded-md border border-red-200 bg-white px-3 py-2 text-xs hover:bg-red-50/60"
+            >
+              <span className="flex items-center gap-2 text-red-700">
+                <AlertTriangle size={12} />
+                {section.title}
+              </span>
+              <span className="rounded-full bg-red-100 px-2 py-0.5 font-bold text-red-700">
+                {section.missingCount} missing
+              </span>
+            </Link>
+          ))}
+        </div>
+      </div>
+    )}
+  </div>
+  );
+}
+
+export default function CourseApprovalReadiness({ course }) {
+  const { completedCount, totalCount, score } = useMemo(
+    () => getApprovalReadinessSummary(course),
+    [course],
+  );
+  const { totalMissingCurriculums } = useMemo(
     () => buildMissingCurriculumSummary(course),
     [course],
   );
@@ -249,14 +322,28 @@ export default function CourseApprovalReadiness({ course }) {
   const circumference = 2 * Math.PI * radius;
   const dashOffset = circumference - (normalizedScore / 100) * circumference;
 
+  const openDetailsModal = () => {
+    modalState.setState({
+      modalInfo: {
+        type: "COURSE_APPROVAL_READINESS",
+        title: "Approval readiness",
+        size: "lg",
+        data: { course },
+      },
+    });
+  };
+
   return (
     <section className={`mb-8 rounded-2xl border p-6 bg-white ${tone.ring}`}>
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-bold text-on-surface">Approval readiness</h2>
           <p className="text-sm text-[#64748b] mt-1">
-            Complete the checklist to improve your chance of approval. Hover the
-            progress circle to view details.
+            Complete the checklist to improve your chance of approval.{" "}
+            <span className="hidden md:inline">
+              Hover the progress circle to view details.
+            </span>
+            <span className="md:hidden">Tap the progress circle to view details.</span>
           </p>
           {totalMissingCurriculums > 0 && (
             <div className="mt-3 inline-flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700">
@@ -267,7 +354,12 @@ export default function CourseApprovalReadiness({ course }) {
           )}
         </div>
         <div className="relative group">
-          <div className="relative h-20 w-20">
+          <button
+            type="button"
+            onClick={openDetailsModal}
+            aria-label="View approval readiness details"
+            className="relative block h-20 w-20 rounded-full md:cursor-default md:pointer-events-none"
+          >
             <svg
               viewBox="0 0 80 80"
               className="h-20 w-20"
@@ -305,60 +397,13 @@ export default function CourseApprovalReadiness({ course }) {
                 {completedCount}/{totalCount}
               </span>
             </div>
-          </div>
+          </button>
 
-          <div className="absolute right-0 top-full pt-2 z-20 opacity-0 pointer-events-none translate-y-1 transition-all duration-150 group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:translate-y-0 group-focus-within:pointer-events-auto">
-            <div className="w-[min(32rem,calc(100vw-3rem))] rounded-xl border border-[#e2e8f0] bg-white p-3 shadow-lg">
-              <p className={`inline-flex px-3 py-1 rounded-full text-xs font-bold ${tone.badge}`}>
-                {score}% complete
-              </p>
-              <div className="mt-3 grid md:grid-cols-2 gap-2">
-                {checks.map((item) => (
-                  <Link
-                    key={item.key}
-                    href={item.href}
-                    className="flex items-center justify-between gap-3 rounded-lg border border-[#e2e8f0] px-3 py-2 hover:bg-[#f8fafc]"
-                  >
-                    <span className="text-sm text-on-surface">{item.label}</span>
-                    <span
-                      className={`text-xs font-bold px-2 py-1 rounded-full ${
-                        item.done
-                          ? "bg-emerald-100 text-emerald-700"
-                          : "bg-amber-100 text-amber-700"
-                      }`}
-                    >
-                      {item.done ? "Done" : "Needed"}
-                    </span>
-                  </Link>
-                ))}
-              </div>
-
-              {sectionIssues.length > 0 && (
-                <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3">
-                  <p className="flex items-center gap-2 text-sm font-semibold text-red-700">
-                    <AlertTriangle size={14} />
-                    Sections that still need curriculum content
-                  </p>
-                  <div className="mt-2 space-y-2">
-                    {sectionIssues.map((section) => (
-                      <Link
-                        key={section.id}
-                        href={`/instructor/courses/${baseUuid}/curriculum`}
-                        className="flex items-center justify-between rounded-md border border-red-200 bg-white px-3 py-2 text-xs hover:bg-red-50/60"
-                      >
-                        <span className="flex items-center gap-2 text-red-700">
-                          <AlertTriangle size={12} />
-                          {section.title}
-                        </span>
-                        <span className="rounded-full bg-red-100 px-2 py-0.5 font-bold text-red-700">
-                          {section.missingCount} missing
-                        </span>
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
+          <div className="absolute right-0 top-full pt-2 z-20 opacity-0 pointer-events-none translate-y-1 transition-all duration-150 hidden md:block group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:translate-y-0 group-focus-within:pointer-events-auto">
+            <ApprovalReadinessDetails
+              course={course}
+              className="w-[32rem] rounded-xl border border-[#e2e8f0] bg-white p-3 shadow-lg"
+            />
           </div>
         </div>
       </div>

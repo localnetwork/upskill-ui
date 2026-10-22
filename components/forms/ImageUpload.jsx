@@ -1,4 +1,5 @@
 "use client";
+
 import BaseApi from "@/lib/api/_base.api";
 import Image from "next/image";
 import { useState, useRef, useEffect } from "react";
@@ -6,7 +7,7 @@ import toast from "react-hot-toast";
 import Spinner from "../icons/Spinner";
 
 export default function ImageUpload({
-  value, // e.g. { id, path, title } from DB
+  value,
   onChange,
   label,
   name,
@@ -26,14 +27,16 @@ export default function ImageUpload({
       : `file-${Math.random().toString(36).slice(2, 9)}`,
   );
 
+  useEffect(() => {
+    setUploadedFile(value || null);
+  }, [value]);
+
   const handleUpload = async (e) => {
     const file = e?.target?.files?.[0];
     if (!file) return;
 
     const formData = new FormData();
     formData.append("file", file);
-
-    // ✅ Use the file name as title
     formData.append("title", file.name);
 
     setIsUploading(true);
@@ -46,7 +49,7 @@ export default function ImageUpload({
         {
           headers: { "Content-Type": "multipart/form-data" },
           onUploadProgress: (evt) => {
-            if (evt.lengthComputable) {
+            if (evt.total) {
               setProgress(Math.round((evt.loaded / evt.total) * 100));
             }
           },
@@ -58,8 +61,9 @@ export default function ImageUpload({
       setUploadedFileName(file.name);
       setUploadedFile(data);
 
-      console.log("data", data);
-      if (inputRef.current) inputRef.current.value = "";
+      if (inputRef.current) {
+        inputRef.current.value = "";
+      }
 
       onChange?.({
         target: {
@@ -69,6 +73,7 @@ export default function ImageUpload({
       });
     } catch (err) {
       console.error(err);
+
       toast.error(
         err?.data?.message ||
           err?.response?.data?.message ||
@@ -80,40 +85,30 @@ export default function ImageUpload({
     }
   };
 
-  const apiDomain = process.env.NEXT_PUBLIC_API_DOMAIN || "";
-
-  // const previewPath = uploadedFile?.path
-  //   ? apiDomain + uploadedFile.path
-  //   : value?.path
-  //     ? apiDomain + value.path
-  //     : preview
-  //       ? apiDomain + preview
-  //       : "/placeholder-cover.webp";
-
-  const previewPath = uploadedFile?.path
-    ? uploadedFile.path
-    : value?.path
-      ? value.path
-      : "/placeholder-cover.webp";
+  const previewPath =
+    uploadedFile?.path || value?.path || preview || "/placeholder-cover.webp";
 
   const buttonText = uploadedFile ? "Change File" : "Upload File";
+
   const displayName =
     uploadedFileName ||
     uploadedFile?.title ||
-    value.title ||
+    value?.title ||
     (uploadedFile?.path && "Existing File") ||
     "No File Selected";
+
   return (
-    <div>
+    <div className="w-full min-w-0">
       <label className="mb-2 block font-normal" htmlFor={idRef.current}>
         {label}
       </label>
 
-      <div className="grid grid-cols-2">
-        <div className="relative">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-0">
+        {/* Image preview */}
+        <div className="relative min-w-0">
           {isUploading && (
-            <div className="absolute inset-0 flex items-center justify-center bg-white/70">
-              <Spinner className="w-[30px] h-[30px]" />
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/70">
+              <Spinner className="h-[30px] w-[30px]" />
             </div>
           )}
 
@@ -121,14 +116,19 @@ export default function ImageUpload({
             src={previewPath}
             width={300}
             height={200}
-            className="w-full object-cover aspect-[16/9] border border-[oklch(86.72%_0.0192_282.72deg)] bg-black"
-            alt={`${label}-preview`}
+            className="aspect-[16/9] w-full border border-[oklch(86.72%_0.0192_282.72deg)] bg-black object-cover"
+            alt={`${label || "Image"}-preview`}
+            sizes="(max-width: 639px) 100vw, 50vw"
           />
         </div>
 
-        <div className="pl-[20px]">
-          <p>{description}</p>
-          <div className="mt-[10px]">
+        {/* Description and upload controls */}
+        <div className="min-w-0 sm:pl-[20px]">
+          {description && (
+            <p className="break-words text-sm sm:text-base">{description}</p>
+          )}
+
+          <div className="mt-[10px] min-w-0">
             <input
               id={idRef.current}
               name={name}
@@ -136,18 +136,29 @@ export default function ImageUpload({
               accept="image/*"
               ref={inputRef}
               onChange={handleUpload}
+              disabled={isUploading}
               className="sr-only"
             />
 
-            <label htmlFor={idRef.current} className="flex gap-[15px]">
-              <span className="border rounded-[5px] p-[10px] w-full text-center line-clamp-1">
-                {isUploading ? `Uploading... ${progress}%` : displayName}
-              </span>
+            <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:gap-[15px]">
+              <label
+                htmlFor={idRef.current}
+                className="min-w-0 flex-1 cursor-pointer"
+              >
+                <span className="block w-full overflow-hidden rounded-[5px] border p-[10px] text-center line-clamp-1">
+                  {isUploading ? `Uploading... ${progress}%` : displayName}
+                </span>
+              </label>
 
-              <span className="cursor-pointer min-w-[150px] flex justify-center border border-[#3588FC] text-[#3588FC] font-semibold rounded-[5px] px-[20px] py-[10px] hover:bg-[#3588FC] hover:text-white">
+              <label
+                htmlFor={idRef.current}
+                className={`flex w-full shrink-0 cursor-pointer items-center justify-center rounded-[5px] border border-[#3588FC] px-[20px] py-[10px] text-center font-semibold text-[#3588FC] hover:bg-[#3588FC] hover:text-white sm:w-auto sm:min-w-[150px] ${
+                  isUploading ? "pointer-events-none opacity-60" : ""
+                }`}
+              >
                 {buttonText}
-              </span>
-            </label>
+              </label>
+            </div>
           </div>
         </div>
       </div>

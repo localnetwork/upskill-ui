@@ -25,7 +25,9 @@ export default function ProfileManagementLayout({ children }) {
       }
 
       try {
-        const meRes = await BaseApi.get(`${process.env.NEXT_PUBLIC_API_URL}/users/me`);
+        const meRes = await BaseApi.get(
+          `${process.env.NEXT_PUBLIC_API_URL}/users/me`,
+        );
         const me = meRes?.data?.data;
         if (!mounted || !me) return;
         persistentStore.setState({
@@ -49,7 +51,7 @@ export default function ProfileManagementLayout({ children }) {
   }, [router, profile]);
 
   return (
-    <div className=" p-[50px] mt-[50px]">
+    <div className="md:p-[30px] lg:p-[50px] mt-[50px]">
       <div className="shadow-box p-[50px]">
         <h1 className="text-3xl font-semibold">Profile & Settings</h1>
 

@@ -2,6 +2,7 @@ import CourseManagementLayout from "@/components/partials/CourseManagementLayout
 import BaseApi from "@/lib/api/_base.api";
 import { setContext } from "@/lib/api/interceptor";
 import modalState from "@/lib/store/modalState";
+import { Info, Share2, Tags } from "lucide-react";
 import { useMemo, useState, useEffect } from "react";
 import toast from "react-hot-toast";
 
@@ -188,9 +189,10 @@ export default function CoursePromotionsPage({ course }) {
 
           <div className="mx-auto max-w-5xl space-y-8">
             <div className="flex items-start gap-4 rounded-r-lg border-l-4 border-primary bg-primary-container p-6">
-              <span className="material-symbols-outlined mt-0.5 text-primary">
+              {/* <span className="material-symbols-outlined mt-0.5 text-primary">
                 info
-              </span>
+              </span> */}
+              <Info className="mt-0.5 text-primary" />
               <div>
                 <p className="mb-1 font-bold text-on-primary-fixed">
                   New Coupon System Update
@@ -204,9 +206,7 @@ export default function CoursePromotionsPage({ course }) {
             <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
               <div className="group relative overflow-hidden rounded-lg border border-outline bg-white p-8 transition-shadow hover:shadow-md md:col-span-2">
                 <div className="absolute right-0 top-0 p-4 opacity-5 transition-opacity group-hover:opacity-10">
-                  <span className="material-symbols-outlined text-9xl">
-                    share
-                  </span>
+                  <Share2 size={32} className="text-9xl" />
                 </div>
 
                 <h2 className="mb-2 text-xl font-bold">Refer students</h2>
@@ -245,7 +245,9 @@ export default function CoursePromotionsPage({ course }) {
                   <p className="mb-6 text-sm text-on-surface-variant">
                     Base course price:{" "}
                     <span className="font-semibold">
-                      {basePrice > 0 ? formatCurrency(basePrice) : "Free / Not set"}
+                      {basePrice > 0
+                        ? formatCurrency(basePrice)
+                        : "Free / Not set"}
                     </span>
                   </p>
                 </div>
@@ -269,9 +271,7 @@ export default function CoursePromotionsPage({ course }) {
               {activeCoupons.length === 0 ? (
                 <div className="flex flex-col items-center justify-center p-12 text-center">
                   <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-surface-container-low">
-                    <span className="material-symbols-outlined text-4xl text-outline-variant">
-                      local_offer
-                    </span>
+                    <Tags size={32} className="text-4xl text-outline-variant" />
                   </div>
                   <p className="font-medium text-on-surface-variant">
                     No active coupons found
@@ -303,11 +303,15 @@ export default function CoursePromotionsPage({ course }) {
                             ? "Unlimited"
                             : `${Math.max(
                                 0,
-                                Number(item.remainingRedemptions ?? item.maxRedemptions),
+                                Number(
+                                  item.remainingRedemptions ??
+                                    item.maxRedemptions,
+                                ),
                               )} / ${item.maxRedemptions}`}
                         </p>
                         <p>
-                          Expires: {item.endAt ? formatDate(item.endAt) : "No expiry"}
+                          Expires:{" "}
+                          {item.endAt ? formatDate(item.endAt) : "No expiry"}
                         </p>
                       </div>
                     </div>

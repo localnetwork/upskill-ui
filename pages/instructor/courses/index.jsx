@@ -5,7 +5,7 @@ import InstructorLayout from "@/components/partials/InstructorLayout";
 import BaseApi from "@/lib/api/_base.api";
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Search } from "lucide-react";
 import persistentStore from "@/lib/store/persistentStore";
 import { useRouter } from "next/router";
 import toast from "react-hot-toast";
@@ -13,30 +13,14 @@ import toast from "react-hot-toast";
 export default function Page() {
   const router = useRouter();
   const profile = persistentStore((state) => state.profile);
+
   const [levels, setLevels] = useState([]);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef(null);
 
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
-        setIsMenuOpen(false);
-      }
-    };
-    const handleEscape = (event) => {
-      if (event.key === "Escape") setIsMenuOpen(false);
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    document.addEventListener("keydown", handleEscape);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-      document.removeEventListener("keydown", handleEscape);
-    };
-  }, []);
-
   const [params, setParams] = useState({
     title: "",
-    instructional_level: "", // no default selection
+    instructional_level: "",
     page: 1,
   });
 
@@ -45,18 +29,39 @@ export default function Page() {
   const [totalPages, setTotalPages] = useState(1);
   const [deletingCourseId, setDeletingCourseId] = useState(null);
 
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    const handleEscape = (event) => {
+      if (event.key === "Escape") setIsMenuOpen(false);
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEscape);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, []);
+
   const fetchCourseLevels = async () => {
     try {
       const response = await BaseApi.get(
         `${process.env.NEXT_PUBLIC_API_URL}/course-levels`,
       );
+
       const levelsPayload = Array.isArray(response?.data)
         ? response.data
         : Array.isArray(response?.data?.data)
           ? response.data.data
           : [];
-      const data = levelsPayload;
-      setLevels(data);
+
+      setLevels(levelsPayload);
     } catch (_error) {
       setLevels([]);
     }
@@ -64,12 +69,15 @@ export default function Page() {
 
   const fetchAuthoredCourses = async (overrideParams = params) => {
     setIsLoading(true);
+
     try {
       const meResponse = await BaseApi.get(
         `${process.env.NEXT_PUBLIC_API_URL}/users/me`,
       );
+
       const currentUser = meResponse?.data?.data;
       const roles = Array.isArray(currentUser?.roles) ? currentUser.roles : [];
+
       if (!roles.includes("EDUCATOR")) {
         toast.error("Your account is not an educator account.");
         router.replace("/register?mode=instructor");
@@ -90,11 +98,13 @@ export default function Page() {
         title: overrideParams.title,
         page: overrideParams.page,
       };
+
       if (overrideParams.instructional_level) {
         queryParams.instructional_level = overrideParams.instructional_level;
       }
 
       const query = new URLSearchParams(queryParams).toString();
+
       const response = await BaseApi.get(
         `${process.env.NEXT_PUBLIC_API_URL}/courses/authored?${query}`,
       );
@@ -103,6 +113,7 @@ export default function Page() {
       setTotalPages(response.data.pagination?.total_pages || 1);
     } catch (error) {
       console.error("Error fetching courses:", error);
+
       if (error?.status === 401) {
         toast.error("Session expired. Please log in again.");
         router.replace("/login");
@@ -115,22 +126,23 @@ export default function Page() {
     }
   };
 
-  // Load initial data on mount
   useEffect(() => {
     fetchCourseLevels();
     fetchAuthoredCourses();
   }, []);
 
-  // Reactive fetch when instructional_level changes
   useEffect(() => {
     if (params.instructional_level) {
-      fetchAuthoredCourses({ ...params, page: 1 });
+      const updatedParams = { ...params, page: 1 };
+      setParams(updatedParams);
+      fetchAuthoredCourses(updatedParams);
     }
   }, [params.instructional_level]);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const updatedParams = { ...params, page: 1 }; // reset page to 1
+  const handleSubmit = (event) => {
+    event.preventDefault();
+
+    const updatedParams = { ...params, page: 1 };
     setParams(updatedParams);
     fetchAuthoredCourses(updatedParams);
   };
@@ -143,13 +155,16 @@ export default function Page() {
 
   const handleDeleteDraftCourse = async (courseId) => {
     const normalizedCourseId = String(courseId || "").trim();
+
     if (!normalizedCourseId) return;
 
     try {
       setDeletingCourseId(normalizedCourseId);
+
       await BaseApi.delete(
         `${process.env.NEXT_PUBLIC_API_URL}/courses/${normalizedCourseId}`,
       );
+
       toast.success("Draft course deleted.");
       await fetchAuthoredCourses(params);
     } catch (error) {
@@ -162,27 +177,48 @@ export default function Page() {
 
   return (
     <InstructorLayout>
-      <div>
-        <h1 className="text-[40px] font-semibold mb-4">Courses</h1>
+      <main className="mx-auto w-full min-w-0 max-w-[1600px] px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
+        {/* PAGE HEADER */}
+        <div className="mb-6">
+          <h1 className="text-2xl font-semibold sm:text-3xl lg:text-[40px]">
+            Courses
+          </h1>
+          <p className="mt-1 text-sm text-gray-500">
+            Manage your courses, track enrollments, and review ratings.
+          </p>
+        </div>
 
-        <div className="flex justify-between items-center mb-6 gap-4">
-          <form className="flex gap-2" onSubmit={handleSubmit}>
+        {/* SEARCH, FILTERS, AND CREATE COURSE */}
+        <div className="mb-6 flex min-w-0 flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+          <form
+            className="grid w-full min-w-0 grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(180px,0.7fr)_auto] xl:flex-1"
+            onSubmit={handleSubmit}
+          >
+            {/* SEARCH INPUT */}
             <input
               type="text"
               value={params.title}
-              onChange={(e) => setParams({ ...params, title: e.target.value })}
-              className="border min-w-[200px] border-gray-300 p-3 rounded-md"
+              onChange={(event) =>
+                setParams({ ...params, title: event.target.value })
+              }
+              className="h-12 w-full min-w-0 rounded-lg border border-gray-300 px-4 text-sm outline-none transition focus:border-[#0056D2] focus:ring-2 focus:ring-blue-100"
               placeholder="Search courses..."
+              aria-label="Search courses"
             />
 
+            {/* LEVEL FILTER */}
             <Select
               value={params.instructional_level}
-              onChange={(e) =>
-                setParams({ ...params, instructional_level: e.target.value })
+              onChange={(event) =>
+                setParams({
+                  ...params,
+                  instructional_level: event.target.value,
+                })
               }
-              className="border border-gray-300 p-3 rounded-md"
+              className="h-12 w-full min-w-0 rounded-lg border border-gray-300 px-3 text-sm"
+              aria-label="Filter by instructional level"
             >
-              <option value="">Select level</option>
+              <option value="">All levels</option>
               {levels.map((level) => (
                 <option key={level.id} value={level.id}>
                   {level.title}
@@ -190,75 +226,81 @@ export default function Page() {
               ))}
             </Select>
 
+            {/* SEARCH BUTTON */}
             <button
               type="submit"
-              className="flex shadow-md bg-[#0056D2] text-white font-semibold px-[20px] py-[10px] rounded-[10px] items-center gap-[10px] hover:opacity-90"
+              aria-label="Search"
+              className="flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-[#0056D2] px-5 font-semibold text-white shadow-sm transition hover:opacity-90 sm:w-auto"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={1.5}
-                stroke="currentColor"
-                className="size-6"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"
-                />
-              </svg>
+              <Search size={20} />
+              <span className="sm:hidden">Search courses</span>
             </button>
           </form>
 
-          <div className="relative" ref={menuRef}>
+          {/* NEW COURSE DROPDOWN */}
+          <div
+            className="relative w-full shrink-0 sm:w-auto xl:min-w-[180px]"
+            ref={menuRef}
+          >
             <button
               type="button"
               aria-haspopup="menu"
               aria-expanded={isMenuOpen}
               onClick={() => setIsMenuOpen((open) => !open)}
-              className="flex shadow-md bg-[#0056D2] text-white font-semibold px-[24px] py-[10px] rounded-[10px] items-center gap-[10px] hover:opacity-90"
+              className="flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-[#0056D2] px-5 font-semibold text-white shadow-sm transition hover:opacity-90 sm:min-w-[180px]"
             >
               New Course
               <ChevronDown
                 size={18}
-                className={`transition-transform ${isMenuOpen ? "rotate-180" : ""}`}
+                className={`transition-transform ${
+                  isMenuOpen ? "rotate-180" : ""
+                }`}
               />
             </button>
+
             {isMenuOpen && (
               <div
                 role="menu"
-                className="absolute right-0 mt-2 w-64 bg-white border border-gray-200 rounded-xl shadow-lg z-20 overflow-hidden"
+                className="absolute right-0 top-full z-50 mt-2 w-full min-w-0 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg sm:w-72"
               >
                 <Link
                   role="menuitem"
                   href="/instructor/courses/create"
-                  className="block px-4 py-3 text-sm hover:bg-gray-50"
+                  onClick={() => setIsMenuOpen(false)}
+                  className="block px-4 py-3 transition hover:bg-gray-50"
                 >
-                  <span className="font-semibold block">Create manually</span>
-                  <span className="text-xs text-gray-500">
+                  <span className="block text-sm font-semibold">
+                    Create manually
+                  </span>
+                  <span className="mt-1 block text-xs leading-relaxed text-gray-500">
                     Start from a blank course
                   </span>
                 </Link>
+
                 <Link
                   role="menuitem"
                   href="/instructor/courses/ai-draft"
-                  className="block px-4 py-3 text-sm hover:bg-gray-50 border-t"
+                  onClick={() => setIsMenuOpen(false)}
+                  className="block border-t px-4 py-3 transition hover:bg-gray-50"
                 >
-                  <span className="font-semibold block">✨ Draft with AI</span>
-                  <span className="text-xs text-gray-500">
+                  <span className="block text-sm font-semibold">
+                    ✨ Draft with AI
+                  </span>
+                  <span className="mt-1 block text-xs leading-relaxed text-gray-500">
                     Generate one course from a brief
                   </span>
                 </Link>
+
                 <Link
                   role="menuitem"
                   href="/instructor/courses/bulk-ai-draft"
-                  className="block px-4 py-3 text-sm hover:bg-gray-50 border-t"
+                  onClick={() => setIsMenuOpen(false)}
+                  className="block border-t px-4 py-3 transition hover:bg-gray-50"
                 >
-                  <span className="font-semibold block">
+                  <span className="block text-sm font-semibold">
                     ✨ Bulk draft with AI
                   </span>
-                  <span className="text-xs text-gray-500">
+                  <span className="mt-1 block text-xs leading-relaxed text-gray-500">
                     Generate several draft courses at once
                   </span>
                 </Link>
@@ -267,19 +309,25 @@ export default function Page() {
           </div>
         </div>
 
-        <InstructorCoursesList
-          courses={courses}
-          isLoading={isLoading}
-          onDeleteDraftCourse={handleDeleteDraftCourse}
-          deletingCourseId={deletingCourseId}
-        />
+        {/* COURSE LIST */}
+        <div className="min-w-0">
+          <InstructorCoursesList
+            courses={courses}
+            isLoading={isLoading}
+            onDeleteDraftCourse={handleDeleteDraftCourse}
+            deletingCourseId={deletingCourseId}
+          />
+        </div>
 
-        <InstructorCoursesPagination
-          totalPages={totalPages}
-          handlePageChange={handlePageChange}
-          params={params}
-        />
-      </div>
+        {/* PAGINATION */}
+        <div className="mt-6 min-w-0 overflow-x-auto">
+          <InstructorCoursesPagination
+            totalPages={totalPages}
+            handlePageChange={handlePageChange}
+            params={params}
+          />
+        </div>
+      </main>
     </InstructorLayout>
   );
 }

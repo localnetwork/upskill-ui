@@ -82,7 +82,9 @@ export default function InstructorLayout({ children }) {
       }
 
       try {
-        const meRes = await BaseApi.get(`${process.env.NEXT_PUBLIC_API_URL}/users/me`);
+        const meRes = await BaseApi.get(
+          `${process.env.NEXT_PUBLIC_API_URL}/users/me`,
+        );
         const me = meRes?.data?.data;
         const meRoles = Array.isArray(me?.roles) ? me.roles : [];
         persistentStore.setState({

@@ -1,6 +1,7 @@
 import Select from "@/components/forms/Select";
 import BaseApi from "@/lib/api/_base.api";
-import { Edit, EllipsisVertical, Search } from "lucide-react";
+import { Ban, Edit, Lock, MoreVertical, Search, X } from "lucide-react";
+import toast from "react-hot-toast";
 import { useEffect, useMemo, useState } from "react";
 
 const ROLE_OPTIONS = [
@@ -79,6 +80,96 @@ export default function AdminUsersManagement() {
   const [page, setPage] = useState(1);
   const [users, setUsers] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [myRoles, setMyRoles] = useState([]);
+  const [myId, setMyId] = useState(null);
+  const [editing, setEditing] = useState(null);
+  const [form, setForm] = useState({ firstName: "", lastName: "", headline: "", biography: "" });
+  const [saving, setSaving] = useState(false);
+  const [busyId, setBusyId] = useState(null);
+  const [reloadKey, setReloadKey] = useState(0);
+  const [menu, setMenu] = useState(null);
+
+  useEffect(() => {
+    if (!menu) return undefined;
+    const close = () => setMenu(null);
+    window.addEventListener("click", close);
+    window.addEventListener("scroll", close, true);
+    window.addEventListener("resize", close);
+    return () => {
+      window.removeEventListener("click", close);
+      window.removeEventListener("scroll", close, true);
+      window.removeEventListener("resize", close);
+    };
+  }, [menu]);
+
+  useEffect(() => {
+    BaseApi.get(`${process.env.NEXT_PUBLIC_API_URL}/users/me`)
+      .then((res) => {
+        const me = res?.data?.data;
+        setMyId(me?.id || null);
+        setMyRoles(
+          (me?.roles || []).map((r) => String(r?.name || r).toUpperCase()),
+        );
+      })
+      .catch(() => {});
+  }, []);
+
+  const menuUser = menu ? users.find((u) => u.id === menu.id) : null;
+
+  const sharesRole = (user) =>
+    (user.roles || []).some((r) => myRoles.includes(String(r).toUpperCase()));
+  const suspendBlockedReason = (user) =>
+    user.id === myId
+      ? "You cannot suspend your own account"
+      : sharesRole(user)
+        ? "Cannot suspend a user with the same role as you"
+        : "";
+
+  const openEdit = (user) => {
+    setEditing(user);
+    setForm({
+      firstName: user.firstName || "",
+      lastName: user.lastName || "",
+      headline: user.headline || "",
+      biography: user.biography || "",
+    });
+  };
+
+  const saveEdit = async (event) => {
+    event.preventDefault();
+    setSaving(true);
+    try {
+      await BaseApi.patch(
+        `${process.env.NEXT_PUBLIC_API_URL}/users/${editing.id}`,
+        form,
+      );
+      toast.success("User updated");
+      setEditing(null);
+      setReloadKey((k) => k + 1);
+    } catch (error) {
+      toast.error(error?.data?.message || "Failed to update user");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const toggleSuspend = async (user) => {
+    const suspend = user.status !== "Suspended";
+    if (suspend && !window.confirm(`Suspend ${user.username}?`)) return;
+    setBusyId(user.id);
+    try {
+      await BaseApi.patch(
+        `${process.env.NEXT_PUBLIC_API_URL}/users/${user.id}/suspend`,
+        { suspended: suspend },
+      );
+      toast.success(suspend ? "User suspended" : "User reactivated");
+      setReloadKey((k) => k + 1);
+    } catch (error) {
+      toast.error(error?.data?.message || "Failed to update account status");
+    } finally {
+      setBusyId(null);
+    }
+  };
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
@@ -139,7 +230,7 @@ export default function AdminUsersManagement() {
     };
 
     fetchUsers();
-  }, [page, pagination.limit, role, searchQuery, status]);
+  }, [page, pagination.limit, role, searchQuery, status, reloadKey]);
 
   const totalPages = Math.max(1, Number(pagination.totalPages || 1));
   const currentPage = Math.min(
@@ -299,17 +390,25 @@ export default function AdminUsersManagement() {
                   </td>
 
                   <td className="px-6 py-5 text-right">
-                    <div className="flex justify-end gap-2">
-                      <button className="p-2 hover:bg-slate-100 rounded-full text-slate-400 hover:text-primary">
-                        {/* <span className="material-symbols-outlined text-[20px]">
-                          edit
-                        </span> */}
-
-                        <Edit className="text-[20px]" />
-                      </button>
-
-                      <button className="p-2 hover:bg-slate-100 rounded-full text-slate-400 hover:text-secondary">
-                        <EllipsisVertical className="text-[20px]" />
+                    <div className="flex items-center justify-end">
+                      <button
+                        type="button"
+                        title="Actions"
+                        aria-haspopup="menu"
+                        aria-expanded={menu?.id === user.id}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          if (menu?.id === user.id) return setMenu(null);
+                          const rect = event.currentTarget.getBoundingClientRect();
+                          setMenu({
+                            id: user.id,
+                            top: rect.bottom + 4,
+                            right: window.innerWidth - rect.right,
+                          });
+                        }}
+                        className="p-2 hover:bg-slate-100 rounded-full text-slate-400 hover:text-primary"
+                      >
+                        <MoreVertical size={20} />
                       </button>
                     </div>
                   </td>
@@ -328,6 +427,41 @@ export default function AdminUsersManagement() {
             </tbody>
           </table>
         </div>
+
+        {menuUser ? (
+          <div
+            role="menu"
+            onClick={(event) => event.stopPropagation()}
+            style={{ position: "fixed", top: menu.top, right: menu.right }}
+            className="z-50 w-48 rounded-lg border border-slate-200 bg-white py-1 shadow-lg"
+          >
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                setMenu(null);
+                openEdit(menuUser);
+              }}
+              className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
+            >
+              <Edit size={16} /> Edit user
+            </button>
+            <button
+              type="button"
+              role="menuitem"
+              title={suspendBlockedReason(menuUser)}
+              disabled={Boolean(suspendBlockedReason(menuUser)) || busyId === menuUser.id}
+              onClick={() => {
+                setMenu(null);
+                toggleSuspend(menuUser);
+              }}
+              className={`flex w-full items-center gap-2 px-4 py-2 text-left text-sm hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 ${menuUser.status === "Suspended" ? "text-slate-700" : "text-error"}`}
+            >
+              <Ban size={16} />
+              {menuUser.status === "Suspended" ? "Reactivate account" : "Suspend account"}
+            </button>
+          </div>
+        ) : null}
 
         {/* Pagination */}
         <div className="px-6 py-4 bg-white border-t border-[#e2e8f0] flex items-center justify-between">
@@ -375,6 +509,85 @@ export default function AdminUsersManagement() {
           </div>
         </div>
       </div>
+
+      {editing && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <form
+            onSubmit={saveEdit}
+            className="flex max-h-[calc(100vh-2rem)] w-full max-w-lg flex-col rounded-xl bg-white shadow-xl"
+          >
+            <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+              <h2 className="text-lg font-bold">Edit user</h2>
+              <button type="button" onClick={() => setEditing(null)} className="text-slate-400 hover:text-slate-700">
+                <X size={18} />
+              </button>
+            </div>
+            <div className="space-y-4 overflow-y-auto p-5">
+              {[
+                ["ID", editing.id],
+                ["Username", editing.username],
+                ["Email", editing.email],
+                ["Role", editing.role],
+              ].map(([label, value]) => (
+                <label key={label} className="block text-sm">
+                  <span className="mb-1 flex items-center gap-1 font-semibold text-slate-500">
+                    <Lock size={12} /> {label}
+                  </span>
+                  <input
+                    readOnly
+                    disabled
+                    value={value || ""}
+                    className="w-full cursor-not-allowed rounded-md border border-slate-200 bg-slate-100 px-3 py-2 text-slate-500"
+                  />
+                </label>
+              ))}
+              <div className="grid grid-cols-2 gap-3">
+                {[["firstName", "First name"], ["lastName", "Last name"]].map(([key, label]) => (
+                  <label key={key} className="block text-sm">
+                    <span className="mb-1 block font-semibold text-slate-700">{label}</span>
+                    <input
+                      value={form[key]}
+                      maxLength={80}
+                      onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
+                      className="w-full rounded-md border border-slate-300 px-3 py-2"
+                    />
+                  </label>
+                ))}
+              </div>
+              <label className="block text-sm">
+                <span className="mb-1 block font-semibold text-slate-700">Headline</span>
+                <input
+                  value={form.headline}
+                  maxLength={100}
+                  onChange={(e) => setForm((f) => ({ ...f, headline: e.target.value }))}
+                  className="w-full rounded-md border border-slate-300 px-3 py-2"
+                />
+              </label>
+              <label className="block text-sm">
+                <span className="mb-1 block font-semibold text-slate-700">Biography</span>
+                <textarea
+                  rows={4}
+                  value={form.biography}
+                  maxLength={2000}
+                  onChange={(e) => setForm((f) => ({ ...f, biography: e.target.value }))}
+                  className="w-full rounded-md border border-slate-300 px-3 py-2"
+                />
+              </label>
+              <p className="text-xs text-slate-500">
+                ID, username, email and role are locked and cannot be changed here.
+              </p>
+            </div>
+            <div className="flex justify-end gap-2 border-t border-slate-200 px-5 py-3">
+              <button type="button" onClick={() => setEditing(null)} className="rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-600">
+                Cancel
+              </button>
+              <button type="submit" disabled={saving} className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">
+                {saving ? "Saving..." : "Save changes"}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 }

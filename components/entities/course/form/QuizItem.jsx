@@ -2,7 +2,14 @@
 import { useMemo, useState } from "react";
 import BaseApi from "@/lib/api/_base.api";
 import Select from "@/components/forms/Select";
-import { Lightbulb, ListChecks, Minus, Space, ToggleLeft } from "lucide-react";
+import {
+  Lightbulb,
+  ListChecks,
+  Minus,
+  Space,
+  ToggleLeft,
+  Trash,
+} from "lucide-react";
 function createQuestion(type = "multiple_choice") {
   return {
     id: `q-${Date.now()}-${Math.round(Math.random() * 10000)}`,
@@ -133,168 +140,177 @@ export default function QuizItem({ quiz, onClose, onSave }) {
           <Lightbulb size={16} /> Short Answer
         </button>
       </div>
-
-      {questions.map((question, index) => (
-        <div key={question.id} className="border rounded p-3 space-y-3">
-          <div className="flex justify-between items-center">
-            <p className="font-semibold text-sm">Question {index + 1}</p>
-            <button
-              className="text-red-600 text-sm"
-              onClick={() => removeQuestion(question.id)}
-            >
-              Remove
-            </button>
-          </div>
-
-          <Select
-            value={question.type}
-            onChange={(e) =>
-              updateQuestion(question.id, createQuestion(e.target.value))
-            }
-            className="border rounded p-2 text-sm"
-          >
-            <option value="multiple_choice">Multiple Choice</option>
-            <option value="fill_in_the_blanks">Fill in the Blanks</option>
-            <option value="true_false">True / False</option>
-            <option value="short_answer">Short Answer</option>
-          </Select>
-
-          <textarea
-            value={question.prompt}
-            onChange={(e) =>
-              updateQuestion(question.id, { prompt: e.target.value })
-            }
-            className="border rounded w-full p-2 text-sm"
-            placeholder="Question prompt"
-          />
-
-          <textarea
-            value={question.hint || ""}
-            onChange={(e) =>
-              updateQuestion(question.id, { hint: e.target.value })
-            }
-            className="border rounded w-full p-2 text-sm"
-            placeholder="Hint (optional, shown when learner clicks Hint)"
-          />
-
-          <textarea
-            value={question.explanation || ""}
-            onChange={(e) =>
-              updateQuestion(question.id, { explanation: e.target.value })
-            }
-            className="border rounded w-full p-2 text-sm"
-            placeholder="Explanation (optional, shown after validation)"
-          />
-
-          {question.type === "multiple_choice" && (
-            <div className="space-y-2">
-              {(question.options || []).map((option, optionIndex) => (
-                <div
-                  key={`${question.id}-option-${optionIndex}`}
-                  className="flex gap-2"
+      {questions.length > 0 && (
+        <div className="px-5 space-y-4">
+          {questions.map((question, index) => (
+            <div key={question.id} className="border rounded p-3 space-y-3">
+              <div className="flex justify-between items-center">
+                <p className="font-semibold text-sm">Question {index + 1}</p>
+                <button
+                  className="flex items-center gap-2 text-red-600 text-sm"
+                  onClick={() => removeQuestion(question.id)}
                 >
-                  <input
-                    type="checkbox"
-                    checked={Boolean(option.isCorrect)}
-                    onChange={(e) => {
-                      const options = [...(question.options || [])];
-                      options[optionIndex] = {
-                        ...options[optionIndex],
-                        isCorrect: e.target.checked,
-                      };
-                      updateQuestion(question.id, { options });
-                    }}
-                  />
-                  <input
-                    type="text"
-                    value={option.text || ""}
-                    className="border rounded w-full p-2 text-sm"
-                    placeholder={`Option ${optionIndex + 1}`}
-                    onChange={(e) => {
-                      const options = [...(question.options || [])];
-                      options[optionIndex] = {
-                        ...options[optionIndex],
-                        text: e.target.value,
-                      };
-                      updateQuestion(question.id, { options });
-                    }}
-                  />
+                  <Trash size={16} /> Remove
+                </button>
+              </div>
+
+              <Select
+                value={question.type}
+                onChange={(e) =>
+                  updateQuestion(question.id, createQuestion(e.target.value))
+                }
+                className="border rounded p-2 text-sm"
+              >
+                <option value="multiple_choice">Multiple Choice</option>
+                <option value="fill_in_the_blanks">Fill in the Blanks</option>
+                <option value="true_false">True / False</option>
+                <option value="short_answer">Short Answer</option>
+              </Select>
+
+              <textarea
+                value={question.prompt}
+                onChange={(e) =>
+                  updateQuestion(question.id, { prompt: e.target.value })
+                }
+                className="w-full bg-[#f8fafc] border border-[#ddd] rounded-sm p-4 text-on-surface placeholder-on-surface-variant/50 focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all text-sm font-medium resize-none "
+                placeholder="Question prompt"
+              />
+
+              <textarea
+                value={question.hint || ""}
+                onChange={(e) =>
+                  updateQuestion(question.id, { hint: e.target.value })
+                }
+                className="w-full bg-[#f8fafc] border border-[#ddd] rounded-sm p-4 text-on-surface placeholder-on-surface-variant/50 focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all text-sm font-medium resize-none "
+                placeholder="Hint (optional, shown when learner clicks Hint)"
+              />
+
+              <textarea
+                value={question.explanation || ""}
+                onChange={(e) =>
+                  updateQuestion(question.id, { explanation: e.target.value })
+                }
+                className="w-full bg-[#f8fafc] border border-[#ddd] rounded-sm p-4 text-on-surface placeholder-on-surface-variant/50 focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all text-sm font-medium resize-none "
+                placeholder="Explanation (optional, shown after validation)"
+              />
+
+              {question.type === "multiple_choice" && (
+                <div className="space-y-2">
+                  {(question.options || []).map((option, optionIndex) => (
+                    <div
+                      key={`${question.id}-option-${optionIndex}`}
+                      className="flex items-center gap-3 p-3 bg-white border border-outline rounded-DEFAULT hover:shadow-sm transition-all group/opt"
+                    >
+                      <input
+                        type="checkbox"
+                        className="w-5 h-5 rounded-full"
+                        checked={Boolean(option.isCorrect)}
+                        onChange={(e) => {
+                          const options = [...(question.options || [])];
+                          options[optionIndex] = {
+                            ...options[optionIndex],
+                            isCorrect: e.target.checked,
+                          };
+                          updateQuestion(question.id, { options });
+                        }}
+                      />
+                      <input
+                        type="text"
+                        value={option.text || ""}
+                        className="w-full outline-none text-on-surface placeholder-on-surface-variant/50 transition-all text-sm font-medium resize-none "
+                        placeholder={`Option ${optionIndex + 1}`}
+                        onChange={(e) => {
+                          const options = [...(question.options || [])];
+                          options[optionIndex] = {
+                            ...options[optionIndex],
+                            text: e.target.value,
+                          };
+                          updateQuestion(question.id, { options });
+                        }}
+                      />
+                    </div>
+                  ))}
+                  <button
+                    className="w-full py-3 border-2 border-dashed border-outline text-on-surface-variant text-sm font-bold rounded-sm hover:border-primary hover:text-primary transition-all flex items-center justify-center gap-2 cursor-pointer"
+                    onClick={() =>
+                      updateQuestion(question.id, {
+                        options: [
+                          ...(question.options || []),
+                          { text: "", isCorrect: false },
+                        ],
+                      })
+                    }
+                  >
+                    + Add option
+                  </button>
                 </div>
-              ))}
-              <button
-                className="px-2 py-1 border rounded text-xs"
-                onClick={() =>
-                  updateQuestion(question.id, {
-                    options: [
-                      ...(question.options || []),
-                      { text: "", isCorrect: false },
-                    ],
-                  })
-                }
-              >
-                + Add option
-              </button>
-            </div>
-          )}
+              )}
 
-          {question.type === "true_false" && (
-            <div className="flex gap-4 text-sm">
-              <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  checked={question.correctAnswer === true}
-                  onChange={() =>
-                    updateQuestion(question.id, { correctAnswer: true })
-                  }
-                />
-                True
-              </label>
-              <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  checked={question.correctAnswer === false}
-                  onChange={() =>
-                    updateQuestion(question.id, { correctAnswer: false })
-                  }
-                />
-                False
-              </label>
-            </div>
-          )}
+              {question.type === "true_false" && (
+                <div className="flex gap-4 text-sm">
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      checked={question.correctAnswer === true}
+                      onChange={() =>
+                        updateQuestion(question.id, { correctAnswer: true })
+                      }
+                    />
+                    True
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      checked={question.correctAnswer === false}
+                      onChange={() =>
+                        updateQuestion(question.id, { correctAnswer: false })
+                      }
+                    />
+                    False
+                  </label>
+                </div>
+              )}
 
-          {(question.type === "fill_in_the_blanks" ||
-            question.type === "short_answer") && (
-            <div className="space-y-2">
-              {(question.acceptedAnswers || []).map((answer, answerIndex) => (
-                <input
-                  key={`${question.id}-answer-${answerIndex}`}
-                  type="text"
-                  value={answer || ""}
-                  className="border rounded w-full p-2 text-sm"
-                  placeholder={`Accepted answer ${answerIndex + 1}`}
-                  onChange={(e) => {
-                    const acceptedAnswers = [
-                      ...(question.acceptedAnswers || []),
-                    ];
-                    acceptedAnswers[answerIndex] = e.target.value;
-                    updateQuestion(question.id, { acceptedAnswers });
-                  }}
-                />
-              ))}
-              <button
-                className="px-2 py-1 border rounded text-xs"
-                onClick={() =>
-                  updateQuestion(question.id, {
-                    acceptedAnswers: [...(question.acceptedAnswers || []), ""],
-                  })
-                }
-              >
-                + Add accepted answer
-              </button>
+              {(question.type === "fill_in_the_blanks" ||
+                question.type === "short_answer") && (
+                <div className="space-y-2">
+                  {(question.acceptedAnswers || []).map(
+                    (answer, answerIndex) => (
+                      <input
+                        key={`${question.id}-answer-${answerIndex}`}
+                        type="text"
+                        value={answer || ""}
+                        className="w-full bg-[#f8fafc] border border-[#ddd] rounded-sm p-4 text-on-surface placeholder-on-surface-variant/50 focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all text-sm font-medium resize-none "
+                        placeholder={`Accepted answer ${answerIndex + 1}`}
+                        onChange={(e) => {
+                          const acceptedAnswers = [
+                            ...(question.acceptedAnswers || []),
+                          ];
+                          acceptedAnswers[answerIndex] = e.target.value;
+                          updateQuestion(question.id, { acceptedAnswers });
+                        }}
+                      />
+                    ),
+                  )}
+                  <button
+                    className="px-2 py-1 border rounded text-xs"
+                    onClick={() =>
+                      updateQuestion(question.id, {
+                        acceptedAnswers: [
+                          ...(question.acceptedAnswers || []),
+                          "",
+                        ],
+                      })
+                    }
+                  >
+                    + Add accepted answer
+                  </button>
+                </div>
+              )}
             </div>
-          )}
+          ))}
         </div>
-      ))}
+      )}
 
       <div className="flex justify-end gap-2">
         <button

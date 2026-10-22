@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import modalState from "@/lib/store/modalState";
-import { Trash2 } from "lucide-react";
+import { Trash2, Pencil, ChartNoAxesColumn, Star } from "lucide-react";
 
 export default function InstructorCoursesList({
   courses,
@@ -10,45 +10,12 @@ export default function InstructorCoursesList({
   deletingCourseId,
 }) {
   const skeletonRows = [1, 2, 3];
+
   const shimmer =
     "animate-pulse bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200";
 
-  if (isLoading) {
-    return (
-      <div className="grid gap-4">
-        {skeletonRows.map((row) => (
-          <div
-            key={`skeleton-${row}`}
-            className="flex flex-col md:flex-row border border-[oklch(86.72%_0.0192_282.72deg)]"
-          >
-            <div className="w-full md:w-[150px]">
-              <div className={`${shimmer} w-full h-[140px] md:h-[100px]`} />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-5 flex-1">
-              <div className="col-span-1 md:col-span-2 p-[20px] space-y-3">
-                <div className={`${shimmer} h-5 w-[70%] rounded`} />
-                <div className={`${shimmer} h-4 w-[35%] rounded`} />
-                <div className={`${shimmer} h-3 w-[60%] rounded`} />
-              </div>
-
-              <div className="p-[20px] border-t md:border-t-0 md:border-l border-[oklch(90%_0.01_280deg)] space-y-3">
-                <div className={`${shimmer} h-7 w-14 rounded`} />
-                <div className={`${shimmer} h-4 w-[80%] rounded`} />
-              </div>
-
-              <div className="p-[20px] border-t md:border-t-0 md:border-l border-[oklch(90%_0.01_280deg)] space-y-3">
-                <div className={`${shimmer} h-7 w-16 rounded`} />
-                <div className={`${shimmer} h-4 w-[70%] rounded`} />
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    );
-  }
-
   const formatRating = (value) => Number(value || 0).toFixed(2);
+
   const openDeleteModal = (course) => {
     if (typeof onDeleteDraftCourse !== "function") return;
 
@@ -65,41 +32,83 @@ export default function InstructorCoursesList({
     });
   };
 
+  if (isLoading) {
+    return (
+      <div className="grid gap-4">
+        {skeletonRows.map((row) => (
+          <div
+            key={`skeleton-${row}`}
+            className="flex flex-col overflow-hidden border border-[oklch(86.72%_0.0192_282.72deg)] sm:flex-row"
+          >
+            <div className="w-full shrink-0 sm:w-[150px]">
+              <div
+                className={`${shimmer} h-[180px] w-full sm:h-full sm:min-h-[140px]`}
+              />
+            </div>
+
+            <div className="grid min-w-0 flex-1 grid-cols-1 md:grid-cols-5">
+              <div className="space-y-3 p-5 md:col-span-2">
+                <div className={`${shimmer} h-5 w-[70%] rounded`} />
+                <div className={`${shimmer} h-4 w-[35%] rounded`} />
+                <div className={`${shimmer} h-3 w-[60%] rounded`} />
+              </div>
+
+              <div className="space-y-3 border-t border-[oklch(90%_0.01_280deg)] p-5 md:border-l md:border-t-0">
+                <div className={`${shimmer} h-7 w-14 rounded`} />
+                <div className={`${shimmer} h-4 w-[80%] rounded`} />
+              </div>
+
+              <div className="space-y-3 border-t border-[oklch(90%_0.01_280deg)] p-5 md:border-l md:border-t-0">
+                <div className={`${shimmer} h-7 w-16 rounded`} />
+                <div className={`${shimmer} h-4 w-[70%] rounded`} />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   return (
-    <div className="grid gap-4 relative">
-      {courses.length ? (
+    <div className="relative grid gap-4">
+      {courses?.length ? (
         courses.map((course) => {
-          const totalEnrollments = Number(course?.stats?.total_enrollments || 0);
+          const totalEnrollments = Number(
+            course?.stats?.total_enrollments || 0,
+          );
+
           const canDeleteDraft =
             course?.published === "0" && totalEnrollments === 0;
+
           const isDeleting = deletingCourseId === course?.id;
 
+          const basicsUrl = `/instructor/courses/${course.uuid}/basics`;
+          const statisticsUrl = `/instructor/courses/${course.uuid}/statistics`;
+          const reviewsUrl = `/instructor/courses/${course.uuid}/reviews`;
+
           return (
-            <div
+            <article
               key={course.id}
-              className="flex flex-col md:flex-row border-[1px] border-solid border-[oklch(86.72%_0.0192_282.72deg)]"
+              className="group flex min-w-0 flex-col overflow-hidden border border-solid border-[oklch(86.72%_0.0192_282.72deg)] bg-white sm:flex-row"
             >
-              <div className="w-full md:w-[150px] h-full">
+              {/* COURSE COVER */}
+              <div className="relative w-full shrink-0 sm:w-[150px]">
                 <Image
                   width={320}
-                  height={100}
-                  src={
-                    course?.cover_image?.path
-                      ? course.cover_image.path
-                      : "/placeholder-cover.webp"
-                  }
-                  alt={course.title}
-                  className="w-full object-cover h-[140px] md:h-[100px]"
+                  height={180}
+                  src={course?.cover_image?.path || "/placeholder-cover.webp"}
+                  alt={course?.title || "Course cover"}
+                  className="h-[180px] w-full object-cover sm:h-full sm:min-h-[150px]"
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-5 flex-1">
-                {/* MANAGE COURSE */}
-                <div className="relative group flex col-span-1 md:col-span-2 flex-col justify-between py-[15px] px-[20px]">
+              <div className="grid min-w-0 flex-1 grid-cols-1 md:grid-cols-5">
+                {/* COURSE DETAILS */}
+                <div className="relative flex min-w-0 flex-col justify-between gap-4 p-4 sm:p-5 md:col-span-2">
                   {canDeleteDraft && (
                     <button
                       type="button"
-                      className="absolute top-2 right-2 z-20 p-1.5 rounded-md text-rose-600 hover:bg-rose-50 disabled:opacity-50"
+                      className="absolute right-3 top-3 z-30 rounded-md p-2 text-rose-600 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-50"
                       onClick={() => openDeleteModal(course)}
                       aria-label="Delete draft course"
                       title="Delete draft course"
@@ -108,63 +117,117 @@ export default function InstructorCoursesList({
                       <Trash2 size={18} />
                     </button>
                   )}
-                  <div className="group-hover:flex text-[20px] absolute top-0 left-0 w-full h-full hidden">
+
+                  <div className="min-w-0 pr-8">
+                    <h3 className="break-words text-base font-bold leading-snug sm:text-lg">
+                      {course.title}
+                    </h3>
+
+                    <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1">
+                      <span
+                        className={`text-xs font-bold uppercase tracking-wide ${
+                          course?.published === "0"
+                            ? "text-amber-700"
+                            : "text-emerald-700"
+                        }`}
+                      >
+                        {course?.published === "0" ? "Draft" : "Published"}
+                      </span>
+
+                      {course?.published === "0" && (
+                        <span className="text-xs leading-relaxed text-gray-500">
+                          Only visible to you and your students
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* MOBILE COURSE ACTION */}
+                  <Link
+                    href={basicsUrl}
+                    className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-md border border-blue-200 px-3 py-2 text-sm font-semibold text-[#0056D2] transition hover:bg-blue-50 md:hidden"
+                  >
+                    <Pencil size={16} />
+                    Edit / Manage Course
+                  </Link>
+
+                  {/* DESKTOP HOVER ACTION */}
+                  <div className="pointer-events-none absolute inset-0 z-10 hidden items-center justify-center bg-white/90 p-4 opacity-0 transition-opacity duration-200 group-hover:opacity-100 md:flex">
                     <Link
-                      href={"/instructor/courses/" + course.uuid + "/basics"}
-                      className="text-[#0056D2] flex items-center justify-center w-full h-full font-semibold px-[20px] py-[10px] rounded-[5px] hover:opacity-90 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+                      href={basicsUrl}
+                      className="pointer-events-auto inline-flex items-center gap-2 rounded-md px-4 py-3 text-center font-semibold text-[#0056D2] hover:bg-blue-50"
                     >
-                      <span className="bg-white opacity-70 absolute top-0 left-0 w-full h-full z-[-1]" />
-                      Edit/Manage Course
+                      <Pencil size={18} />
+                      Edit / Manage Course
                     </Link>
                   </div>
-                  <span className="font-bold">{course.title}</span>
-                  <div className="flex mt-3  gap-[15px] items-center">
-                    <span className="font-bold uppercase">
-                      {course?.published === "0" ? "Draft" : "Published"}
-                    </span>
-                    {course?.published === "0" && (
-                      <span className="text-[12px]">
-                        Only visible to you and your students
-                      </span>
-                    )}
-                  </div>
                 </div>
-                <div className="relative col-span-1 group flex flex-col justify-between py-[15px] px-[20px] border-t md:border-t-0 md:border-l border-[oklch(90%_0.01_280deg)]">
-                  <div className="group-hover:flex text-[20px] absolute top-0 left-0 w-full h-full hidden">
+
+                {/* ENROLLMENTS */}
+                <div className="group/stat relative flex min-w-0 flex-col justify-center gap-1 border-t border-[oklch(90%_0.01_280deg)] p-4 sm:p-5 md:border-l md:border-t-0">
+                  <div className="text-2xl font-semibold tabular-nums">
+                    {Number(course?.stats?.enrollments_this_month || 0)}
+                  </div>
+
+                  <div className="text-sm leading-snug text-gray-600">
+                    Enrollments this month
+                  </div>
+
+                  {/* MOBILE STATISTICS LINK */}
+                  <Link
+                    href={statisticsUrl}
+                    className="mt-3 inline-flex min-h-10 items-center gap-2 text-sm font-semibold text-[#0056D2] hover:underline md:hidden"
+                  >
+                    <ChartNoAxesColumn size={16} />
+                    See Statistics
+                  </Link>
+
+                  {/* DESKTOP HOVER ACTION */}
+                  <div className="pointer-events-none absolute inset-0 z-10 hidden items-center justify-center bg-white/90 p-3 opacity-0 transition-opacity duration-200 group-hover/stat:opacity-100 md:flex">
                     <Link
-                      href={"/instructor/courses/" + course.uuid + "/statistics"}
-                      className="text-[#0056D2] flex items-center justify-center w-full h-full font-semibold px-[20px] py-[10px] rounded-[5px] hover:opacity-90 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+                      href={statisticsUrl}
+                      className="pointer-events-auto rounded-md px-3 py-2 text-center text-base font-semibold text-[#0056D2] hover:bg-blue-50"
                     >
-                      <span className="bg-white opacity-70 absolute top-0 left-0 w-full h-full z-[-1]" />
                       See Statistics
                     </Link>
                   </div>
-                  <div className="font-semibold text-[25px]">
-                    {Number(course?.stats?.enrollments_this_month || 0)}
-                  </div>
-                  <div className="text-[15px]">Enrollments this month</div>
                 </div>
-                <div className="relative col-span-1 group flex flex-col justify-between py-[15px] px-[20px] border-t md:border-t-0 md:border-l border-[oklch(90%_0.01_280deg)]">
-                  <div className="group-hover:flex text-[20px] absolute top-0 left-0 w-full h-full hidden">
+
+                {/* COURSE RATING */}
+                <div className="group/review relative flex min-w-0 flex-col justify-center gap-1 border-t border-[oklch(90%_0.01_280deg)] p-4 sm:p-5 md:border-l md:border-t-0">
+                  <div className="text-2xl font-semibold tabular-nums">
+                    {formatRating(course?.stats?.average_rating)}
+                  </div>
+
+                  <div className="text-sm leading-snug text-gray-600">
+                    Course Rating
+                  </div>
+
+                  {/* MOBILE REVIEWS LINK */}
+                  <Link
+                    href={reviewsUrl}
+                    className="mt-3 inline-flex min-h-10 items-center gap-2 text-sm font-semibold text-[#0056D2] hover:underline md:hidden"
+                  >
+                    <Star size={16} />
+                    See Reviews
+                  </Link>
+
+                  {/* DESKTOP HOVER ACTION */}
+                  <div className="pointer-events-none absolute inset-0 z-10 hidden items-center justify-center bg-white/90 p-3 opacity-0 transition-opacity duration-200 group-hover/review:opacity-100 md:flex">
                     <Link
-                      href={`/instructor/courses/${course.uuid}/reviews`}
-                      className="text-[#0056D2] flex items-center justify-center w-full h-full font-semibold px-[20px] py-[10px] rounded-[5px] hover:opacity-90 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+                      href={reviewsUrl}
+                      className="pointer-events-auto rounded-md px-3 py-2 text-center text-base font-semibold text-[#0056D2] hover:bg-blue-50"
                     >
-                      <span className="bg-white opacity-70 absolute top-0 left-0 w-full h-full z-[-1]" />
                       See Reviews
                     </Link>
                   </div>
-                  <div className="font-semibold text-[25px]">
-                    {formatRating(course?.stats?.average_rating)}
-                  </div>
-                  <div className="text-[15px]">Course Rating</div>
                 </div>
               </div>
-            </div>
+            </article>
           );
         })
       ) : (
-        <>{!isLoading && <p>No courses found.</p>}</>
+        <p className="py-6 text-sm text-gray-500">No courses found.</p>
       )}
     </div>
   );

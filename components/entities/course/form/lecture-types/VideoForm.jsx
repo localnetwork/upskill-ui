@@ -26,7 +26,8 @@ export default function VideoForm({ onSave, onCancel, lecture }) {
   const [progress, setProgress] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploadStatus, setUploadStatus] = useState("");
-  const pendingUpload = lecture?.upload?.status === "UPLOADING" ? lecture.upload : null;
+  const pendingUpload =
+    lecture?.upload?.status === "UPLOADING" ? lecture.upload : null;
   const [serverOffsetPercent, setServerOffsetPercent] = useState(null);
   const abortRef = useRef(null);
 
@@ -55,7 +56,9 @@ export default function VideoForm({ onSave, onCancel, lecture }) {
         const offset = Number(res.headers.get("Upload-Offset"));
         const length = Number(res.headers.get("Upload-Length"));
         if (!cancelled && length > 0 && offset >= 0) {
-          setServerOffsetPercent(Math.min(100, Math.round((offset / length) * 100)));
+          setServerOffsetPercent(
+            Math.min(100, Math.round((offset / length) * 100)),
+          );
         }
       })
       .catch(() => {});
@@ -131,7 +134,9 @@ export default function VideoForm({ onSave, onCancel, lecture }) {
         }));
       } catch (uploadError) {
         if (uploadError?.name === "AbortError") {
-          toast("Upload paused. Choose the same file and save again to continue where it left off.");
+          toast(
+            "Upload paused. Choose the same file and save again to continue where it left off.",
+          );
           return;
         }
         if (
@@ -191,7 +196,7 @@ export default function VideoForm({ onSave, onCancel, lecture }) {
   return (
     <div className="space-y-3">
       <label className="mb-2 block font-normal">Upload Video</label>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className="bg-[#F8FAFB] flex items-center justify-center">
           {videoUploaded ? (
             <SecureVideo
@@ -216,7 +221,7 @@ export default function VideoForm({ onSave, onCancel, lecture }) {
           )}
         </div>
         <div>
-          <p>
+          <p className="text-sm md:text-base">
             Upload your video file here. Accepted formats: MP4, AVI, MOV.
             Uploads are resumable: if your connection drops, the upload
             continues where it left off.
@@ -224,7 +229,10 @@ export default function VideoForm({ onSave, onCancel, lecture }) {
           {pendingUpload && !loading ? (
             <p className="mt-1 text-[13px] text-emerald-700">
               Upload in progress: {pendingUpload.file_name}
-              {serverOffsetPercent !== null ? ` (${serverOffsetPercent}% sent)` : ""}.
+              {serverOffsetPercent !== null
+                ? ` (${serverOffsetPercent}% sent)`
+                : ""}
+              .
               {file &&
               (file.name !== pendingUpload.file_name ||
                 file.size !== pendingUpload.size_in_bytes)
@@ -234,7 +242,7 @@ export default function VideoForm({ onSave, onCancel, lecture }) {
           ) : null}
           <label
             htmlFor="video-file"
-            className="mt-2 flex gap-2 cursor-pointer"
+            className="mt-2 flex cursor-pointer flex-col gap-2 sm:flex-row"
           >
             <input
               id="video-file"
@@ -243,7 +251,7 @@ export default function VideoForm({ onSave, onCancel, lecture }) {
               onChange={handleFileChange}
               className="hidden"
             />
-            <span className="border rounded-[5px] p-[10px] w-full text-center max-w-[calc(100%-48px)]">
+            <span className="border rounded-[5px] p-[10px] w-full min-w-0 text-center sm:max-w-[calc(100%-48px)]">
               <span className="line-clamp-1 block">
                 {loading
                   ? isProcessing
@@ -263,14 +271,14 @@ export default function VideoForm({ onSave, onCancel, lecture }) {
               )}
             </span>
 
-            <span className="cursor-pointer min-w-[150px] flex justify-center border border-[#3588FC] text-[#3588FC] font-semibold rounded-[5px] px-[20px] py-[10px] hover:bg-[#3588FC] hover:text-white">
+            <span className="cursor-pointer w-full sm:w-auto sm:min-w-[150px] flex justify-center border border-[#3588FC] text-[#3588FC] font-semibold rounded-[5px] px-[20px] py-[10px] hover:bg-[#3588FC] hover:text-white">
               Choose file
             </span>
           </label>
         </div>
       </div>
 
-      <div className="flex justify-end gap-2">
+      <div className="flex flex-wrap justify-end gap-2">
         {loading && !isProcessing ? (
           <button
             onClick={handlePauseUpload}
@@ -291,7 +299,11 @@ export default function VideoForm({ onSave, onCancel, lecture }) {
           className="px-4 py-2 cursor-pointer flex items-center justify-center font-bold border-[2px] border-[#0056D2] hover:bg-[#0056D2] hover:text-white text-[#0056D2] rounded"
         >
           <Save size={20} />
-          {loading ? "Uploading..." : pendingUpload ? "Resume Upload" : "Save Video"}
+          {loading
+            ? "Uploading..."
+            : pendingUpload
+              ? "Resume Upload"
+              : "Save Video"}
         </button>
       </div>
     </div>

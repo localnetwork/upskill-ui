@@ -142,6 +142,13 @@ function validatorToCheck(validator, index) {
   };
 }
 
+function parseStepHints(value) {
+  return String(value || "")
+    .split(/\n\s*---\s*\n/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
 // Converts a stored step (new `validators` or legacy single expected value) into editable form.
 function hydrateStep(step, index) {
   let checks = [];
@@ -166,6 +173,10 @@ function hydrateStep(step, index) {
     title: step?.title || `Step ${index + 1}`,
     instruction: step?.instruction || step?.instructions || "",
     starter_code: step?.starter_code || step?.starterCode || "",
+    hintsText: (Array.isArray(step?.hints) ? step.hints : [])
+      .map((item) => String(item || "").trim())
+      .filter(Boolean)
+      .join("\n---\n"),
     checks,
   };
 }
@@ -181,6 +192,7 @@ function serializeStep(step, index) {
     title: step.title || `Step ${index + 1}`,
     instruction: step.instruction,
     starter_code: step.starter_code,
+    hints: parseStepHints(step.hintsText),
     validators,
     // kept for older readers of the payload
     validation_mode: first?.mode || "CODE_INCLUDES",
@@ -343,6 +355,7 @@ export default function CodingExerciseItem({ exercise, onClose, onSave }) {
       title: `Step ${steps.length + 1}`,
       instruction: "",
       starter_code: isMarkup && !steps.length ? HTML_TEMPLATE : "",
+      hintsText: "",
       checks: [],
     };
     setSteps((list) => [...list, step]);
@@ -714,6 +727,23 @@ export default function CodingExerciseItem({ exercise, onClose, onSave }) {
                 </div>
               </div>
 
+              <label className="block">
+                <span className="text-xs text-slate-500">
+                  Hints for this step (optional). Learners reveal them one at a
+                  time, so put the gentlest first and the answer last. Separate
+                  hints with a line containing only ---
+                </span>
+                <textarea
+                  rows={5}
+                  value={selectedStep.hintsText || ""}
+                  onChange={(e) =>
+                    updateStep(selectedStep.id, { hintsText: e.target.value })
+                  }
+                  placeholder={"Use the <h1> tag.\n---\nAnswer:\n<h1>Welcome</h1>"}
+                  className={`${INPUT} mt-1 font-mono`}
+                />
+              </label>
+
               <div className="space-y-3">
                 <div>
                   <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
@@ -861,8 +891,11 @@ export default function CodingExerciseItem({ exercise, onClose, onSave }) {
 
       <section className="rounded-xl border border-slate-200 dark:border-slate-700 p-5 space-y-3">
         <h4 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-          3. Hints (optional)
+          3. General hints (optional)
         </h4>
+        <p className="text-xs text-slate-500">
+          Shown only for steps that have no hints of their own.
+        </p>
         <textarea
           rows={4}
           value={hintsDraft}

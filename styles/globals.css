@@ -25,7 +25,10 @@ p:not(:last-of-type) {
 .container {
   @apply mx-auto !px-[30px] max-w-full xl:max-w-[80rem] 2xl:max-w-[90rem];
 }
-
+.text-on-surface {
+  --tw-text-opacity: 1;
+  color: rgb(15 23 42 / var(--tw-text-opacity, 1));
+}
 .font-secondary {
   font-family: "Playfair Display", serif;
 }

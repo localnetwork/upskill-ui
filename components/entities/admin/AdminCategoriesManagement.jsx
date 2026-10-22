@@ -12,6 +12,7 @@ import {
   Megaphone,
   Music,
   Plus,
+  Sparkles,
   SwatchBook,
   Wallet,
   X,
@@ -99,6 +100,7 @@ export default function AdminCategoriesManagement() {
     isValid: false,
     message: "",
   });
+  const [isGeneratingAI, setIsGeneratingAI] = useState(null);
   const [formValues, setFormValues] = useState({
     title: "",
     slug: "",
@@ -186,6 +188,7 @@ export default function AdminCategoriesManagement() {
   const closeModal = useCallback(() => {
     setIsModalOpen(false);
     setActiveCategoryId(null);
+    setIsGeneratingAI(null);
     setSlugStatus({
       isChecking: false,
       isAvailable: true,
@@ -259,6 +262,43 @@ export default function AdminCategoriesManagement() {
       setUploadProgress(0);
     }
   }, []);
+
+  const handleAISuggest = useCallback(
+    async (fields) => {
+      const title = String(formValues.title || "").trim();
+      if (title.length < 2) {
+        toast.error("Enter a category title first.");
+        return;
+      }
+
+      setIsGeneratingAI(fields);
+      try {
+        const parent = flatCategories.find((item) => item.id === formValues.parentId);
+        const response = await BaseApi.post(
+          `${process.env.NEXT_PUBLIC_API_URL}/categories/ai-suggest`,
+          {
+            title,
+            fields,
+            parentTitle: parent?.title || "",
+            existingDescription: formValues.description || "",
+          },
+        );
+        const result = response?.data?.data || {};
+        setFormValues((prev) => ({
+          ...prev,
+          description: result.description || prev.description,
+          icon: result.icon || prev.icon,
+          color: result.color || prev.color,
+        }));
+        toast.success("AI suggestions applied. Review before saving.");
+      } catch (error) {
+        toast.error(error?.data?.message || "AI generation failed.");
+      } finally {
+        setIsGeneratingAI(null);
+      }
+    },
+    [flatCategories, formValues],
+  );
 
   const handleSubmit = useCallback(
     async (event) => {
@@ -468,8 +508,8 @@ export default function AdminCategoriesManagement() {
 
       {isModalOpen ? (
         <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/40 p-4">
-          <div className="w-full max-w-xl rounded-2xl bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+          <div className="flex max-h-[calc(100vh-2rem)] w-full max-w-xl flex-col rounded-2xl bg-white shadow-2xl">
+            <div className="flex shrink-0 items-center justify-between border-b border-slate-200 px-6 py-4">
               <h3 className="text-lg font-bold text-slate-900">
                 {modalMode === "create" ? "Create Category" : "Edit Category"}
               </h3>
@@ -482,7 +522,10 @@ export default function AdminCategoriesManagement() {
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4 px-6 py-5">
+            <form
+              onSubmit={handleSubmit}
+              className="min-h-0 flex-1 space-y-4 overflow-y-auto px-6 py-5"
+            >
               <div>
                 <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
                   Title
@@ -552,9 +595,24 @@ export default function AdminCategoriesManagement() {
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Description
-                </label>
+                <div className="mb-1 flex items-center justify-between gap-2">
+                  <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Description
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => handleAISuggest("description")}
+                    disabled={Boolean(isGeneratingAI)}
+                    className="inline-flex items-center gap-1 rounded-md border border-[#0056d2] px-2 py-1 text-xs font-semibold text-[#0056d2] hover:bg-[#0056d2] hover:text-white disabled:opacity-60"
+                  >
+                    <Sparkles className="h-3.5 w-3.5" />
+                    {isGeneratingAI === "description"
+                      ? "Generating..."
+                      : String(formValues.description || "").trim()
+                        ? "Improve with AI"
+                        : "Generate with AI"}
+                  </button>
+                </div>
                 <div className="rounded-md border border-slate-300">
                   <TextEditor
                     name="description"

@@ -45,7 +45,9 @@ export default function CurriculumItem({
   const [deleting, setDeleting] = useState(false);
   const [openContentOnSync, setOpenContentOnSync] = useState(false);
   const [unlockType, setUnlockType] = useState(
-    String(item?.unlock_type || "immediate").trim().toLowerCase(),
+    String(item?.unlock_type || "immediate")
+      .trim()
+      .toLowerCase(),
   );
   const [unlockAt, setUnlockAt] = useState(() => {
     const raw = String(item?.unlock_at || "").trim();
@@ -141,7 +143,9 @@ export default function CurriculumItem({
           : [],
     );
     setUnlockType(
-      String(item?.unlock_type || "immediate").trim().toLowerCase(),
+      String(item?.unlock_type || "immediate")
+        .trim()
+        .toLowerCase(),
     );
     const rawUnlockAt = String(item?.unlock_at || "").trim();
     if (!rawUnlockAt) {
@@ -154,9 +158,7 @@ export default function CurriculumItem({
           : parsedUnlockAt.toISOString().slice(0, 16),
       );
     }
-    setPrerequisiteLessonId(
-      String(item?.prerequisite_lesson_id || "").trim(),
-    );
+    setPrerequisiteLessonId(String(item?.prerequisite_lesson_id || "").trim());
     setError("");
     if (shouldAutoOpenContent) {
       setOpenContentOnSync(false);
@@ -296,13 +298,13 @@ export default function CurriculumItem({
 
   return (
     <div
-      className={`${hasMissingContent ? "border-2 border-dashed border-red-500 bg-red-50/40" : "[border:1px_solid_oklch(67.22%_0.0355_279.77deg)] bg-gray-50"} px-[20px] py-[15px] mb-2 w-full`}
+      className={`${hasMissingContent ? "border-2 border-dashed border-red-500 bg-red-50/40" : "[border:1px_solid_oklch(67.22%_0.0355_279.77deg)] bg-gray-50"} px-3 py-[15px] sm:px-[20px] mb-2 w-full`}
     >
       {/* Header */}
-      <div className="flex justify-between items-center w-full">
-        <div className="w-full">
+      <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="w-full min-w-0">
           {mode === "edit" ? (
-            <div className="relative w-1/2 flex items-center gap-[5px]">
+            <div className="relative flex w-full items-center gap-[5px] md:w-1/2">
               <label className="flex items-center font-semibold mb-1 nowrap">
                 Title <span className="text-red-500">*</span>
               </label>
@@ -321,8 +323,8 @@ export default function CurriculumItem({
               </p>
             </div>
           ) : (
-            <div className="flex items-center">
-              <span>
+            <div className="flex flex-wrap items-center gap-y-1">
+              <span className="min-w-0 break-words">
                 {resourceType === "video" ? (
                   <MonitorPlay size={18} className="inline mr-2" />
                 ) : resourceType === "article" ? (
@@ -384,16 +386,7 @@ export default function CurriculumItem({
           )}
         </div>
 
-        <div>
-          {console.log("resourceType", resourceType)}
-          {console.log(
-            "isLecture:",
-            isLecture,
-            "isQuiz:",
-            isQuiz,
-            "isCoding:",
-            isCoding,
-          )}
+        <div className="shrink-0 self-start sm:self-auto">
           {(isLecture || isQuiz || isCoding) && (
             <button
               onClick={() => setMode(mode === "content" ? null : "content")}
@@ -529,7 +522,7 @@ export default function CurriculumItem({
 
           {error && <p className="text-sm text-red-600">{error}</p>}
 
-          <div className="flex justify-end gap-2">
+          <div className="flex flex-wrap justify-end gap-2">
             <button
               onClick={() => {
                 if (
@@ -552,7 +545,9 @@ export default function CurriculumItem({
                 onClick={handleSave}
                 className="px-4 py-2 cursor-pointer flex items-center justify-center font-bold border-[2px] border-[#0056D2] hover:bg-[#0056D2] hover:text-white text-[#0056D2] rounded"
                 disabled={
-                  !title.trim() || !description.trim() || hasUnlockValidationError
+                  !title.trim() ||
+                  !description.trim() ||
+                  hasUnlockValidationError
                 }
               >
                 Save Curriculum
@@ -562,7 +557,9 @@ export default function CurriculumItem({
                 onClick={handleUpdate}
                 className="px-4 py-2 cursor-pointer flex items-center justify-center font-bold border-[2px] border-[#0056D2] hover:bg-[#0056D2] hover:text-white text-[#0056D2] rounded"
                 disabled={
-                  !title.trim() || !description.trim() || hasUnlockValidationError
+                  !title.trim() ||
+                  !description.trim() ||
+                  hasUnlockValidationError
                 }
               >
                 <Save size={16} className="mr-1" />

@@ -72,6 +72,8 @@ export async function getServerSideProps(context) {
     return {
       props: {
         course,
+        isOwner,
+        isAdmin,
       },
     };
   } catch (error) {
@@ -96,7 +98,7 @@ export async function getServerSideProps(context) {
   }
 }
 
-export default function CourseDetailsPreviewPage({ course }) {
+export default function CourseDetailsPreviewPage({ course, isOwner, isAdmin }) {
   const author = course?.author?.data || course?.educator || null;
 
   return (
@@ -104,13 +106,21 @@ export default function CourseDetailsPreviewPage({ course }) {
       <header className="bg-[#0f172a] text-white py-10 lg:py-16 px-4 lg:px-8">
         <div className="container mx-auto">
           <div className="mb-6 flex items-center justify-between gap-3 flex-wrap">
-            <Link
-              href={`/instructor/courses/${course?.uuid}/basics`}
-              className="inline-flex items-center gap-2 rounded-md bg-white/10 hover:bg-white/20 px-3 py-2 text-sm font-semibold"
-            >
-              <ChevronLeft size={18} />
-              Back to course management
-            </Link>
+            {isOwner || isAdmin ? (
+              <Link
+                href={
+                  isOwner
+                    ? `/instructor/courses/${course?.uuid}/basics`
+                    : "/admin?tab=courses"
+                }
+                className="inline-flex items-center gap-2 rounded-md bg-white/10 hover:bg-white/20 px-3 py-2 text-sm font-semibold"
+              >
+                <ChevronLeft size={18} />
+                Back to course management
+              </Link>
+            ) : (
+              <span />
+            )}
             <Link
               href={`/instructor/courses/${course?.uuid}/preview`}
               className="inline-flex items-center gap-2 rounded-md bg-[#3588FC] hover:bg-[#1f6fe0] px-3 py-2 text-sm font-semibold"

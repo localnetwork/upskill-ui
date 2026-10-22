@@ -1,15 +1,108 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import BaseApi from "@/lib/api/_base.api";
 import { setContext } from "@/lib/api/interceptor";
 import toast from "react-hot-toast";
 import Link from "next/link";
-import { Banknote, GraduationCap, ShoppingCart, User } from "lucide-react";
+import { Banknote, ChevronDown, GraduationCap, ShoppingCart, User } from "lucide-react";
 import AdminUsersManagement from "@/components/entities/admin/AdminUsersManagement";
 import AdminCoursesManagement from "@/components/entities/admin/AdminCoursesManagement";
 import AdminCategoriesManagement from "@/components/entities/admin/AdminCategoriesManagement";
 import AdminTagsManagement from "@/components/entities/admin/AdminTagsManagement";
 
 const ADMIN_TABS = ["overview", "users", "courses", "categories", "tags", "payouts"];
+const VISIBLE_TAB_COUNT = 3;
+
+function AdminTabPills({ activeTab }) {
+  const [open, setOpen] = useState(false);
+  const menuRef = useRef(null);
+  const visibleTabs = ADMIN_TABS.slice(0, VISIBLE_TAB_COUNT);
+  const hiddenTabs = ADMIN_TABS.slice(VISIBLE_TAB_COUNT);
+  const hiddenActive = hiddenTabs.includes(activeTab);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const onPointerDown = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setOpen(false);
+      }
+    };
+    const onKeyDown = (event) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("mousedown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open]);
+
+  return (
+    <div className="flex rounded-full bg-slate-100 p-1.5">
+      {visibleTabs.map((tab) => (
+        <Link
+          key={tab}
+          href={`/admin?tab=${tab}`}
+          className={`rounded-full px-5 py-2 text-sm font-semibold capitalize ${activeTab === tab ? "bg-[#0056d2] text-white" : "text-slate-600"}`}
+        >
+          {tab}
+        </Link>
+      ))}
+
+      <div className="relative" ref={menuRef}>
+        <button
+          type="button"
+          aria-haspopup="menu"
+          aria-expanded={open}
+          onClick={() => setOpen((prev) => !prev)}
+          className={`inline-flex items-center gap-1 rounded-full px-5 py-2 text-sm font-semibold capitalize ${hiddenActive ? "bg-[#0056d2] text-white" : "text-slate-600"}`}
+        >
+          {hiddenActive ? activeTab : "More"}
+          <ChevronDown
+            size={14}
+            className={`transition-transform ${open ? "rotate-180" : ""}`}
+          />
+        </button>
+
+        {open && (
+          <div
+            role="menu"
+            className="absolute right-0 z-30 mt-2 min-w-[160px] overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-lg"
+          >
+            {hiddenTabs.map((tab) => (
+              <Link
+                key={tab}
+                role="menuitem"
+                href={`/admin?tab=${tab}`}
+                onClick={() => setOpen(false)}
+                className={`block px-4 py-2 text-sm font-semibold capitalize hover:bg-slate-50 ${activeTab === tab ? "text-[#0056d2]" : "text-slate-600"}`}
+              >
+                {tab}
+              </Link>
+            ))}
+            <div className="my-1 border-t border-slate-100" />
+            <Link
+              role="menuitem"
+              href="/admin/roles"
+              onClick={() => setOpen(false)}
+              className="block px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+            >
+              Roles
+            </Link>
+            <Link
+              role="menuitem"
+              href="/admin/permissions"
+              onClick={() => setOpen(false)}
+              className="block px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+            >
+              Permissions
+            </Link>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 const DEFAULT_PLATFORM_CURRENCY = "PHP";
 
 const normalizeRoleNames = (roles) => {
@@ -327,17 +420,7 @@ export default function AdminDashboard({ initialTab }) {
           </p>
         </div>
 
-        <div className="flex rounded-full bg-slate-100 p-1.5">
-          {ADMIN_TABS.map((tab) => (
-            <Link
-              key={tab}
-              href={`/admin?tab=${tab}`}
-              className={`rounded-full px-5 py-2 text-sm font-semibold capitalize ${activeTab === tab ? "bg-[#0056d2] text-white" : "text-slate-600"}`}
-            >
-              {tab}
-            </Link>
-          ))}
-        </div>
+        <AdminTabPills activeTab={activeTab} />
       </div>
 
       {activeTab === "overview" && (

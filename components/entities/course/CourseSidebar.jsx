@@ -3,11 +3,14 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import toast from "react-hot-toast";
 import courseStore from "@/lib/store/courseStore";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { MoreVertical } from "lucide-react";
 import { getApprovalReadinessSummary } from "./CourseApprovalReadiness";
 export default function CourseSidebar({ course }) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef(null);
 
   const courseManagement = courseStore((state) => state.courseManagement);
 
@@ -184,109 +187,180 @@ export default function CourseSidebar({ course }) {
     }
   };
 
-  return (
-    <div className="px-[30px] pl-[50px] py-[50px] w-[300px] min-h-[calc(100vh-60px)]">
-      <div className="sticky top-[190px]">
-        <div className="mb-[30px]">
-          <h2 className="text-[20px] font-semibold pl-[30px]">
-            Course Editing
-          </h2>
-          <div>
-            {editingLinks.map((item, index) => (
-              <div key={index} className="">
-                {(() => {
-                  const isActive = currentTab === item.tab;
-                  return (
-                <Link
-                  href={item.link}
-                  className="relative text-[17px] py-[10px] block pl-[30px] hover:bg-[#f5f5f5]"
-                >
-                  {isActive && (
-                    <span className="inline-block absolute left-0 top-0 w-[5px] bg-[#000] h-full" />
-                  )}
-                  {item.name}
-                </Link>
-                  );
-                })()}
-              </div>
-            ))}
-          </div>
-        </div>
-        <div className="mb-[30px]">
-          <h2 className="text-[20px] font-semibold pl-[30px]">
-            Course Management
-          </h2>
-          <div>
-            {managementLinks.map((item, index) => (
-              <div key={index} className="">
-                {(() => {
-                  const isActive = currentTab === item.tab;
-                  return (
-                <Link
-                  href={item.link}
-                  className="relative text-[17px] py-[10px] block pl-[30px] hover:bg-[#f5f5f5]"
-                >
-                  {isActive && (
-                    <span className="inline-block absolute left-0 top-0 w-[5px] bg-[#000] h-full" />
-                  )}
-                  {item.name}
-                </Link>
-                  );
-                })()}
-              </div>
-            ))}
-          </div>
-        </div>
+  const actionButton = (
+    <>
+      {isPublished ? (
+        <button
+          onClick={handleUnpublish}
+          disabled={isSubmitting}
+          className={`bg-[#0056D2] font-semibold text-white px-[20px] py-[10px] rounded-[5px] w-full hover:bg-[#1d6de0] ${
+            isSubmitting ? "opacity-70 cursor-not-allowed" : ""
+          }`}
+        >
+          {isSubmitting ? "Please wait..." : "Draft this Course"}
+        </button>
+      ) : ["DRAFT", "REJECTED"].includes(workflowStatus) ? (
+        <button
+          onClick={handleRequestForReview}
+          disabled={isSubmitting}
+          className={`bg-[#0056D2] font-semibold text-white px-[20px] py-[10px] rounded-[5px] w-full hover:bg-[#1d6de0] ${
+            isSubmitting ? "opacity-70 cursor-not-allowed" : ""
+          }`}
+        >
+          {isSubmitting
+            ? "Please wait..."
+            : workflowStatus === "REJECTED"
+              ? "Resubmit for Review"
+              : "Request for Review"}
+        </button>
+      ) : workflowStatus === "APPROVED" ? (
+        <button
+          onClick={handlePublish}
+          disabled={isSubmitting}
+          className={`bg-[#0056D2] font-semibold text-white px-[20px] py-[10px] rounded-[5px] w-full hover:bg-[#1d6de0] ${
+            isSubmitting ? "opacity-70 cursor-not-allowed" : ""
+          }`}
+        >
+          {isSubmitting ? "Please wait..." : "Publish this Course"}
+        </button>
+      ) : (
+        <button
+          disabled
+          className="bg-[#0056D2] opacity-70 cursor-not-allowed font-semibold text-white px-[20px] py-[10px] rounded-[5px] w-full"
+        >
+          {workflowStatus === "PENDING_APPROVAL"
+            ? "Pending Review"
+            : workflowStatus === "REJECTED"
+              ? "Changes Required"
+              : "Under Review"}
+        </button>
+      )}
+    </>
+  );
 
-        <div>
-          {isPublished ? (
+  const allLinks = [...editingLinks, ...managementLinks];
+  const visibleLinks = allLinks.slice(0, 3);
+  const overflowLinks = allLinks.slice(3);
+  const overflowActive = overflowLinks.some((item) => item.tab === currentTab);
+
+  useEffect(() => {
+    if (!menuOpen) return undefined;
+    const handleOutside = (event) => {
+      if (!menuRef.current?.contains(event.target)) setMenuOpen(false);
+    };
+    document.addEventListener("mousedown", handleOutside);
+    return () => document.removeEventListener("mousedown", handleOutside);
+  }, [menuOpen]);
+
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [router.asPath]);
+
+  return (
+    <>
+      <div className="border-b border-[#e2e8f0] bg-white px-4 py-3 sm:px-6 lg:hidden">
+        <div className="flex items-center gap-1">
+          <nav className="flex min-w-0 flex-1 items-center gap-1 overflow-hidden">
+            {visibleLinks.map((item) => (
+              <Link
+                key={item.tab}
+                href={item.link}
+                className={`truncate rounded-md px-3 py-2 text-[14px] hover:bg-[#f5f5f5] ${
+                  currentTab === item.tab ? "bg-[#f1f5f9] font-semibold" : ""
+                }`}
+              >
+                {item.name}
+              </Link>
+            ))}
+          </nav>
+          <div className="relative shrink-0" ref={menuRef}>
             <button
-              onClick={handleUnpublish}
-              disabled={isSubmitting}
-              className={`bg-[#0056D2] font-semibold text-white px-[20px] py-[10px] rounded-[5px] w-full hover:bg-[#1d6de0] ${
-                isSubmitting ? "opacity-70 cursor-not-allowed" : ""
+              type="button"
+              aria-label="More course menu items"
+              aria-expanded={menuOpen}
+              onClick={() => setMenuOpen((open) => !open)}
+              className={`rounded-md p-2 hover:bg-[#f5f5f5] ${
+                overflowActive ? "bg-[#f1f5f9]" : ""
               }`}
             >
-              {isSubmitting ? "Please wait..." : "Draft this Course"}
+              <MoreVertical size={20} />
             </button>
-          ) : ["DRAFT", "REJECTED"].includes(workflowStatus) ? (
-            <button
-              onClick={handleRequestForReview}
-              disabled={isSubmitting}
-              className={`bg-[#0056D2] font-semibold text-white px-[20px] py-[10px] rounded-[5px] w-full hover:bg-[#1d6de0] ${
-                isSubmitting ? "opacity-70 cursor-not-allowed" : ""
-              }`}
-            >
-              {isSubmitting
-                ? "Please wait..."
-                : workflowStatus === "REJECTED"
-                  ? "Resubmit for Review"
-                  : "Request for Review"}
-            </button>
-          ) : workflowStatus === "APPROVED" ? (
-            <button
-              onClick={handlePublish}
-              disabled={isSubmitting}
-              className={`bg-[#0056D2] font-semibold text-white px-[20px] py-[10px] rounded-[5px] w-full hover:bg-[#1d6de0] ${
-                isSubmitting ? "opacity-70 cursor-not-allowed" : ""
-              }`}
-            >
-              {isSubmitting ? "Please wait..." : "Publish this Course"}
-            </button>
-          ) : (
-            <button
-              disabled
-              className="bg-[#0056D2] opacity-70 cursor-not-allowed font-semibold text-white px-[20px] py-[10px] rounded-[5px] w-full"
-            >
-              {workflowStatus === "PENDING_APPROVAL"
-                ? "Pending Review"
-                : workflowStatus === "REJECTED"
-                  ? "Changes Required"
-                  : "Under Review"}
-            </button>
-          )}
+            {menuOpen && (
+              <div className="absolute right-0 top-full z-30 mt-1 w-56 rounded-xl border border-[#e2e8f0] bg-white py-1 shadow-lg">
+                {overflowLinks.map((item) => (
+                  <Link
+                    key={item.tab}
+                    href={item.link}
+                    className={`block px-4 py-2.5 text-[14px] hover:bg-[#f5f5f5] ${
+                      currentTab === item.tab ? "font-semibold" : ""
+                    }`}
+                  >
+                    {item.name}
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+        <div className="mt-3">{actionButton}</div>
+      </div>
+
+      <div className="hidden px-[30px] pl-[50px] py-[50px] w-[260px] xl:w-[300px] min-h-[calc(100vh-60px)] lg:block">
+        <div className="sticky top-[190px]">
+          <div className="mb-[30px]">
+            <h2 className="text-[20px] font-semibold pl-[30px]">
+              Course Editing
+            </h2>
+            <div>
+              {editingLinks.map((item, index) => (
+                <div key={index} className="">
+                  {(() => {
+                    const isActive = currentTab === item.tab;
+                    return (
+                      <Link
+                        href={item.link}
+                        className="relative text-[17px] py-[10px] block pl-[30px] hover:bg-[#f5f5f5]"
+                      >
+                        {isActive && (
+                          <span className="inline-block absolute left-0 top-0 w-[5px] bg-[#000] h-full" />
+                        )}
+                        {item.name}
+                      </Link>
+                    );
+                  })()}
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="mb-[30px]">
+            <h2 className="text-[20px] font-semibold pl-[30px]">
+              Course Management
+            </h2>
+            <div>
+              {managementLinks.map((item, index) => (
+                <div key={index} className="">
+                  {(() => {
+                    const isActive = currentTab === item.tab;
+                    return (
+                      <Link
+                        href={item.link}
+                        className="relative text-[17px] py-[10px] block pl-[30px] hover:bg-[#f5f5f5]"
+                      >
+                        {isActive && (
+                          <span className="inline-block absolute left-0 top-0 w-[5px] bg-[#000] h-full" />
+                        )}
+                        {item.name}
+                      </Link>
+                    );
+                  })()}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div>{actionButton}</div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
