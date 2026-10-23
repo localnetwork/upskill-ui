@@ -13,6 +13,10 @@ import {
   Loader2,
 } from "lucide-react";
 import BaseApi from "@/lib/api/_base.api";
+import {
+  MARKUP_LANGUAGES,
+  buildPreviewDocument,
+} from "@/lib/services/codingPreview";
 
 const Editor = dynamic(() => import("@monaco-editor/react"), { ssr: false });
 
@@ -173,7 +177,7 @@ export default function CodingExercisePreview({
   const hintKey = `${activeLanguage}:${activeStepNumber}`;
   const revealedCount = Math.min(revealedHints[hintKey] || 0, hintItems.length);
 
-  const isHtml = activeLanguage === "html";
+  const isHtml = MARKUP_LANGUAGES.includes(activeLanguage);
   const activeCode = codeByLanguage[activeLanguage] || "";
 
   useEffect(() => {
@@ -794,7 +798,11 @@ export default function CodingExercisePreview({
               <iframe
                 title="Preview"
                 sandbox="allow-scripts"
-                srcDoc={previewCode}
+                srcDoc={buildPreviewDocument(
+                  activeLanguage,
+                  previewCode,
+                  activeStep?.preview_html,
+                )}
                 className="flex-1 w-full bg-white"
               />
             ) : (

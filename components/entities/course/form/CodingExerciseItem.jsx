@@ -11,11 +11,16 @@ import {
   ArrowDown,
 } from "lucide-react";
 import BaseApi from "@/lib/api/_base.api";
+import {
+  DEFAULT_CSS_PREVIEW_HTML,
+  buildPreviewDocument,
+} from "@/lib/services/codingPreview";
 
 const Editor = dynamic(() => import("@monaco-editor/react"), { ssr: false });
 
 const AVAILABLE_LANGUAGES = [
   "html",
+  "css",
   "javascript",
   "typescript",
   "python",
@@ -23,9 +28,60 @@ const AVAILABLE_LANGUAGES = [
   "php",
   "go",
   "csharp",
+  "c",
+  "cpp",
+  "ruby",
+  "rust",
+  "kotlin",
+  "swift",
+  "sql",
 ];
 
+const LANGUAGE_LABELS = {
+  html: "HTML",
+  css: "CSS",
+  javascript: "JavaScript",
+  typescript: "TypeScript",
+  python: "Python",
+  java: "Java",
+  php: "PHP",
+  go: "Go",
+  csharp: "C#",
+  c: "C",
+  cpp: "C++",
+  ruby: "Ruby",
+  rust: "Rust",
+  kotlin: "Kotlin",
+  swift: "Swift",
+  sql: "SQL",
+};
+
+const languageLabel = (language) =>
+  LANGUAGE_LABELS[language] || String(language || "").toUpperCase();
+
 const MARKUP_LANGUAGES = ["html", "css"];
+
+const CSS_QUICK_CHECKS = [
+  {
+    name: "Styles an element with a color",
+    type: "regex",
+    value: "\\{[^}]*\\bcolor\\s*:\\s*[^;}]+",
+  },
+  {
+    name: "Sets a background",
+    type: "regex",
+    value: "\\{[^}]*\\bbackground(-color)?\\s*:\\s*[^;}]+",
+  },
+  {
+    name: "Sets a font-size",
+    type: "regex",
+    value: "\\{[^}]*\\bfont-size\\s*:\\s*[^;}]+",
+  },
+  { name: "Uses flexbox", type: "regex", value: "display\\s*:\\s*(inline-)?flex" },
+  { name: "Adds padding or margin", type: "regex", value: "\\b(padding|margin)\\s*:" },
+];
+
+const CSS_TEMPLATE = "/* Write your CSS here */\n";
 
 const CHECK_TYPES = [
   {
@@ -173,6 +229,7 @@ function hydrateStep(step, index) {
     title: step?.title || `Step ${index + 1}`,
     instruction: step?.instruction || step?.instructions || "",
     starter_code: step?.starter_code || step?.starterCode || "",
+    preview_html: step?.preview_html || step?.previewHtml || "",
     hintsText: (Array.isArray(step?.hints) ? step.hints : [])
       .map((item) => String(item || "").trim())
       .filter(Boolean)
@@ -192,6 +249,7 @@ function serializeStep(step, index) {
     title: step.title || `Step ${index + 1}`,
     instruction: step.instruction,
     starter_code: step.starter_code,
+    ...(step.preview_html ? { preview_html: step.preview_html } : {}),
     hints: parseStepHints(step.hintsText),
     validators,
     // kept for older readers of the payload
@@ -354,7 +412,16 @@ export default function CodingExerciseItem({ exercise, onClose, onSave }) {
       id: newId("step"),
       title: `Step ${steps.length + 1}`,
       instruction: "",
-      starter_code: isMarkup && !steps.length ? HTML_TEMPLATE : "",
+      starter_code:
+        isMarkup && !steps.length
+          ? activeLanguage === "css"
+            ? CSS_TEMPLATE
+            : HTML_TEMPLATE
+          : "",
+      preview_html:
+        activeLanguage === "css"
+          ? steps[steps.length - 1]?.preview_html || DEFAULT_CSS_PREVIEW_HTML
+          : "",
       hintsText: "",
       checks: [],
     };
@@ -565,7 +632,7 @@ export default function CodingExerciseItem({ exercise, onClose, onSave }) {
                     : "bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200"
                 }`}
               >
-                {language}
+                {languageLabel(language)}
               </button>
             ))}
           </div>
@@ -594,7 +661,7 @@ export default function CodingExerciseItem({ exercise, onClose, onSave }) {
                       : "text-slate-700 dark:text-slate-200"
                   }`}
                 >
-                  {language}
+                  {languageLabel(language)}
                 </button>
               ))}
             </div>
@@ -716,15 +783,50 @@ export default function CodingExerciseItem({ exercise, onClose, onSave }) {
                     />
                   </div>
                   {isMarkup && (
-                    <iframe
-                      title="Live preview"
-                      sandbox=""
-                      srcDoc={selectedStep.starter_code}
-                      className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white"
-                      style={{ height: editorHeight }}
-                    />
+                    <div className="flex flex-col gap-2">
+                      <iframe
+                        title="Live preview"
+                        sandbox=""
+                        srcDoc={buildPreviewDocument(
+                          activeLanguage,
+                          selectedStep.starter_code,
+                          selectedStep.preview_html,
+                        )}
+                        className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white"
+                        style={{ height: editorHeight }}
+                      />
+                    </div>
                   )}
                 </div>
+                {activeLanguage === "css" && (
+                  <div className="mt-3">
+                    <p className="text-xs text-slate-500 mb-1">
+                      Sample HTML the CSS is applied to (shown in the preview
+                      for learners)
+                    </p>
+                    <div className="rounded-lg overflow-hidden border border-slate-300 dark:border-slate-600">
+                      <Editor
+                        key={`preview-html-${selectedStep.id}`}
+                        language="html"
+                        value={selectedStep.preview_html || ""}
+                        onChange={(value) =>
+                          updateStep(selectedStep.id, {
+                            preview_html: value ?? "",
+                          })
+                        }
+                        theme="vs-dark"
+                        height={220}
+                        options={{
+                          minimap: { enabled: false },
+                          fontSize: 14,
+                          wordWrap: "on",
+                          scrollBeyondLastLine: false,
+                          automaticLayout: true,
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
 
               <label className="block">
@@ -862,10 +964,13 @@ export default function CodingExerciseItem({ exercise, onClose, onSave }) {
                 {isMarkup && (
                   <div>
                     <p className="text-xs text-slate-500 mb-1">
-                      Quick checks for HTML
+                      Quick checks for {languageLabel(activeLanguage)}
                     </p>
                     <div className="flex flex-wrap gap-2">
-                      {HTML_QUICK_CHECKS.map((preset) => (
+                      {(activeLanguage === "css"
+                        ? CSS_QUICK_CHECKS
+                        : HTML_QUICK_CHECKS
+                      ).map((preset) => (
                         <button
                           key={preset.name}
                           type="button"

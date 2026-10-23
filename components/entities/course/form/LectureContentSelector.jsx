@@ -116,7 +116,7 @@ export default function LectureContentSelector({
               </p>
             )}
 
-            <div className="aspect-video w-full overflow-hidden rounded-lg bg-gray-100">
+            <div className="flex items-center justify-center aspect-video w-full overflow-hidden rounded-lg bg-gray-100">
               <SecureVideo
                 lessonId={lecture.id}
                 src={lecture?.asset?.path || lecture?.videoUrl || ""}

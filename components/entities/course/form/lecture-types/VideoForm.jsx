@@ -45,8 +45,10 @@ export default function VideoForm({ onSave, onCancel, lecture }) {
   useEffect(() => () => abortRef.current?.abort(), []);
 
   // Ask Cloudflare how much of the interrupted upload it already has.
+  // Bunny uses a shared tus endpoint (no per-upload URL), so tus-js-client resumes it on its own.
   useEffect(() => {
     if (!pendingUpload?.upload_url) return undefined;
+    if (/bunnycdn\.com/i.test(pendingUpload.upload_url)) return undefined;
     let cancelled = false;
     fetch(pendingUpload.upload_url, {
       method: "HEAD",

@@ -82,11 +82,12 @@ export default function Register({ googleClientId }) {
     }
 
     const body = {
-      email: e.target.email.value,
-      password: e.target.password.value,
-      confirm_password: e.target.confirm_password.value,
-      firstname: e.target.firstname.value,
-      lastname: e.target.lastname.value,
+      username: payload.username.trim(),
+      email: payload.email.trim(),
+      password: payload.password,
+      confirm_password: payload.confirm_password,
+      firstname: payload.firstname.trim(),
+      lastname: payload.lastname.trim(),
       role: router?.query?.mode === "instructor" ? "EDUCATOR" : "LEARNER",
     };
 
@@ -101,7 +102,15 @@ export default function Register({ googleClientId }) {
     } catch (error) {
       console.log("Error", error);
       setErrors(error?.data?.errors);
-      if (error?.data?.message) toast.error(error.data.message);
+      const message = String(error?.data?.message || "");
+      // Show duplicate username/email next to the field instead of only a toast.
+      if (/username already/i.test(message)) {
+        setFieldErrors({ username: message });
+      } else if (/email already/i.test(message)) {
+        setFieldErrors({ email: message });
+      } else if (message) {
+        toast.error(message);
+      }
     } finally {
       setIsLoading(false);
     }

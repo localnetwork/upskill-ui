@@ -14,6 +14,7 @@ import {
   buildStreamEmbedUrlFromPlaybackUrl,
   extractStreamVideoIdFromPlaybackUrl,
   isAbsoluteHttpUrl,
+  isBunnyEmbedUrl,
   resolveVideoSource,
 } from "@/lib/services/videoSource";
 
@@ -273,6 +274,7 @@ export default function VideoPreview({
     if (loading) return;
 
     const attachIframePlaybackEvents = async () => {
+      if (isBunnyEmbedUrl(iframeSrc)) return;
       try {
         const Stream = await loadStreamPlayerSdk();
         if (
@@ -309,6 +311,40 @@ export default function VideoPreview({
         }
       }
     };
+  }, [iframeSrc, lecture?.id, loading]);
+
+  // Bunny's iframe player speaks the player.js protocol over postMessage.
+  useEffect(() => {
+    if (!isBunnyEmbedUrl(iframeSrc) || !lecture?.id || loading) return;
+
+    const post = (message) =>
+      iframeRef.current?.contentWindow?.postMessage(
+        JSON.stringify({ context: "player.js", version: "0.0.11", ...message }),
+        "*",
+      );
+
+    const onMessage = (event) => {
+      if (event.source !== iframeRef.current?.contentWindow) return;
+      let data = event.data;
+      if (typeof data === "string") {
+        try {
+          data = JSON.parse(data);
+        } catch (_error) {
+          return;
+        }
+      }
+      if (data?.context !== "player.js") return;
+      if (data.event === "ready") {
+        post({ method: "addEventListener", value: "ended" });
+      } else if (data.event === "ended") {
+        markCompletedRef.current?.();
+      }
+    };
+
+    window.addEventListener("message", onMessage);
+    // "ready" may have fired before we subscribed, so subscribe right away as well.
+    post({ method: "addEventListener", value: "ended" });
+    return () => window.removeEventListener("message", onMessage);
   }, [iframeSrc, lecture?.id, loading]);
 
   useEffect(() => {
