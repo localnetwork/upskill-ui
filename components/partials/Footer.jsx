@@ -124,14 +124,17 @@ const Footer = () => {
             © {new Date().getFullYear()} Upskill Learning. All rights reserved.
           </p>
           <div className="flex items-center gap-4">
-            <Link href="/about" className="transition-colors hover:text-white">
-              Privacy
-            </Link>
             <Link
-              href="/contact-us"
+              href="/privacy-policy"
               className="transition-colors hover:text-white"
             >
-              Terms
+              Privacy Policy
+            </Link>
+            <Link
+              href="/terms-conditions"
+              className="transition-colors hover:text-white"
+            >
+              Terms & Conditions
             </Link>
             <Link
               href="/contact-us"
