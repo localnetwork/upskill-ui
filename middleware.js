@@ -221,6 +221,7 @@ const isAnonymous = (req, token) => {
   const pathname = req.nextUrl.pathname;
   const isRestrictedPath =
     pathname === "/my-orders" ||
+    pathname === "/my-subscriptions" ||
     pathname === "/profile" ||
     pathname.startsWith("/profile/") ||
     pathname === "/settings" ||
@@ -288,6 +289,7 @@ export const config = {
     "/profile",
     "/profile/:path*",
     "/my-orders",
+    "/my-subscriptions",
     "/settings",
     "/settings/:path*",
     "/checkout",

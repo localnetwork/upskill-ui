@@ -89,7 +89,7 @@ export default function InstructorSidebar({ collapsed, onToggle }) {
                       "flex shrink-0 items-center justify-center",
                       "[&>svg]:h-5 [&>svg]:w-5",
                       isActive
-                        ? "text-blue-600"
+                        ? "text-primary"
                         : "text-zinc-500 group-hover:text-zinc-700",
                     ].join(" ")}
                     aria-hidden="true"

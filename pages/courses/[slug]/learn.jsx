@@ -126,14 +126,15 @@ export async function getServerSideProps(context) {
       };
     }
 
-    // if (status === 403 || status === 404) {
-    //   return {
-    //     redirect: {
-    //       destination: "/my-courses/learning",
-    //       permanent: false,
-    //     },
-    //   };
-    // }
+    // No live enrollment (never enrolled, or trial/subscription access ended): back to the course page to buy or subscribe.
+    if (status === 403 || status === 404) {
+      return {
+        redirect: {
+          destination: `/courses/${encodeURIComponent(slug)}`,
+          permanent: false,
+        },
+      };
+    }
 
     return { notFound: true };
   }

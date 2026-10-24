@@ -43,6 +43,7 @@ import CourseFeedback from "@/components/entities/course/show/CourseFeedback";
 import CourseReviews from "@/components/entities/course/show/CourseReviews";
 import persistentStore from "@/lib/store/persistentStore";
 import { trackAnalyticsEvent } from "@/lib/services/analytics";
+import useSubscriptionAccess from "@/lib/hooks/useSubscriptionAccess";
 const shimmer =
   "animate-pulse bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 rounded";
 
@@ -162,6 +163,8 @@ export default function Course() {
   const [purchaseMode, setPurchaseMode] = useState("subscribe");
   const [subPlans, setSubPlans] = useState([]);
   const [hasSubscription, setHasSubscription] = useState(false);
+  const { canStartWithPlan, startWithPlan, starting: startingWithPlan } =
+    useSubscriptionAccess(course, course?.is_enrolled);
   const [catalogCount, setCatalogCount] = useState(0);
   const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
 
@@ -382,9 +385,11 @@ export default function Course() {
     BaseApi.get(`${api}/subscription/catalog-summary`)
       .then((res) => setCatalogCount(Number(res?.data?.data?.courseCount || 0)))
       .catch(() => {});
-    BaseApi.get(`${api}/subscription/me`)
-      .then((res) => setHasSubscription(Boolean(res?.data?.data?.hasSubscription)))
-      .catch(() => {});
+    if (isLoggedIn()) {
+      BaseApi.get(`${api}/subscription/me`)
+        .then((res) => setHasSubscription(Boolean(res?.data?.data?.hasSubscription)))
+        .catch(() => {});
+    }
   }, []);
 
   // Lowest effective monthly price across plans, with the regular monthly price as the strike-through.
@@ -770,6 +775,15 @@ export default function Course() {
                       >
                         Continue Learning
                       </Link>
+                    ) : canStartWithPlan ? (
+                      <button
+                        type="button"
+                        onClick={startWithPlan}
+                        disabled={startingWithPlan}
+                        className="block px-4 text-center w-full py-4 bg-primary text-white font-black text-lg rounded-xl hover:brightness-110 active:scale-95 transition-all disabled:opacity-60"
+                      >
+                        {startingWithPlan ? "Opening..." : "Start Learning"}
+                      </button>
                     ) : showSubscribeOption ? (
                       <div className="rounded-xl border border-slate-200 divide-y divide-slate-200 overflow-hidden">
                         <label className="block cursor-pointer p-4">
@@ -865,7 +879,7 @@ export default function Course() {
                       </>
                     )}
 
-                    <CourseAccessButton course={course} enabled />
+                    <CourseAccessButton course={course} enabled={!canStartWithPlan} />
 
                     {!course?.is_enrolled && !showSubscribeOption && (
                       <div className="flex gap-2">

@@ -20,7 +20,7 @@ export default function CourseDescription({ description }) {
       />
       {shouldTruncate && (
         <button
-          className="text-blue-600 font-bold mt-3 hover:bg-[#f5f5f5] px-[5px] py-[10px] rounded-sm cursor-pointer"
+          className="text-primary font-bold mt-3 hover:bg-[#f5f5f5] px-[5px] py-[10px] rounded-sm cursor-pointer"
           onClick={() => setExpanded(!expanded)}
         >
           {expanded ? (

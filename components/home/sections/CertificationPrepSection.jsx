@@ -26,7 +26,7 @@ const certifications = [
     name: "PMP",
     slug: "pmp",
     badgeLabel: "PMP",
-    badgeColor: "bg-blue-100 text-blue-600",
+    badgeColor: "bg-blue-100 text-primary",
     courses: 8,
     description:
       "Globally recognized project management certification for experienced leaders.",

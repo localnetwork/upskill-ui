@@ -79,13 +79,25 @@ export default function ExpressCheckout() {
       try {
         await BaseApi.post(`${process.env.NEXT_PUBLIC_API_URL}/subscription/confirm`, { subscriptionId });
         toast.success("Subscription activated. Enjoy learning!");
-        router.replace(`/courses/${slug}/learn`);
       } catch (error) {
         if (!cancelled && error?.status === 409 && attempt < 8) {
           setTimeout(() => confirm(attempt + 1), 2500);
           return;
         }
         toast.error(error?.data?.message || "Could not confirm subscription.");
+        return;
+      }
+
+      // A subscription alone doesn't enroll; open this course with the plan before heading to the player.
+      try {
+        const api = process.env.NEXT_PUBLIC_API_URL;
+        const courseRes = await BaseApi.get(`${api}/courses/route/${slug}`);
+        const courseId = courseRes?.data?.id;
+        if (courseId) await BaseApi.post(`${api}/subscription/course/${courseId}/access`);
+        router.replace(`/courses/${slug}/learn`);
+      } catch (error) {
+        toast.error(error?.data?.message || "Could not open this course with your plan.");
+        router.replace(`/courses/${slug}`);
       }
     };
     confirm(0);

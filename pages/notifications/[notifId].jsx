@@ -42,6 +42,7 @@ export default function NotificationDetailPage() {
           setNotification((prev) =>
             prev ? { ...prev, readAt: new Date().toISOString() } : prev,
           );
+          window.dispatchEvent(new Event("notifications:changed"));
         }
       } catch (_error) {
         setNotification(null);

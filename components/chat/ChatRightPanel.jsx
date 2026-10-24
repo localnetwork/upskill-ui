@@ -5,7 +5,10 @@ import {
   Lock,
   Search,
 } from "lucide-react";
-import { IconCircleButton, SectionToggle } from "@/components/chat/design-system/ChatUi";
+import {
+  IconCircleButton,
+  SectionToggle,
+} from "@/components/chat/design-system/ChatUi";
 
 export default function ChatRightPanel({
   chatPhotoUrl,
@@ -52,7 +55,7 @@ export default function ChatRightPanel({
           }}
           className={`mt-5 h-12 w-12 ${
             messageSearchActive
-              ? "bg-blue-100 text-blue-600"
+              ? "bg-blue-100 text-primary"
               : "bg-slate-100 text-slate-700"
           }`}
         >

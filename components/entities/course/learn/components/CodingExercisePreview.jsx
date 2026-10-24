@@ -99,7 +99,10 @@ function runJavaScriptInSandbox(code) {
     };
 
     window.addEventListener("message", onMessage);
-    const safeCode = JSON.stringify(String(code || "")).replace(/</g, "\\u003c");
+    const safeCode = JSON.stringify(String(code || "")).replace(
+      /</g,
+      "\\u003c",
+    );
     iframe.srcdoc = `<script>
 const T=${JSON.stringify(token)};
 const send=(type,text)=>parent.postMessage({token:T,type,text},"*");
@@ -163,8 +166,9 @@ export default function CodingExercisePreview({
   const activeStep = useMemo(() => {
     if (!stepChallenges.length) return null;
     return (
-      stepChallenges.find((step) => getStepNumber(step) === currentStepNumber) ||
-      stepChallenges[0]
+      stepChallenges.find(
+        (step) => getStepNumber(step) === currentStepNumber,
+      ) || stepChallenges[0]
     );
   }, [stepChallenges, currentStepNumber]);
   const activeStepNumber = activeStep ? getStepNumber(activeStep) : 1;
@@ -217,9 +221,8 @@ export default function CodingExercisePreview({
     let saved = 1;
     try {
       saved =
-        Number(
-          localStorage.getItem(getStepKey(lecture?.id, activeLanguage)),
-        ) || 1;
+        Number(localStorage.getItem(getStepKey(lecture?.id, activeLanguage))) ||
+        1;
     } catch (_error) {}
     const exists = getSortedSteps(lecture?.asset || {}, activeLanguage).some(
       (step) => getStepNumber(step) === saved,
@@ -242,7 +245,10 @@ export default function CodingExercisePreview({
     const currentCode = codeByLanguage[activeLanguage];
     if (currentCode === undefined) return;
     try {
-      localStorage.setItem(getDraftKey(lecture.id, activeLanguage), currentCode);
+      localStorage.setItem(
+        getDraftKey(lecture.id, activeLanguage),
+        currentCode,
+      );
     } catch (_error) {}
   }, [lecture?.id, activeLanguage, codeByLanguage]);
 
@@ -338,7 +344,12 @@ export default function CodingExercisePreview({
           status: "done",
           lines: lines.length
             ? lines
-            : [{ type: "info", text: "(no output - use console.log to print)" }],
+            : [
+                {
+                  type: "info",
+                  text: "(no output - use console.log to print)",
+                },
+              ],
         });
         return;
       }
@@ -565,10 +576,7 @@ export default function CodingExercisePreview({
       </div>
 
       {/* Body */}
-      <div
-        ref={bodyRef}
-        className="flex-1 min-h-0 flex"
-      >
+      <div ref={bodyRef} className="flex-1 min-h-0 flex">
         {/* Instructions panel */}
         <div
           className="min-w-0 overflow-y-auto p-5 space-y-5 bg-white text-slate-800"
@@ -576,12 +584,14 @@ export default function CodingExercisePreview({
         >
           {isStepMode && activeStep ? (
             <section>
-              <p className="text-xs font-semibold uppercase tracking-wide text-blue-600 mb-1">
+              <p className="text-xs font-semibold uppercase tracking-wide text-primary mb-1">
                 Step {activeStepIndex + 1}
                 {activeStep?.title ? ` - ${activeStep.title}` : ""}
               </p>
               <p className="text-[15px] leading-relaxed whitespace-pre-wrap">
-                {String(activeStep?.instruction || activeStep?.instructions || "")}
+                {String(
+                  activeStep?.instruction || activeStep?.instructions || "",
+                )}
               </p>
             </section>
           ) : (
@@ -676,7 +686,8 @@ export default function CodingExercisePreview({
                   : "Not quite yet - keep trying"}
                 <span className="font-normal text-slate-500">
                   {" "}
-                  ({stepCheckSummary.passedChecks ??
+                  (
+                  {stepCheckSummary.passedChecks ??
                     stepCheckSummary.passedTests ??
                     0}
                   /

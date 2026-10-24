@@ -100,7 +100,7 @@ export default function PublicProfile({ profile }) {
                   label: "Total learners",
                   value: Number(educatorStats?.total_learners || 0),
                   icon: Users,
-                  iconColor: "text-blue-600",
+                  iconColor: "text-primary",
                   iconBg: "bg-blue-50",
                   border: "border-blue-100",
                 },

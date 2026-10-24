@@ -193,6 +193,13 @@ export default function Header() {
     };
   }, [cartDrawerOpen]);
 
+  // Notification pages announce reads so the bell count stays in sync.
+  useEffect(() => {
+    window.addEventListener("notifications:changed", refreshNotifications);
+    return () =>
+      window.removeEventListener("notifications:changed", refreshNotifications);
+  }, [refreshNotifications]);
+
   useEffect(() => {
     refreshNotifications();
     refreshChatUnread();

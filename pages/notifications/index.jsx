@@ -5,14 +5,15 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/router";
 import toast from "react-hot-toast";
 import NotificationAvatar from "@/components/entities/notification/NotificationVisual";
+import persistentStore from "@/lib/store/persistentStore";
 
-const TYPE_OPTIONS = [
+const ALL_TYPE_OPTIONS = [
   { label: "All Types", value: "ALL" },
-  { label: "Enrollment", value: "ENROLLMENT" },
-  { label: "Order", value: "ORDER" },
-  { label: "Payout", value: "PAYOUT" },
-  { label: "Course Approval", value: "COURSE_APPROVAL" },
-  { label: "Course Review", value: "COURSE_REVIEW" },
+  { label: "Enrollment", value: "ENROLLMENT", roles: ["LEARNER", "EDUCATOR", "STAFF"] },
+  { label: "Order", value: "ORDER", roles: ["STAFF"] },
+  { label: "Payout", value: "PAYOUT", roles: ["EDUCATOR", "STAFF"] },
+  { label: "Course Approval", value: "COURSE_APPROVAL", roles: ["EDUCATOR", "STAFF"] },
+  { label: "Course Review", value: "COURSE_REVIEW", roles: ["EDUCATOR", "STAFF"] },
   { label: "System", value: "SYSTEM" },
 ];
 
@@ -22,18 +23,39 @@ const STATUS_OPTIONS = [
   { label: "Read", value: "read" },
 ];
 
-const KIND_OPTIONS = [
+// Options without `roles` are shown to everyone.
+const ALL_KIND_OPTIONS = [
   { label: "All Notifications", value: "ALL" },
   { label: "Friend Requests", value: "FRIEND_REQUEST" },
   { label: "Friend Request Responses", value: "FRIEND_REQUEST_RESPONSE" },
-  { label: "Welcome Message", value: "COURSE_WELCOME_MESSAGE" },
+  { label: "Welcome Message", value: "COURSE_WELCOME_MESSAGE", roles: ["LEARNER"] },
   {
     label: "Congratulations Message",
     value: "COURSE_CONGRATULATIONS_MESSAGE",
+    roles: ["LEARNER"],
   },
-  { label: "New Enrollment", value: "COURSE_NEW_ENROLLMENT" },
+  { label: "New Enrollment", value: "COURSE_NEW_ENROLLMENT", roles: ["EDUCATOR", "STAFF"] },
   { label: "Security (New Device Login)", value: "SECURITY_NEW_DEVICE_LOGIN" },
 ];
+
+// Maps the profile's roles to LEARNER / EDUCATOR / STAFF (admin or any internal role).
+function resolveRoleGroups(profile) {
+  const groups = new Set();
+  for (const role of profile?.roles || []) {
+    const name = String(
+      typeof role === "string" ? role : role?.name || role?.role_name || role?.id || "",
+    ).toUpperCase();
+    if (["LEARNER", "STUDENT", "3"].includes(name)) groups.add("LEARNER");
+    else if (["EDUCATOR", "INSTRUCTOR", "2"].includes(name)) groups.add("EDUCATOR");
+    else if (name) groups.add("STAFF");
+  }
+  return groups;
+}
+
+const filterOptionsByRole = (options, groups) =>
+  options.filter(
+    (option) => !option.roles || option.roles.some((role) => groups.has(role)),
+  );
 
 function toRelativeTime(dateValue) {
   if (!dateValue) return "Just now";
@@ -87,6 +109,16 @@ function isPendingFriendRequest(notification) {
 
 export default function NotificationsPage() {
   const router = useRouter();
+  const profile = persistentStore((state) => state.profile);
+  const roleGroups = useMemo(() => resolveRoleGroups(profile), [profile]);
+  const typeOptions = useMemo(
+    () => filterOptionsByRole(ALL_TYPE_OPTIONS, roleGroups),
+    [roleGroups],
+  );
+  const kindOptions = useMemo(
+    () => filterOptionsByRole(ALL_KIND_OPTIONS, roleGroups),
+    [roleGroups],
+  );
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [type, setType] = useState("ALL");
@@ -182,6 +214,7 @@ export default function NotificationsPage() {
               : item,
           ),
         );
+        window.dispatchEvent(new Event("notifications:changed"));
       } catch (_error) {}
     }
 
@@ -214,6 +247,7 @@ export default function NotificationsPage() {
             : item,
         ),
       );
+      window.dispatchEvent(new Event("notifications:changed"));
 
       toast.success(
         action === "ACCEPT"
@@ -257,7 +291,7 @@ export default function NotificationsPage() {
             setType(e.target.value);
           }}
         >
-          {TYPE_OPTIONS.map((option) => (
+          {typeOptions.map((option) => (
             <option key={option.value} value={option.value}>
               {option.label}
             </option>
@@ -272,7 +306,7 @@ export default function NotificationsPage() {
             setKind(e.target.value);
           }}
         >
-          {KIND_OPTIONS.map((option) => (
+          {kindOptions.map((option) => (
             <option key={option.value} value={option.value}>
               {option.label}
             </option>

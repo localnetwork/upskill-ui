@@ -9,6 +9,7 @@ import CertificationPrepSection from "./sections/CertificationPrepSection";
 import FinalCTA from "@/components/blocks/FinalCTA";
 import usePrefersReducedMotion from "./usePrefersReducedMotion";
 import HomePopular from "./sections/HomePopular";
+import ExploreByCategorySection from "./sections/ExploreByCategorySection";
 import HomepageSkillsTransform from "./sections/HomepageSkillsTransform";
 
 export default function HomePageExperience() {
@@ -74,6 +75,7 @@ export default function HomePageExperience() {
   return (
     <div ref={wrapperRef}>
       <HomeHeroSection />
+      <ExploreByCategorySection />
       <HomePopular />
       <HomepageSkillsTransform />
     </div>

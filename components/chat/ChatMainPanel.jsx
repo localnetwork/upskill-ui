@@ -198,7 +198,7 @@ export default function ChatMainPanel({
             ) : null}
 
             <div className="flex items-end gap-2 rounded-full bg-slate-100 px-2 py-2">
-              <IconCircleButton className="h-auto w-auto p-1 text-blue-600 hover:bg-blue-50">
+              <IconCircleButton className="h-auto w-auto p-1 text-primary hover:bg-blue-50">
                 <Mic className="h-5 w-5" />
               </IconCircleButton>
               <input
@@ -211,7 +211,7 @@ export default function ChatMainPanel({
                 }
               />
               <IconCircleButton
-                className="h-auto w-auto p-1 text-blue-600 hover:bg-blue-50"
+                className="h-auto w-auto p-1 text-primary hover:bg-blue-50"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploading}
               >
@@ -224,7 +224,7 @@ export default function ChatMainPanel({
                   </span>
                 )}
               </IconCircleButton>
-              <IconCircleButton className="h-auto w-auto p-1 text-blue-600 hover:bg-blue-50">
+              <IconCircleButton className="h-auto w-auto p-1 text-primary hover:bg-blue-50">
                 <MessageCircleMore className="h-5 w-5" />
               </IconCircleButton>
               <div className="flex-1 px-2">
@@ -241,12 +241,12 @@ export default function ChatMainPanel({
                   className="w-full min-w-[80px] bg-transparent px-1 py-1 text-base text-slate-800 outline-none"
                 />
               </div>
-              <IconCircleButton className="h-auto w-auto p-1 text-blue-600 hover:bg-blue-50">
+              <IconCircleButton className="h-auto w-auto p-1 text-primary hover:bg-blue-50">
                 <Smile className="h-5 w-5" />
               </IconCircleButton>
               <IconCircleButton
                 onClick={handleSend}
-                className="h-auto w-auto p-1 text-blue-600 hover:bg-blue-50 disabled:opacity-60"
+                className="h-auto w-auto p-1 text-primary hover:bg-blue-50 disabled:opacity-60"
                 disabled={
                   sending ||
                   (!composerText.trim() && !attachment?.path) ||
@@ -255,7 +255,7 @@ export default function ChatMainPanel({
               >
                 <SendHorizontal className="h-5 w-5" />
               </IconCircleButton>
-              <IconCircleButton className="h-auto w-auto p-1 text-blue-600 hover:bg-blue-50">
+              <IconCircleButton className="h-auto w-auto p-1 text-primary hover:bg-blue-50">
                 <span className="text-base">{defaultEmoji}</span>
               </IconCircleButton>
             </div>

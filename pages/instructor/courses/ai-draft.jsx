@@ -308,7 +308,7 @@ export default function AIDraftCoursePage() {
             {/* Footer Actions */}
             <div className="pt-8 border-t border-outline flex flex-col md:flex-row items-center justify-between gap-6">
               <div className="flex items-center gap-3 text-on-surface-variant">
-                <Info className="text-blue-600" />
+                <Info className="text-primary" />
 
                 <p className="text-xs font-medium leading-relaxed max-w-sm">
                   Generating a draft typically takes 10-20 seconds. You can edit
@@ -347,106 +347,109 @@ export default function AIDraftCoursePage() {
               </div>
             </div>
 
-          {isGenerating && (
-            <div className="rounded-xl border border-[#dbeafe] bg-[#eff6ff] p-4">
-              <div className="flex items-center gap-2 text-[#1d4ed8] font-semibold">
-                <Sparkles size={16} className="animate-pulse" />
-                AI drafting in progress
-              </div>
-              <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-[#bfdbfe]">
-                <div
-                  className="h-full rounded-full bg-[#2563eb] transition-all duration-500"
-                  style={{
-                    width: `${Math.max(
-                      8,
-                      Math.min(
-                        100,
-                        Number(generationProgress.progressPercent || 0),
-                      ),
-                    )}%`,
-                  }}
-                />
-              </div>
-              <p className="mt-2 text-[13px] text-slate-600">{stepLabel}</p>
-              {generationProgress?.draftProgress && (
-                <p className="text-[12px] text-slate-500 mt-1">
-                  Sections: {generationProgress.draftProgress.sectionsCreated}/
-                  {generationProgress.draftProgress.totalSections} ·
-                  Curriculums: {generationProgress.draftProgress.lessonsCreated}
-                  /{generationProgress.draftProgress.totalLessons}
-                </p>
-              )}
-            </div>
-          )}
-
-          {(isGenerating || generationResult) && progressPreview?.title && (
-            <div className="rounded-xl border border-slate-200 bg-white p-4">
-              <h3 className="font-semibold text-slate-900">
-                Live draft preview
-              </h3>
-              <p className="mt-2 text-[18px] font-semibold text-slate-800">
-                {progressPreview.title}
-              </p>
-              {progressPreview.subtitle && (
-                <p className="text-[14px] text-slate-600 mt-1">
-                  {progressPreview.subtitle}
-                </p>
-              )}
-              {progressPreview.description && (
-                <p className="text-[13px] text-slate-600 mt-2 line-clamp-4">
-                  {progressPreview.description}
-                </p>
-              )}
-              {!!previewSections.length && (
-                <div className="mt-4 space-y-3">
-                  {previewSections.slice(0, 3).map((section, sectionIndex) => (
-                    <div
-                      key={`${section?.title || "section"}-${sectionIndex}`}
-                      className="rounded-lg border border-slate-200 p-3"
-                    >
-                      <p className="font-semibold text-[14px] text-slate-800">
-                        {sectionIndex + 1}.{" "}
-                        {section?.title || "Untitled section"}
-                      </p>
-                      <p className="text-[12px] text-slate-600 mt-1">
-                        {(Array.isArray(section?.lessons)
-                          ? section.lessons.length
-                          : 0) || 0}{" "}
-                        curriculums
-                      </p>
-                      <div className="mt-2 text-[12px] text-slate-600 space-y-1">
-                        {(Array.isArray(section?.lessons)
-                          ? section.lessons
-                          : []
-                        )
-                          .slice(0, 2)
-                          .map((lesson, lessonIndex) => (
-                            <p
-                              key={`${lesson?.title || "lesson"}-${lessonIndex}`}
-                            >
-                              • {lesson?.title || "Untitled curriculum"}
-                            </p>
-                          ))}
-                      </div>
-                    </div>
-                  ))}
+            {isGenerating && (
+              <div className="rounded-xl border border-[#dbeafe] bg-[#eff6ff] p-4">
+                <div className="flex items-center gap-2 text-[#1d4ed8] font-semibold">
+                  <Sparkles size={16} className="animate-pulse" />
+                  AI drafting in progress
                 </div>
-              )}
-            </div>
-          )}
-
-          {generationResult && (
-            <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
-              <div className="flex items-center gap-2 text-emerald-700 font-semibold">
-                <CheckCircle2 size={20} />
-                Draft created successfully
+                <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-[#bfdbfe]">
+                  <div
+                    className="h-full rounded-full bg-[#2563eb] transition-all duration-500"
+                    style={{
+                      width: `${Math.max(
+                        8,
+                        Math.min(
+                          100,
+                          Number(generationProgress.progressPercent || 0),
+                        ),
+                      )}%`,
+                    }}
+                  />
+                </div>
+                <p className="mt-2 text-[13px] text-slate-600">{stepLabel}</p>
+                {generationProgress?.draftProgress && (
+                  <p className="text-[12px] text-slate-500 mt-1">
+                    Sections: {generationProgress.draftProgress.sectionsCreated}
+                    /{generationProgress.draftProgress.totalSections} ·
+                    Curriculums:{" "}
+                    {generationProgress.draftProgress.lessonsCreated}/
+                    {generationProgress.draftProgress.totalLessons}
+                  </p>
+                )}
               </div>
-              <p className="mt-2 text-[13px] text-emerald-700/90">
-                {generationResult.sectionCount} sections and{" "}
-                {generationResult.lessonCount} curriculums generated.
-              </p>
-            </div>
-          )}
+            )}
+
+            {(isGenerating || generationResult) && progressPreview?.title && (
+              <div className="rounded-xl border border-slate-200 bg-white p-4">
+                <h3 className="font-semibold text-slate-900">
+                  Live draft preview
+                </h3>
+                <p className="mt-2 text-[18px] font-semibold text-slate-800">
+                  {progressPreview.title}
+                </p>
+                {progressPreview.subtitle && (
+                  <p className="text-[14px] text-slate-600 mt-1">
+                    {progressPreview.subtitle}
+                  </p>
+                )}
+                {progressPreview.description && (
+                  <p className="text-[13px] text-slate-600 mt-2 line-clamp-4">
+                    {progressPreview.description}
+                  </p>
+                )}
+                {!!previewSections.length && (
+                  <div className="mt-4 space-y-3">
+                    {previewSections
+                      .slice(0, 3)
+                      .map((section, sectionIndex) => (
+                        <div
+                          key={`${section?.title || "section"}-${sectionIndex}`}
+                          className="rounded-lg border border-slate-200 p-3"
+                        >
+                          <p className="font-semibold text-[14px] text-slate-800">
+                            {sectionIndex + 1}.{" "}
+                            {section?.title || "Untitled section"}
+                          </p>
+                          <p className="text-[12px] text-slate-600 mt-1">
+                            {(Array.isArray(section?.lessons)
+                              ? section.lessons.length
+                              : 0) || 0}{" "}
+                            curriculums
+                          </p>
+                          <div className="mt-2 text-[12px] text-slate-600 space-y-1">
+                            {(Array.isArray(section?.lessons)
+                              ? section.lessons
+                              : []
+                            )
+                              .slice(0, 2)
+                              .map((lesson, lessonIndex) => (
+                                <p
+                                  key={`${lesson?.title || "lesson"}-${lessonIndex}`}
+                                >
+                                  • {lesson?.title || "Untitled curriculum"}
+                                </p>
+                              ))}
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {generationResult && (
+              <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+                <div className="flex items-center gap-2 text-emerald-700 font-semibold">
+                  <CheckCircle2 size={20} />
+                  Draft created successfully
+                </div>
+                <p className="mt-2 text-[13px] text-emerald-700/90">
+                  {generationResult.sectionCount} sections and{" "}
+                  {generationResult.lessonCount} curriculums generated.
+                </p>
+              </div>
+            )}
           </form>
         </section>
       </div>

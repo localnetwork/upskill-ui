@@ -10,6 +10,11 @@
     "access": "view-own-learnings"
   },
   {
+    "name": "My Subscriptions",
+    "link": "/my-subscriptions",
+    "access": "view-own-learnings"
+  },
+  {
     "name": "Edit Profile",
     "link": "/profile/basic-information",
     "access": ["*"]

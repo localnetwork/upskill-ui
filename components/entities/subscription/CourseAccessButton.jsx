@@ -18,7 +18,7 @@ export default function CourseAccessButton({ course, enabled }) {
       .catch(() => setOptions(null));
   }, [enabled, course?.id, course?.is_enrolled]);
 
-  if (!options || course?.is_enrolled) return null;
+  if (!enabled || !options || course?.is_enrolled) return null;
   if (!options.canUseTrial && !options.canUseSubscription) return null;
 
   const label = options.canUseSubscription
