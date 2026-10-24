@@ -20,6 +20,25 @@
     "access": ["admin"]
   },
   {
+    "name": "Employee Dashboard",
+    "link": "/employee-dashboard",
+    "access": [
+      "courses.list",
+      "courses.approve",
+      "courses.reject",
+      "categories.manage",
+      "tags.manage",
+      "users.view",
+      "users.suspend",
+      "users.manage",
+      "payouts.manage",
+      "reports.view",
+      "reports.revenue",
+      "settings.view",
+      "settings.manage"
+    ]
+  },
+  {
     "name": "Instructor Dashboard",
     "link": "/instructor/courses",
     "access": ["add-course"]

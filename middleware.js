@@ -152,6 +152,13 @@ const hasRole = (roles, roleName) => {
   return roles.some((role) => accepted.includes(String(role).toUpperCase()));
 };
 
+const BASE_USER_ROLES = ["EDUCATOR", "INSTRUCTOR", "LEARNER", "STUDENT", "2", "3"];
+
+// Any role beyond the learner/educator ones is internal staff; the API enforces per-permission access.
+const hasAdminAreaAccess = (roles) =>
+  hasRole(roles, "ADMIN") ||
+  roles.some((role) => !BASE_USER_ROLES.includes(String(role).toUpperCase()));
+
 const guardAdminRoute = (req, token, roles, decoded) => {
   const pathname = req.nextUrl.pathname;
   if (!pathname.startsWith("/admin")) return null;
@@ -166,7 +173,26 @@ const guardAdminRoute = (req, token, roles, decoded) => {
   // allow request and let server-side page/API checks make the final decision.
   if (!decoded) return null;
 
-  if (!hasRole(roles, "ADMIN")) {
+  if (!hasAdminAreaAccess(roles)) {
+    const url = req.nextUrl.clone();
+    url.pathname = "/";
+    return NextResponse.redirect(url);
+  }
+  return null;
+};
+
+const guardEmployeeRoute = (req, token, roles, decoded) => {
+  if (!req.nextUrl.pathname.startsWith("/employee-dashboard")) return null;
+
+  if (!token) {
+    const url = req.nextUrl.clone();
+    url.pathname = "/login";
+    return NextResponse.redirect(url);
+  }
+
+  if (!decoded) return null;
+
+  if (!hasAdminAreaAccess(roles)) {
     const url = req.nextUrl.clone();
     url.pathname = "/";
     return NextResponse.redirect(url);
@@ -238,6 +264,10 @@ export async function middleware(req) {
   if (adminGuardResponse)
     return applyCookieMutations(adminGuardResponse, cookieMutations);
 
+  const employeeGuardResponse = guardEmployeeRoute(req, token, roles, decoded);
+  if (employeeGuardResponse)
+    return applyCookieMutations(employeeGuardResponse, cookieMutations);
+
   const loggedInBlockResponse = isLoggedInBlock(req, token);
   if (loggedInBlockResponse)
     return applyCookieMutations(loggedInBlockResponse, cookieMutations);
@@ -266,6 +296,8 @@ export const config = {
     "/verify-2fa",
     "/admin",
     "/admin/:path*",
+    "/employee-dashboard",
+    "/employee-dashboard/:path*",
     "/instructor",
     "/instructor/:path*",
   ],

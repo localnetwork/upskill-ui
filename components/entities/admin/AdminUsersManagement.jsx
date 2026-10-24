@@ -1,14 +1,20 @@
 import Select from "@/components/forms/Select";
 import BaseApi from "@/lib/api/_base.api";
-import { Ban, Edit, Lock, MoreVertical, Search, X } from "lucide-react";
+import { Ban, BookOpen, Edit, Lock, MoreVertical, Search, ShieldCheck, UserPlus, X } from "lucide-react";
 import toast from "react-hot-toast";
 import { useEffect, useMemo, useState } from "react";
+import AdminRolesGuide from "./AdminRolesGuide";
+import { CreateUserModal, UserRolesModal } from "./AdminUserFormModals";
 
 const ROLE_OPTIONS = [
   { value: "ALL", label: "All Roles" },
   { value: "ADMIN", label: "Admin" },
   { value: "EDUCATOR", label: "Educator" },
   { value: "LEARNER", label: "Learner" },
+  { value: "FINANCE_OFFICER", label: "Finance Officer" },
+  { value: "COURSE_REVIEWER", label: "Course Reviewer" },
+  { value: "SUPPORT_AGENT", label: "Support Agent" },
+  { value: "ANALYST", label: "Analyst" },
 ];
 
 const STATUS_OPTIONS = [
@@ -23,6 +29,15 @@ const ROLE_BADGE_CLASS = {
   EDUCATOR: "bg-blue-100 text-blue-700",
   LEARNER: "bg-amber-100 text-amber-700",
 };
+const STAFF_BADGE_CLASS = "bg-emerald-100 text-emerald-700";
+
+function formatRoleLabel(name = "") {
+  return String(name)
+    .toLowerCase()
+    .split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
 
 const STATUS_TEXT_CLASS = {
   Active: "text-emerald-700",
@@ -65,6 +80,14 @@ function normalizeUser(user) {
   return {
     ...user,
     role: toTitleCase(primaryRole),
+    roleBadges: (roles.length ? roles : ["LEARNER"]).map((name) => {
+      const key = String(name).toUpperCase();
+      return {
+        key,
+        label: formatRoleLabel(key),
+        style: ROLE_BADGE_CLASS[key] || STAFF_BADGE_CLASS,
+      };
+    }),
     roleStyle: ROLE_BADGE_CLASS[primaryRole] || "bg-slate-100 text-slate-700",
     status,
     initials: getInitials(user),
@@ -88,7 +111,23 @@ export default function AdminUsersManagement() {
   const [busyId, setBusyId] = useState(null);
   const [reloadKey, setReloadKey] = useState(0);
   const [menu, setMenu] = useState(null);
+  const [roleCatalog, setRoleCatalog] = useState([]);
+  const [showGuide, setShowGuide] = useState(false);
+  const [showCreate, setShowCreate] = useState(false);
+  const [rolesUser, setRolesUser] = useState(null);
 
+  const isAdmin = myRoles.includes("ADMIN");
+  const staffRoles = useMemo(
+    () => roleCatalog.filter((r) => !r.is_system),
+    [roleCatalog],
+  );
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    BaseApi.get(`${process.env.NEXT_PUBLIC_API_URL}/admin/roles`)
+      .then((res) => setRoleCatalog(res?.data?.data || []))
+      .catch(() => {});
+  }, [isAdmin, reloadKey]);
   useEffect(() => {
     if (!menu) return undefined;
     const close = () => setMenu(null);
@@ -284,6 +323,24 @@ export default function AdminUsersManagement() {
           </div>
 
           <div className="flex items-center gap-3 w-full md:w-auto">
+            {isAdmin ? (
+              <button
+                type="button"
+                onClick={() => setShowGuide(true)}
+                className="flex shrink-0 items-center gap-2 rounded-[5px] border border-slate-300 px-3 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              >
+                <BookOpen size={16} /> Roles guide
+              </button>
+            ) : null}
+            {isAdmin ? (
+              <button
+                type="button"
+                onClick={() => setShowCreate(true)}
+                className="flex shrink-0 items-center gap-2 rounded-[5px] bg-primary px-3 py-2.5 text-sm font-semibold text-white"
+              >
+                <UserPlus size={16} /> Add user
+              </button>
+            ) : null}
             <Select
               className={`border border-[oklch(67.22%_0.0355_279.77deg)] rounded-[5px] p-[10px] w-full`}
               name="roles"
@@ -364,11 +421,16 @@ export default function AdminUsersManagement() {
                   </td>
 
                   <td className="px-6 py-5">
-                    <span
-                      className={`px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider rounded-full ${user.roleStyle}`}
-                    >
-                      {user.role}
-                    </span>
+                    <div className="flex flex-wrap gap-1">
+                      {user.roleBadges.map((badge) => (
+                        <span
+                          key={badge.key}
+                          className={`px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider rounded-full ${badge.style}`}
+                        >
+                          {badge.label}
+                        </span>
+                      ))}
+                    </div>
                   </td>
 
                   <td className="px-6 py-5">
@@ -446,6 +508,21 @@ export default function AdminUsersManagement() {
             >
               <Edit size={16} /> Edit user
             </button>
+            {isAdmin ? (
+              <button
+                type="button"
+                role="menuitem"
+                title={menuUser.id === myId ? "You cannot change your own roles" : ""}
+                disabled={menuUser.id === myId}
+                onClick={() => {
+                  setMenu(null);
+                  setRolesUser(menuUser);
+                }}
+                className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <ShieldCheck size={16} /> Manage staff roles
+              </button>
+            ) : null}
             <button
               type="button"
               role="menuitem"
@@ -509,6 +586,34 @@ export default function AdminUsersManagement() {
           </div>
         </div>
       </div>
+
+      {showGuide ? (
+        <AdminRolesGuide
+          roles={roleCatalog}
+          onClose={() => setShowGuide(false)}
+        />
+      ) : null}
+      {showCreate ? (
+        <CreateUserModal
+          staffRoles={staffRoles}
+          onClose={() => setShowCreate(false)}
+          onCreated={() => {
+            setShowCreate(false);
+            setReloadKey((k) => k + 1);
+          }}
+        />
+      ) : null}
+      {rolesUser ? (
+        <UserRolesModal
+          user={rolesUser}
+          staffRoles={staffRoles}
+          onClose={() => setRolesUser(null)}
+          onSaved={() => {
+            setRolesUser(null);
+            setReloadKey((k) => k + 1);
+          }}
+        />
+      ) : null}
 
       {editing && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">

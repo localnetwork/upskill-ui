@@ -158,7 +158,11 @@ export async function getServerSideProps(context) {
     );
     const me = meRes?.data?.data;
     const roles = normalizeRoleNames(me?.roles);
-    if (!roles.includes("ADMIN")) {
+    const BASE_USER_ROLES = ["EDUCATOR", "INSTRUCTOR", "LEARNER", "STUDENT"];
+    const hasAdminAreaAccess = roles.some(
+      (role) => role === "ADMIN" || !BASE_USER_ROLES.includes(role),
+    );
+    if (!hasAdminAreaAccess) {
       return {
         redirect: {
           destination: "/",

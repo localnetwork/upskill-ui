@@ -42,8 +42,9 @@ export async function getServerSideProps(context) {
     const roles = normalizeRoleNames(me?.roles);
     const isAdmin = roles.includes("ADMIN");
     const isEducator = roles.includes("EDUCATOR");
+    const isReviewer = (me?.permissions || []).includes("courses.review");
 
-    if (!isAdmin && !isEducator) {
+    if (!isAdmin && !isEducator && !isReviewer) {
       return {
         redirect: {
           destination: "/",
@@ -60,10 +61,10 @@ export async function getServerSideProps(context) {
       course?.educatorId || course?.author?.data?.id || course?.educator?.id || null;
     const isOwner = Boolean(me?.id && authorId && me.id === authorId);
 
-    if (!isAdmin && !isOwner) {
+    if (!isAdmin && !isOwner && !isReviewer) {
       return {
         redirect: {
-          destination: "/instructor/courses",
+          destination: isEducator ? "/instructor/courses" : "/",
           permanent: false,
         },
       };
@@ -74,6 +75,7 @@ export async function getServerSideProps(context) {
         course,
         isOwner,
         isAdmin,
+        isReviewer: !isAdmin && !isOwner && isReviewer,
       },
     };
   } catch (error) {
@@ -98,25 +100,26 @@ export async function getServerSideProps(context) {
   }
 }
 
-export default function CourseDetailsPreviewPage({ course, isOwner, isAdmin }) {
+export default function CourseDetailsPreviewPage({ course, isOwner, isAdmin, isReviewer }) {
   const author = course?.author?.data || course?.educator || null;
+  const backHref = isOwner
+    ? `/instructor/courses/${course?.uuid}/basics`
+    : isReviewer
+      ? "/employee-dashboard?tab=courses"
+      : "/admin?tab=courses";
 
   return (
     <div className="pb-[50px]">
       <header className="bg-[#0f172a] text-white py-10 lg:py-16 px-4 lg:px-8">
         <div className="container mx-auto">
           <div className="mb-6 flex items-center justify-between gap-3 flex-wrap">
-            {isOwner || isAdmin ? (
+            {isOwner || isAdmin || isReviewer ? (
               <Link
-                href={
-                  isOwner
-                    ? `/instructor/courses/${course?.uuid}/basics`
-                    : "/admin?tab=courses"
-                }
+                href={backHref}
                 className="inline-flex items-center gap-2 rounded-md bg-white/10 hover:bg-white/20 px-3 py-2 text-sm font-semibold"
               >
                 <ChevronLeft size={18} />
-                Back to course management
+                {isReviewer ? "Back to course review" : "Back to course management"}
               </Link>
             ) : (
               <span />

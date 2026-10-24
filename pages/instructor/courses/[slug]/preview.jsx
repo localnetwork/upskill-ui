@@ -263,8 +263,9 @@ export async function getServerSideProps(context) {
     const roles = normalizeRoleNames(me?.roles);
     const isAdmin = roles.includes("ADMIN");
     const isEducator = roles.includes("EDUCATOR");
+    const isReviewer = (me?.permissions || []).includes("courses.review");
 
-    if (!isAdmin && !isEducator) {
+    if (!isAdmin && !isEducator && !isReviewer) {
       return {
         redirect: {
           destination: "/",
@@ -281,10 +282,10 @@ export async function getServerSideProps(context) {
       course?.educatorId || course?.author?.data?.id || course?.educator?.id || null;
     const isOwner = Boolean(me?.id && authorId && me.id === authorId);
 
-    if (!isAdmin && !isOwner) {
+    if (!isAdmin && !isOwner && !isReviewer) {
       return {
         redirect: {
-          destination: "/instructor/courses",
+          destination: isEducator ? "/instructor/courses" : "/",
           permanent: false,
         },
       };
