@@ -13,6 +13,10 @@ export default function Meta({ title, description, keywords }) {
       <meta charSet="UTF-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <meta httpEquiv="X-UA-Compatible" content="ie=edge" />
+      <meta
+        name="google-site-verification"
+        content="YuVLUAGlJZWcM4bqQakgcn4Yay1qT4B9X-x6WDtpclg"
+      />
       <title>{findTitle}</title>
       <meta name="description" content={findDescription} />
       <meta name="keywords" content={keywords} />
