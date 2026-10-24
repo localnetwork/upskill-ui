@@ -38,6 +38,7 @@ import { mutate } from "swr";
 import globalStore from "@/lib/store/globalStore";
 import modalState from "@/lib/store/modalState";
 import { isLoggedIn } from "@/lib/services/auth";
+import CourseAccessButton from "@/components/entities/subscription/CourseAccessButton";
 import CourseFeedback from "@/components/entities/course/show/CourseFeedback";
 import CourseReviews from "@/components/entities/course/show/CourseReviews";
 import persistentStore from "@/lib/store/persistentStore";
@@ -158,6 +159,10 @@ export default function Course() {
   const [isWishlistSubmitting, setIsWishlistSubmitting] = useState(false);
   const [isShareSubmitting, setIsShareSubmitting] = useState(false);
   const [couponCodeInput, setCouponCodeInput] = useState("");
+  const [purchaseMode, setPurchaseMode] = useState("subscribe");
+  const [subPlans, setSubPlans] = useState([]);
+  const [hasSubscription, setHasSubscription] = useState(false);
+  const [catalogCount, setCatalogCount] = useState(0);
   const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
 
   const [isScrolled, setIsScrolled] = useState(false);
@@ -367,6 +372,44 @@ export default function Course() {
     } finally {
       setIsWishlistSubmitting(false);
     }
+  };
+
+  useEffect(() => {
+    const api = process.env.NEXT_PUBLIC_API_URL;
+    BaseApi.get(`${api}/subscription/plans`)
+      .then((res) => setSubPlans(res?.data?.data || []))
+      .catch(() => setSubPlans([]));
+    BaseApi.get(`${api}/subscription/catalog-summary`)
+      .then((res) => setCatalogCount(Number(res?.data?.data?.courseCount || 0)))
+      .catch(() => {});
+    BaseApi.get(`${api}/subscription/me`)
+      .then((res) => setHasSubscription(Boolean(res?.data?.data?.hasSubscription)))
+      .catch(() => {});
+  }, []);
+
+  // Lowest effective monthly price across plans, with the regular monthly price as the strike-through.
+  const subscriptionOffer = (() => {
+    const priced = subPlans
+      .map((plan) => ({
+        perMonth:
+          (plan.firstCyclePrice ?? plan.price) / (plan.interval === "YEAR" ? 12 : 1),
+        regular: plan.interval === "YEAR" ? plan.price / 12 : plan.price,
+      }))
+      .sort((a, b) => a.perMonth - b.perMonth);
+    return priced[0] || null;
+  })();
+  const showSubscribeOption =
+    Boolean(subscriptionOffer) && !hasSubscription && !isFreeCourse;
+
+  const handleStartSubscription = async () => {
+    if (!course) return;
+    if (!(await isLoggedIn())) {
+      modalState.setState({
+        modalInfo: { type: "LOGIN", message: "Please log in to subscribe." },
+      });
+      return;
+    }
+    router.push(`/checkout/express?slug=${encodeURIComponent(course.slug)}&mode=subscribe`);
   };
 
   const handleBuyNow = async () => {
@@ -727,6 +770,81 @@ export default function Course() {
                       >
                         Continue Learning
                       </Link>
+                    ) : showSubscribeOption ? (
+                      <div className="rounded-xl border border-slate-200 divide-y divide-slate-200 overflow-hidden">
+                        <label className="block cursor-pointer p-4">
+                          <div className="flex items-start gap-3">
+                            <input type="radio" className="mt-1.5 h-4 w-4 accent-primary" checked={purchaseMode === "subscribe"} onChange={() => setPurchaseMode("subscribe")} />
+                            <div>
+                              <p className="text-slate-700">Subscribe and save</p>
+                              <p className="font-bold text-xl">
+                                From {formatPhpPrice(Math.round(subscriptionOffer.perMonth))}
+                                {subscriptionOffer.regular > subscriptionOffer.perMonth && (
+                                  <span className="ml-2 text-base font-normal text-slate-500 line-through">
+                                    {formatPhpPrice(Math.round(subscriptionOffer.regular))}
+                                  </span>
+                                )}
+                                <span className="ml-1 text-sm font-normal text-slate-600">/month</span>
+                              </p>
+                            </div>
+                          </div>
+                          {purchaseMode === "subscribe" && (
+                            <div className="mt-4 space-y-2 pl-7 text-sm text-slate-700">
+                              <p>{catalogCount > 0 ? `Access to ${catalogCount}+ top-rated courses` : "Access to our top-rated courses"}</p>
+                              <p>Cancel anytime</p>
+                              <button
+                                type="button"
+                                onClick={handleStartSubscription}
+                                className="mt-3 block w-full rounded-lg bg-primary py-3.5 text-center font-bold text-white hover:brightness-110"
+                              >
+                                Start subscription
+                              </button>
+                            </div>
+                          )}
+                        </label>
+                        <label className="block cursor-pointer p-4">
+                          <div className="flex items-start gap-3">
+                            <input type="radio" className="mt-1.5 h-4 w-4 accent-primary" checked={purchaseMode === "buy"} onChange={() => setPurchaseMode("buy")} />
+                            <div>
+                              <p className="text-slate-700">Buy individual course</p>
+                              <p className="font-bold text-xl">
+                                {formatPhpPrice(effectiveCoursePrice)}
+                                {hasDiscountedPrice && (
+                                  <span className="ml-2 text-base font-normal text-slate-500 line-through">
+                                    {formatPhpPrice(baseCoursePrice)}
+                                  </span>
+                                )}
+                              </p>
+                            </div>
+                          </div>
+                          {purchaseMode === "buy" && (
+                            <div className="mt-4 space-y-3 pl-7">
+                              {course?.is_in_cart ? (
+                                <Link href="/cart" className="block w-full rounded-lg bg-primary py-3.5 text-center font-bold text-white hover:brightness-110">
+                                  Go to Cart
+                                </Link>
+                              ) : (
+                                <button type="button" onClick={(e) => handleCart(e)} className="block w-full rounded-lg bg-primary py-3.5 text-center font-bold text-white hover:brightness-110">
+                                  Add to Cart
+                                </button>
+                              )}
+                              <button type="button" onClick={handleBuyNow} className="block w-full rounded-lg border border-slate-900 py-3 font-bold text-slate-900 hover:bg-slate-50">
+                                Buy Now
+                              </button>
+                            </div>
+                          )}
+                        </label>
+                        <div className="flex justify-end bg-slate-50 px-4 py-3">
+                          <button
+                            type="button"
+                            onClick={handleWishlist}
+                            disabled={isWishlistSubmitting}
+                            className={`flex h-9 w-9 items-center justify-center rounded-lg border ${course?.is_in_wishlist ? "border-red-200 bg-red-50 text-red-500" : "border-slate-200 bg-white text-slate-600 hover:text-red-500"}`}
+                          >
+                            <Heart size={18} fill={course?.is_in_wishlist ? "currentColor" : "none"} />
+                          </button>
+                        </div>
+                      </div>
                     ) : (
                       <>
                         {course?.is_in_cart ? (
@@ -747,7 +865,9 @@ export default function Course() {
                       </>
                     )}
 
-                    {!course?.is_enrolled && (
+                    <CourseAccessButton course={course} enabled />
+
+                    {!course?.is_enrolled && !showSubscribeOption && (
                       <div className="flex gap-2">
                         <button
                           onClick={handleBuyNow}

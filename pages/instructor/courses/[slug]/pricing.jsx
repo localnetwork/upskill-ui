@@ -6,6 +6,7 @@ import { setContext } from "@/lib/api/interceptor";
 import { useState } from "react";
 import { toast } from "react-hot-toast"; // ✅ make sure you have this imported
 import { extractErrors } from "@/lib/services/errorsExtractor";
+import { CourseProgramOptIn } from "@/components/entities/subscription/SubscriptionEarningsSection";
 import courseStore from "@/lib/store/courseStore";
 export async function getServerSideProps(context) {
   const { slug } = context.params;
@@ -127,6 +128,7 @@ export default function Pricing({ course }) {
           </div>
         </form>
       </div>
+      <CourseProgramOptIn courseId={course?.uuid} />
     </CourseManagementLayout>
   );
 }

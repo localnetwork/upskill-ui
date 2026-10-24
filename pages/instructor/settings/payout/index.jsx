@@ -1,6 +1,7 @@
 "use client";
 
 import InstructorLayout from "@/components/partials/InstructorLayout";
+import SubscriptionEarningsSection from "@/components/entities/subscription/SubscriptionEarningsSection";
 import PAYOUTAPI from "@/lib/api/payouts/request";
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
@@ -765,6 +766,8 @@ export default function PayoutSettingsPage() {
             applies on payout requests.
           </p>
         </section>
+
+        <SubscriptionEarningsSection />
 
         <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
           {cards.map((card) => (

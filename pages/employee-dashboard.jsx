@@ -17,6 +17,7 @@ import AdminPayoutsManagement, {
   formatCurrency,
 } from "@/components/entities/admin/AdminPayoutsManagement";
 import EmployeeReports from "@/components/entities/employee/EmployeeReports";
+import EmployeeSubscriptionsPanel from "@/components/entities/employee/EmployeeSubscriptionsPanel";
 import PlatformSettingsPanel from "@/components/entities/employee/PlatformSettingsPanel";
 
 const API = process.env.NEXT_PUBLIC_API_URL;
@@ -196,6 +197,9 @@ export default function EmployeeDashboard({
       revenue: check(["reports.revenue"]),
       activity: check(["reports.view"]),
       payouts: check(["payouts.manage"]),
+      earnings: check(["earnings.manage"]),
+      trial: check(["trial.manage", "earnings.manage"]),
+      trialManage: check(["trial.manage"]),
       manageSettings: check(["settings.manage"]),
     };
   }, [permissions, isAdmin]);
@@ -263,6 +267,13 @@ export default function EmployeeDashboard({
         <AdminTagsManagement />
       )}
       {activeTab === "payouts" && can.payouts && <AdminPayoutsManagement />}
+      {activeTab === "subscriptions" && (can.earnings || can.trial) && (
+        <EmployeeSubscriptionsPanel
+          canManageEarnings={can.earnings}
+          canViewTrial={can.trial}
+          canManageTrial={can.trialManage}
+        />
+      )}
       {activeTab === "reports" && (can.activity || can.revenue) && (
         <EmployeeReports canViewActivity={can.activity} canViewRevenue={can.revenue} />
       )}

@@ -1,4 +1,5 @@
 import MyCoursesLayout from "@/components/partials/MyCoursesLayout";
+import AccessBanner from "@/components/entities/subscription/AccessBanner";
 import BaseApi from "@/lib/api/_base.api";
 import ORDERAPI from "@/lib/api/orders/request";
 import Image from "next/image";
@@ -24,6 +25,7 @@ export default function Page() {
 
   return (
     <MyCoursesLayout title="My Learning">
+      <AccessBanner />
       <div className="grid grid-cols-4 gap-[20px]">
         {items && items.length > 0 ? (
           items.map((item) => (

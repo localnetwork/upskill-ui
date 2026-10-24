@@ -186,6 +186,21 @@ export default function Page({ data }) {
     }
   }, [currentLecture, router]);
 
+  // Server caps each beat, so this only reports time while the lesson tab is visible.
+  const heartbeatLessonId = currentLecture?.is_locked ? null : currentLecture?.uuid;
+  useEffect(() => {
+    if (!heartbeatLessonId) return undefined;
+    const sendBeat = () => {
+      if (document.visibilityState !== "visible") return;
+      BaseApi.post(`${process.env.NEXT_PUBLIC_API_URL}/earnings/watch/heartbeat`, {
+        lessonId: heartbeatLessonId,
+      }).catch(() => {});
+    };
+    sendBeat();
+    const timer = setInterval(sendBeat, 30000);
+    return () => clearInterval(timer);
+  }, [heartbeatLessonId]);
+
   const handleTabs = (tabId) => {
     setCurrentTab(tabId);
   };
