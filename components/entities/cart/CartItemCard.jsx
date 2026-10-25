@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { confirmModal } from "@/lib/services/confirm";
 import CARTAPI from "@/lib/api/cart/request";
 import { mutate } from "swr";
 import { useMemo, useState } from "react";
@@ -23,9 +24,12 @@ export default function CartItemCard({ item, isLast, appliedCoupon }) {
   const handleDelete = async (cartItemId) => {
     if (isRemoving) return;
 
-    const confirmed = window.confirm(
-      "Are you sure you want to remove this item from the cart?",
-    );
+    const confirmed = await confirmModal({
+      title: "Remove item",
+      message: "Are you sure you want to remove this item from the cart?",
+      confirmText: "Remove",
+      variant: "danger",
+    });
     if (!confirmed) return;
 
     try {

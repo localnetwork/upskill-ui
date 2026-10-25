@@ -1,4 +1,5 @@
 "use client";
+import { confirmModal } from "@/lib/services/confirm";
 
 import { useState, useEffect } from "react";
 import { Film, FileText, ArrowLeft, Trash2 } from "lucide-react";
@@ -68,9 +69,12 @@ export default function LectureContentSelector({
   }
 
   async function handleDelete() {
-    const confirmed = window.confirm(
-      "Are you sure you want to delete this content?",
-    );
+    const confirmed = await confirmModal({
+      title: "Delete content",
+      message: "Are you sure you want to delete this content?",
+      confirmText: "Delete",
+      variant: "danger",
+    });
 
     if (!confirmed) return;
 

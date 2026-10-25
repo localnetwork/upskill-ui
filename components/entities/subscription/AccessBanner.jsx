@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { confirmModal } from "@/lib/services/confirm";
 import Link from "next/link";
 import toast from "react-hot-toast";
 import BaseApi from "@/lib/api/_base.api";
@@ -18,7 +19,14 @@ export default function AccessBanner() {
   const { trial, subscription } = summary;
 
   const cancel = async () => {
-    if (!window.confirm("Cancel your subscription? You keep access until the end of the paid period.")) return;
+    const ok = await confirmModal({
+      title: "Cancel subscription",
+      message: "Cancel your subscription? You keep access until the end of the paid period.",
+      confirmText: "Cancel subscription",
+      cancelText: "Keep it",
+      variant: "danger",
+    });
+    if (!ok) return;
     try {
       await BaseApi.post(`${API}/subscription/cancel`);
       toast.success("Subscription canceled.");

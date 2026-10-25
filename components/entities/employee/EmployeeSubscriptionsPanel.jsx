@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { confirmModal } from "@/lib/services/confirm";
 import toast from "react-hot-toast";
 import BaseApi from "@/lib/api/_base.api";
 import { formatCurrency } from "@/components/entities/admin/AdminPayoutsManagement";
@@ -252,7 +253,14 @@ function CyclesSection() {
       toast.error("Use the YYYY-MM format.");
       return;
     }
-    if (action === "publish" && !window.confirm(`Publish ${targetMonth}? Educators will be able to withdraw these earnings.`)) {
+    if (
+      action === "publish" &&
+      !(await confirmModal({
+        title: "Publish earnings",
+        message: `Publish ${targetMonth}? Educators will be able to withdraw these earnings.`,
+        confirmText: "Publish",
+      }))
+    ) {
       return;
     }
     setBusy(true);

@@ -4,7 +4,7 @@ import { setContext } from "@/lib/api/interceptor";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/router";
 import CourseAssetPreview from "@/components/entities/course/learn/CourseAssetPreview";
-import { ChevronLeft, List as ListIcon } from "lucide-react";
+import { ChevronLeft, List as ListIcon, Users } from "lucide-react";
 import Link from "next/link";
 import CourseOverview from "@/components/entities/course/learn/CourseOverview";
 import learnTabs from "@/lib/menu/learnNavTabs.json";
@@ -233,16 +233,25 @@ export default function Page({ data }) {
               {data?.course?.title || "Course Title"}
             </h2>
           </div>
-          <button
-            type="button"
-            onClick={() =>
-              setPanelStatus((status) => (status === "closed" ? "open" : "closed"))
-            }
-            className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-white/30 text-sm hover:bg-white/10"
-          >
-            <ListIcon size={16} />
-            {panelStatus === "closed" ? "Show course content" : "Hide course content"}
-          </button>
+          <div className="flex items-center gap-2">
+            <Link
+              href={`/courses/${data?.course?.slug}/community`}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-white/30 text-sm hover:bg-white/10"
+            >
+              <Users size={16} />
+              Community
+            </Link>
+            <button
+              type="button"
+              onClick={() =>
+                setPanelStatus((status) => (status === "closed" ? "open" : "closed"))
+              }
+              className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-white/30 text-sm hover:bg-white/10"
+            >
+              <ListIcon size={16} />
+              {panelStatus === "closed" ? "Show course content" : "Hide course content"}
+            </button>
+          </div>
         </div>
       </div>
       <div className="flex flex-wrap">

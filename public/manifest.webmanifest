@@ -1,0 +1,12 @@
+{
+  "name": "Upskill",
+  "short_name": "Upskill",
+  "start_url": "/my-courses/learning",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0056D2",
+  "icons": [
+    { "src": "/new-logo.png", "sizes": "any", "type": "image/png", "purpose": "any" }
+  ]
+}

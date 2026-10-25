@@ -4,6 +4,7 @@ import {
   Flame,
   GraduationCap,
   Laptop,
+  MessageCircle,
   Monitor,
   PartyPopper,
   ShieldAlert,
@@ -68,6 +69,14 @@ export function getNotificationMeta(notification) {
   }
   if (kind === "COURSE_NEW_ENROLLMENT") {
     return { kind, label: "New Enrollment", Icon: UserPlus, tone: "green" };
+  }
+  if (kind === "COMMUNITY_POST_COMMENT" || kind === "COMMUNITY_COMMENT_REPLY") {
+    return {
+      kind,
+      label: kind === "COMMUNITY_COMMENT_REPLY" ? "Community Reply" : "Community Comment",
+      Icon: MessageCircle,
+      tone: "blue",
+    };
   }
   if (kind === "LEARNER_NUDGE") {
     return { kind, label: "Reminder", Icon: Flame, tone: "amber" };

@@ -11,6 +11,9 @@ import usePrefersReducedMotion from "./usePrefersReducedMotion";
 import HomePopular from "./sections/HomePopular";
 import ExploreByCategorySection from "./sections/ExploreByCategorySection";
 import HomepageSkillsTransform from "./sections/HomepageSkillsTransform";
+import WhyLearnersChooseSection from "./sections/WhyLearnersChooseSection";
+import LearningPathsSection from "./sections/LearningPathsSection";
+import FeaturedCoursesCarouselSection from "./sections/FeaturedCoursesCarouselSection";
 
 export default function HomePageExperience() {
   const wrapperRef = useRef(null);
@@ -75,6 +78,9 @@ export default function HomePageExperience() {
   return (
     <div ref={wrapperRef}>
       <HomeHeroSection />
+      <WhyLearnersChooseSection />
+      <LearningPathsSection />
+      <FeaturedCoursesCarouselSection />
       <ExploreByCategorySection />
       <HomePopular />
       <HomepageSkillsTransform />

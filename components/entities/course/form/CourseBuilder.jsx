@@ -22,7 +22,7 @@ function CourseSectionSkeleton() {
   );
 }
 
-export default function CourseBuilder({ courseId }) {
+export default function CourseBuilder({ courseId, liveTick = 0 }) {
   const [sections, setSections] = useState([]);
   const [topics, setTopics] = useState([]);
   const [isSectionsLoading, setIsSectionsLoading] = useState(false);
@@ -140,6 +140,50 @@ export default function CourseBuilder({ courseId }) {
       },
     });
   }, [sections, isSectionsLoading, activeCourseId, mapSectionsForCourseStore]);
+
+  // Silent refresh used while an AI draft is still filling in the curriculum.
+  useEffect(() => {
+    if (!liveTick || !activeCourseId) return undefined;
+    let cancelled = false;
+    (async () => {
+      try {
+        const sectionsResponse = await BaseApi.get(
+          `${process.env.NEXT_PUBLIC_API_URL}/course-sections/course/${activeCourseId}`,
+        );
+        const data = sectionsResponse?.data?.data || [];
+        const withItems = await Promise.all(
+          data.map(async (section) => {
+            try {
+              const response = await BaseApi.get(
+                `${process.env.NEXT_PUBLIC_API_URL}/course-sections/${section.id}/curriculums`,
+              );
+              return { section, items: response?.data?.data || response?.data || [] };
+            } catch (_error) {
+              return { section, items: null };
+            }
+          }),
+        );
+        if (cancelled) return;
+        setSections((prev) =>
+          withItems.map(({ section, items }) => {
+            const existing = prev.find((item) => item.id === section.id);
+            return {
+              ...section,
+              items: items ?? existing?.items ?? [],
+              itemsLoaded: items !== null || Boolean(existing?.itemsLoaded),
+              tempKey: existing?.tempKey || uuid(),
+              isNew: false,
+            };
+          }),
+        );
+      } catch (error) {
+        console.error("Error refreshing live curriculum:", error);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [liveTick, activeCourseId]);
 
   useEffect(() => {
     const handleAICourseUpdated = (event) => {

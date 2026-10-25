@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { confirmModal } from "@/lib/services/confirm";
 import Link from "next/link";
 import toast from "react-hot-toast";
 import { Lock, Plus, Save, Trash2 } from "lucide-react";
@@ -225,7 +226,13 @@ export function RolesManager() {
 
   const remove = async () => {
     if (!selected || selected.is_system) return;
-    if (!window.confirm(`Delete role ${selected.name}?`)) return;
+    const ok = await confirmModal({
+      title: "Delete role",
+      message: `Delete role ${selected.name}?`,
+      confirmText: "Delete",
+      variant: "danger",
+    });
+    if (!ok) return;
     try {
       await BaseApi.delete(`${API}/admin/roles/${selected.id}`);
       toast.success("Role deleted");

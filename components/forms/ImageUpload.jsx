@@ -14,6 +14,7 @@ export default function ImageUpload({
   description,
   title,
   preview,
+  returnPath = false,
 }) {
   const [isUploading, setIsUploading] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -68,7 +69,9 @@ export default function ImageUpload({
       onChange?.({
         target: {
           name,
-          value: data?.id ?? data?.path ?? data,
+          value: returnPath
+            ? (data?.path ?? "")
+            : (data?.id ?? data?.path ?? data),
         },
       });
     } catch (err) {
@@ -85,6 +88,8 @@ export default function ImageUpload({
     }
   };
 
+  const openPicker = () => inputRef.current?.click();
+
   const previewPath =
     uploadedFile?.path || value?.path || preview || "/placeholder-cover.webp";
 
@@ -99,9 +104,7 @@ export default function ImageUpload({
 
   return (
     <div className="w-full min-w-0">
-      <label className="mb-2 block font-normal" htmlFor={idRef.current}>
-        {label}
-      </label>
+      <span className="mb-2 block font-normal">{label}</span>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-0">
         {/* Image preview */}
@@ -141,23 +144,27 @@ export default function ImageUpload({
             />
 
             <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:gap-[15px]">
-              <label
-                htmlFor={idRef.current}
+              <button
+                type="button"
+                onClick={openPicker}
+                disabled={isUploading}
                 className="min-w-0 flex-1 cursor-pointer"
               >
                 <span className="block w-full overflow-hidden rounded-[5px] border p-[10px] text-center line-clamp-1">
                   {isUploading ? `Uploading... ${progress}%` : displayName}
                 </span>
-              </label>
+              </button>
 
-              <label
-                htmlFor={idRef.current}
+              <button
+                type="button"
+                onClick={openPicker}
+                disabled={isUploading}
                 className={`flex w-full shrink-0 cursor-pointer items-center justify-center rounded-[5px] border border-[#3588FC] px-[20px] py-[10px] text-center font-semibold text-[#3588FC] hover:bg-[#3588FC] hover:text-white sm:w-auto sm:min-w-[150px] ${
                   isUploading ? "pointer-events-none opacity-60" : ""
                 }`}
               >
                 {buttonText}
-              </label>
+              </button>
             </div>
           </div>
         </div>

@@ -11,12 +11,15 @@ import CoursePromotionModal from "./content/CoursePromotionModal";
 import CourseAIUpdateModal from "./content/CourseAIUpdateModal";
 import InstructorDraftCourseDeleteModal from "./content/InstructorDraftCourseDeleteModal";
 import CourseApprovalReadinessModal from "./content/CourseApprovalReadinessModal";
+import ConfirmModal from "./content/ConfirmModal";
+import { settleConfirm } from "@/lib/services/confirm";
 
 export default function Modal() {
   const modalInfo = modalState((state) => state.modalInfo);
 
   const size = modalInfo?.size || "md";
   const handleClose = () => {
+    if (modalInfo?.type === "CONFIRM") settleConfirm(false);
     modalState.setState({ modalInfo: null });
     document.body.style.overflow = "auto";
   };
@@ -68,6 +71,9 @@ export default function Modal() {
       break;
     case "COURSE_APPROVAL_READINESS":
       Content = <CourseApprovalReadinessModal />;
+      break;
+    case "CONFIRM":
+      Content = <ConfirmModal />;
       break;
     default:
       return null;

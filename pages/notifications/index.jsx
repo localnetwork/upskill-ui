@@ -4,6 +4,7 @@ import { Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/router";
 import toast from "react-hot-toast";
+import { notificationTarget } from "@/lib/notificationTarget";
 import NotificationAvatar from "@/components/entities/notification/NotificationVisual";
 import persistentStore from "@/lib/store/persistentStore";
 
@@ -218,7 +219,7 @@ export default function NotificationsPage() {
       } catch (_error) {}
     }
 
-    router.push(`/notifications/${notification.id}`);
+    router.push(notificationTarget(notification));
   };
 
   const handleFriendRequestAction = async (notification, action) => {

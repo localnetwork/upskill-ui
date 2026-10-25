@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { confirmModal } from "@/lib/services/confirm";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import toast from "react-hot-toast";
@@ -83,9 +84,14 @@ export default function MySubscriptions() {
 
   const cancel = async (id) => {
     if (
-      !window.confirm(
-        "Cancel your subscription? You keep access until the end of the paid period.",
-      )
+      !(await confirmModal({
+        title: "Cancel subscription",
+        message:
+          "Cancel your subscription? You keep access until the end of the paid period.",
+        confirmText: "Cancel subscription",
+        cancelText: "Keep it",
+        variant: "danger",
+      }))
     )
       return;
     setCancelingId(id);

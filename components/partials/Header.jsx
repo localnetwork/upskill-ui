@@ -153,7 +153,9 @@ export default function Header() {
         `${process.env.NEXT_PUBLIC_API_URL}/chat/conversations`,
         { params: { page: 1, limit: 5 } },
       );
-      const rows = Array.isArray(response?.data?.data) ? response.data.data : [];
+      const rows = Array.isArray(response?.data?.data)
+        ? response.data.data
+        : [];
       setRecentMessages(rows);
     } catch (_error) {}
   }, [profile]);
@@ -306,7 +308,13 @@ export default function Header() {
         socketRef.current = null;
       }
     };
-  }, [playChatNotificationSound, profile?.id, refreshChatUnread, refreshNotifications, refreshRecentMessages]);
+  }, [
+    playChatNotificationSound,
+    profile?.id,
+    refreshChatUnread,
+    refreshNotifications,
+    refreshRecentMessages,
+  ]);
 
   useEffect(() => {
     if (!profile?.id) return;
@@ -467,7 +475,9 @@ export default function Header() {
                       </p>
                       <div className="max-h-[320px] overflow-y-auto space-y-2">
                         {recentMessages.length === 0 ? (
-                          <p className="text-sm text-slate-500">No recent messages.</p>
+                          <p className="text-sm text-slate-500">
+                            No recent messages.
+                          </p>
                         ) : (
                           recentMessages.map((conversation) => (
                             <Link
@@ -499,9 +509,9 @@ export default function Header() {
                                 {conversation.lastMessage?.deletedForEveryone
                                   ? "Message deleted"
                                   : conversation.lastMessage?.body ||
-                                  (conversation.lastMessage?.mediaPath
-                                    ? "[Attachment]"
-                                    : "No messages yet")}
+                                    (conversation.lastMessage?.mediaPath
+                                      ? "[Attachment]"
+                                      : "No messages yet")}
                               </p>
                             </Link>
                           ))
@@ -667,7 +677,9 @@ export default function Header() {
                 <span className="grid h-16 w-16 place-items-center rounded-full bg-white/20 backdrop-blur">
                   <PhoneOff className="h-7 w-7 text-white" />
                 </span>
-                <span className="text-base font-medium text-slate-100">Reject</span>
+                <span className="text-base font-medium text-slate-100">
+                  Reject
+                </span>
               </button>
               <button
                 type="button"
@@ -677,7 +689,9 @@ export default function Header() {
                 <span className="grid h-16 w-16 place-items-center rounded-full bg-emerald-500 shadow-[0_8px_30px_rgba(16,185,129,0.5)]">
                   <Phone className="h-7 w-7 text-white" />
                 </span>
-                <span className="text-base font-medium text-slate-100">Accept</span>
+                <span className="text-base font-medium text-slate-100">
+                  Accept
+                </span>
               </button>
             </div>
           </div>

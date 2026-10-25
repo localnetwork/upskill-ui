@@ -1,9 +1,19 @@
 "use client";
+import { Menu } from "lucide-react";
+import { confirmModal } from "@/lib/services/confirm";
 import { useState, useEffect, useMemo } from "react";
 import BaseApi from "@/lib/api/_base.api";
 import courseStore from "@/lib/store/courseStore";
 import CurriculumItem from "./CurriculumItem";
-import { Trash, Loader2, Pencil, Save, Plus } from "lucide-react";
+import {
+  Trash,
+  Loader2,
+  Pencil,
+  Save,
+  Plus,
+  ChevronUp,
+  ChevronDown,
+} from "lucide-react";
 import {
   BookOpen,
   HelpCircle,
@@ -31,7 +41,9 @@ function CurriculumItemSkeleton() {
           <div className="h-8 w-24 rounded bg-gray-200" />
         </div>
       </div>
-      <span className="text-gray-300">☰</span>
+      <span className="text-gray-300">
+        <Menu size={20} />
+      </span>
     </div>
   );
 }
@@ -48,13 +60,13 @@ export default function CourseSection({
   const [open, setOpen] = useState(autoExpand);
   const [confirmed, setConfirmed] = useState(
     Boolean(
-      section.id && (section.title || section.objective || section.description)
-    )
+      section.id && (section.title || section.objective || section.description),
+    ),
   );
 
   const [title, setTitle] = useState(section.title || "");
   const [objective, setObjective] = useState(
-    section.section_description || section.description || ""
+    section.section_description || section.description || "",
   );
   const [items, setItems] = useState(section.items || []); // curriculums
   const [itemsLoaded, setItemsLoaded] = useState(Boolean(section.itemsLoaded));
@@ -108,7 +120,10 @@ export default function CourseSection({
   };
 
   const missingCurriculumCount = useMemo(
-    () => (Array.isArray(items) ? items.filter(hasMissingCurriculumContent).length : 0),
+    () =>
+      Array.isArray(items)
+        ? items.filter(hasMissingCurriculumContent).length
+        : 0,
     [items],
   );
   const hasMissingContentInSection = missingCurriculumCount > 0;
@@ -125,7 +140,7 @@ export default function CourseSection({
         setLoadingItems(true);
         try {
           const response = await BaseApi.get(
-            `${process.env.NEXT_PUBLIC_API_URL}/course-sections/${section.id}/curriculums`
+            `${process.env.NEXT_PUBLIC_API_URL}/course-sections/${section.id}/curriculums`,
           );
           const nextItems = response?.data?.data || response?.data || [];
           setItems(nextItems);
@@ -156,7 +171,7 @@ export default function CourseSection({
             title: editTitle.trim(),
             description: editObjective.trim(),
             course_id: courseManagement.id,
-          }
+          },
         );
         onUpdate?.({
           ...section,
@@ -174,7 +189,7 @@ export default function CourseSection({
             title: editTitle.trim(),
             description: editObjective.trim(),
             course_id: courseManagement.id,
-          }
+          },
         );
         onUpdate?.({
           ...section,
@@ -203,15 +218,19 @@ export default function CourseSection({
   };
 
   const handleDelete = async () => {
-    const confirmedDelete = window.confirm(
-      "Are you sure you want to delete this section? This action cannot be undone."
-    );
+    const confirmedDelete = await confirmModal({
+      title: "Delete section",
+      message:
+        "Are you sure you want to delete this section? This action cannot be undone.",
+      confirmText: "Delete",
+      variant: "danger",
+    });
     if (confirmedDelete) {
       try {
         setIsDeleting(true);
         if (section.id) {
           await BaseApi.delete(
-            `${process.env.NEXT_PUBLIC_API_URL}/course-sections/${section.id}`
+            `${process.env.NEXT_PUBLIC_API_URL}/course-sections/${section.id}`,
           );
         }
         onDelete?.(section.id);
@@ -326,7 +345,7 @@ export default function CourseSection({
         {
           items: reordered.map((i) => i.id),
           section_id: section.id,
-        }
+        },
       );
       toast.success("Curriculums sorted successfully!");
     } catch (err) {
@@ -413,7 +432,9 @@ export default function CourseSection({
               {missingCurriculumCount} missing content
             </span>
           )}
-          <span>{open ? "▲" : "▼"}</span>
+          <span>
+            {open ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+          </span>
         </div>
       </div>
 
@@ -508,7 +529,9 @@ export default function CourseSection({
                   {loadingItems ? (
                     <div className="space-y-2">
                       {[1, 2, 3].map((index) => (
-                        <CurriculumItemSkeleton key={`curriculum-skeleton-${index}`} />
+                        <CurriculumItemSkeleton
+                          key={`curriculum-skeleton-${index}`}
+                        />
                       ))}
                     </div>
                   ) : items.length > 0 ? (
@@ -530,7 +553,9 @@ export default function CourseSection({
                             onUpdate={handleItemUpdate}
                             onDelete={handleItemDelete}
                           />
-                          <span className="text-gray-400">☰</span>
+                          <span className="text-gray-400">
+                            <Menu size={20} />
+                          </span>
                         </div>
                       ))}
                     </div>

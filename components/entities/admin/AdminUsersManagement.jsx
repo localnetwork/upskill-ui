@@ -1,4 +1,5 @@
 import Select from "@/components/forms/Select";
+import { confirmModal } from "@/lib/services/confirm";
 import BaseApi from "@/lib/api/_base.api";
 import { Ban, BookOpen, Edit, Lock, MoreVertical, Search, ShieldCheck, UserPlus, X } from "lucide-react";
 import toast from "react-hot-toast";
@@ -194,7 +195,16 @@ export default function AdminUsersManagement() {
 
   const toggleSuspend = async (user) => {
     const suspend = user.status !== "Suspended";
-    if (suspend && !window.confirm(`Suspend ${user.username}?`)) return;
+    if (
+      suspend &&
+      !(await confirmModal({
+        title: "Suspend user",
+        message: `Suspend ${user.username}?`,
+        confirmText: "Suspend",
+        variant: "danger",
+      }))
+    )
+      return;
     setBusyId(user.id);
     try {
       await BaseApi.patch(

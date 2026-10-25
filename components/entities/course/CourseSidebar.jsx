@@ -1,4 +1,5 @@
 import CourseAPI from "@/lib/api/course/request";
+import { confirmModal } from "@/lib/services/confirm";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import toast from "react-hot-toast";
@@ -84,6 +85,11 @@ export default function CourseSidebar({ course }) {
       tab: "course-messages",
       link: `/instructor/courses/${course?.uuid}/course-messages`,
     },
+    {
+      name: "Community",
+      tab: "community",
+      link: `/instructor/courses/${course?.uuid}/community`,
+    },
   ];
 
   const currentTab = useMemo(() => {
@@ -116,9 +122,12 @@ export default function CourseSidebar({ course }) {
       return;
     }
 
-    const confirm = window.confirm(
-      "Submitting this course sends it for admin review. You can still edit after review decisions. Continue?",
-    );
+    const confirm = await confirmModal({
+      title: "Submit for review",
+      message:
+        "Submitting this course sends it for admin review. You can still edit after review decisions. Continue?",
+      confirmText: "Submit",
+    });
     if (!confirm) return;
 
     setIsSubmitting(true);
@@ -140,9 +149,13 @@ export default function CourseSidebar({ course }) {
   };
 
   const handleUnpublish = async () => {
-    const confirm = window.confirm(
-      "Drafting this course will remove it from public view but learners who enrolled will still have access to it. Are you sure you want to proceed?",
-    );
+    const confirm = await confirmModal({
+      title: "Move to draft",
+      message:
+        "Drafting this course will remove it from public view but learners who enrolled will still have access to it. Are you sure you want to proceed?",
+      confirmText: "Move to draft",
+      variant: "danger",
+    });
     if (!confirm) return;
 
     setIsSubmitting(true);
@@ -164,9 +177,11 @@ export default function CourseSidebar({ course }) {
   };
 
   const handlePublish = async () => {
-    const confirm = window.confirm(
-      "Publishing this course will make it visible to learners. Continue?",
-    );
+    const confirm = await confirmModal({
+      title: "Publish course",
+      message: "Publishing this course will make it visible to learners. Continue?",
+      confirmText: "Publish",
+    });
     if (!confirm) return;
 
     setIsSubmitting(true);

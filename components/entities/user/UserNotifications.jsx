@@ -3,6 +3,7 @@ import { useRouter } from "next/router";
 import BaseApi from "@/lib/api/_base.api";
 import { useState } from "react";
 import toast from "react-hot-toast";
+import { notificationTarget } from "@/lib/notificationTarget";
 import NotificationAvatar from "../notification/NotificationVisual";
 
 function toRelativeTime(dateValue) {
@@ -51,7 +52,7 @@ export default function UserNotifications({
 
   const openNotification = (notification) => {
     onNotificationClick?.(notification);
-    router.push(`/notifications/${notification.id}`);
+    router.push(notificationTarget(notification));
   };
 
   const handleFriendRequestAction = async (notification, action) => {

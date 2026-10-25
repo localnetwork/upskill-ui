@@ -5,6 +5,7 @@ import modalState from "@/lib/store/modalState";
 import Footer from "./Footer";
 import LearnerAIWidget from "./LearnerAIWidget";
 import { useRouter } from "next/router";
+import OfflineProvider from "./OfflineProvider";
 
 export default function Layout({ children }) {
   const modalInfo = modalState((state) => state.modalInfo);
@@ -17,6 +18,7 @@ export default function Layout({ children }) {
       <main className="grow">{children}</main>
 
       <Toaster position="top-right" reverseOrder={false} />
+      <OfflineProvider />
       {!isCallRoute ? <Footer /> : null}
       {!isCallRoute ? <LearnerAIWidget /> : null}
       {modalInfo && <Modal />}

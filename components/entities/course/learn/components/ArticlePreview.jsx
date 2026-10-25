@@ -1,4 +1,4 @@
-import BaseApi from "@/lib/api/_base.api";
+import { postOrQueue } from "@/lib/offline/queue";
 import { useEffect } from "react";
 
 export default function ArticlePreview({ lecture, course, setCourse }) {
@@ -11,7 +11,7 @@ export default function ArticlePreview({ lecture, course, setCourse }) {
         return;
       }
 
-      await BaseApi.post(
+      await postOrQueue(
         process.env.NEXT_PUBLIC_API_URL + "/course-curriculums/add-progress",
         {
           course_id: course?.id,

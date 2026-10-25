@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import BaseApi from "@/lib/api/_base.api";
 import toast from "react-hot-toast";
+import OfflineDownloadButton from "./OfflineDownloadButton";
 
 export default function CourseOverview({ lecture, course }) {
   const { subtitle, instructional_level, description, author } = course;
@@ -66,7 +67,13 @@ export default function CourseOverview({ lecture, course }) {
     }
   };
 
-  console.log("course", course?.instructional_level?.title);
+  const curriculumTags = (
+    Array.isArray(lecture?.topics) && lecture.topics.length > 0
+      ? lecture.topics
+      : lecture?.topic
+        ? [lecture.topic]
+        : []
+  ).filter((tag) => tag?.title);
 
   return (
     <>
@@ -77,17 +84,20 @@ export default function CourseOverview({ lecture, course }) {
           dangerouslySetInnerHTML={{ __html: lecture?.curriculum_description }}
         />
 
-        <div class="flex flex-wrap gap-3 mt-4">
-          <span class="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-bold uppercase tracking-wider">
-            UI Design
-          </span>
-          <span class="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-bold uppercase tracking-wider">
-            Frontend
-          </span>
-          <span class="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-bold uppercase tracking-wider">
-            Architecture
-          </span>
-        </div>
+        <OfflineDownloadButton lecture={lecture} course={course} />
+
+        {curriculumTags.length > 0 && (
+          <div className="flex flex-wrap gap-3 mt-4 curriculumn-tags">
+            {curriculumTags.map((tag) => (
+              <span
+                key={tag.id || tag.slug || tag.title}
+                className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-bold uppercase tracking-wider"
+              >
+                {tag.title}
+              </span>
+            ))}
+          </div>
+        )}
         <div class="pt-8 mt-8 border-t border-primary/10">
           <h2 class="text-xl font-bold mb-6">About this course</h2>
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">

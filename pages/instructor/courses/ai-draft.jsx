@@ -1,6 +1,10 @@
 import InstructorLayout from "@/components/partials/InstructorLayout";
 import BaseApi from "@/lib/api/_base.api";
 import { useRouter } from "next/router";
+import Link from "next/link";
+import LiveCurriculumAccordion, {
+  Typewriter,
+} from "@/components/entities/course/form/LiveCurriculumAccordion";
 import { useCallback, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import Spinner from "@/components/icons/Spinner";
@@ -49,6 +53,7 @@ export default function AIDraftCoursePage() {
       progressPercent: Number(job?.progressPercent || 0),
       preview: job?.preview || null,
       draftProgress: job?.draftProgress || null,
+      course: job?.course || null,
     });
   }, []);
 
@@ -377,6 +382,14 @@ export default function AIDraftCoursePage() {
                     {generationProgress.draftProgress.totalLessons}
                   </p>
                 )}
+                {generationProgress?.course?.slug && (
+                  <Link
+                    href={`/instructor/courses/${generationProgress.course.slug}/curriculum`}
+                    className="mt-3 inline-flex items-center rounded-md bg-[#2563eb] px-3 py-1.5 text-[13px] font-semibold text-white hover:bg-[#1d4ed8]"
+                  >
+                    View curriculum as it&apos;s generated →
+                  </Link>
+                )}
               </div>
             )}
 
@@ -386,11 +399,11 @@ export default function AIDraftCoursePage() {
                   Live draft preview
                 </h3>
                 <p className="mt-2 text-[18px] font-semibold text-slate-800">
-                  {progressPreview.title}
+                  <Typewriter text={progressPreview.title} />
                 </p>
                 {progressPreview.subtitle && (
                   <p className="text-[14px] text-slate-600 mt-1">
-                    {progressPreview.subtitle}
+                    <Typewriter text={progressPreview.subtitle} speed={12} />
                   </p>
                 )}
                 {progressPreview.description && (
@@ -399,40 +412,15 @@ export default function AIDraftCoursePage() {
                   </p>
                 )}
                 {!!previewSections.length && (
-                  <div className="mt-4 space-y-3">
-                    {previewSections
-                      .slice(0, 3)
-                      .map((section, sectionIndex) => (
-                        <div
-                          key={`${section?.title || "section"}-${sectionIndex}`}
-                          className="rounded-lg border border-slate-200 p-3"
-                        >
-                          <p className="font-semibold text-[14px] text-slate-800">
-                            {sectionIndex + 1}.{" "}
-                            {section?.title || "Untitled section"}
-                          </p>
-                          <p className="text-[12px] text-slate-600 mt-1">
-                            {(Array.isArray(section?.lessons)
-                              ? section.lessons.length
-                              : 0) || 0}{" "}
-                            curriculums
-                          </p>
-                          <div className="mt-2 text-[12px] text-slate-600 space-y-1">
-                            {(Array.isArray(section?.lessons)
-                              ? section.lessons
-                              : []
-                            )
-                              .slice(0, 2)
-                              .map((lesson, lessonIndex) => (
-                                <p
-                                  key={`${lesson?.title || "lesson"}-${lessonIndex}`}
-                                >
-                                  • {lesson?.title || "Untitled curriculum"}
-                                </p>
-                              ))}
-                          </div>
-                        </div>
-                      ))}
+                  <div className="mt-4">
+                    <LiveCurriculumAccordion
+                      sections={previewSections}
+                      lessonsCreated={
+                        generationProgress?.draftProgress?.lessonsCreated || 0
+                      }
+                      isGenerating={isGenerating}
+                      showAll={Boolean(generationResult)}
+                    />
                   </div>
                 )}
               </div>

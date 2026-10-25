@@ -27,6 +27,30 @@ export default function ExpressCheckout() {
   const [catalogCount, setCatalogCount] = useState(0);
   const [hasSubscription, setHasSubscription] = useState(false);
 
+  const [selectedMethod, setSelectedMethod] = useState("paypal");
+
+  const paymentMethods = [
+    {
+      id: "paypal",
+      name: "Paypal",
+      icon: "/hpp-paypal.svg",
+      description:
+        "In order to complete your transaction, we will transfer you over to PayPal's secure servers.",
+    },
+    {
+      id: "gcash",
+      name: "GCash",
+      description:
+        "You will be redirected to a secure Xendit page to pay with your GCash wallet.",
+    },
+    {
+      id: "paymaya",
+      name: "Maya (PayMaya)",
+      description:
+        "You will be redirected to a secure Xendit page to pay with your Maya wallet.",
+    },
+  ];
+
   const cookie = parseCookies();
 
   useEffect(() => {
@@ -162,6 +186,7 @@ export default function ExpressCheckout() {
       setIsLoading(true);
       const payload = {
         courseId: course.id,
+        payment_method: selectedMethod,
         couponCode: couponCode || undefined,
         couponCodes: couponCode ? [couponCode] : undefined,
       };
@@ -234,6 +259,45 @@ export default function ExpressCheckout() {
                       </ul>
                     </div>
                   </div>
+  );
+
+  const paymentMethodList = (
+    <div className="mt-4">
+      <h2 className="text-[18px] font-semibold mb-2">Payment Method</h2>
+      {paymentMethods.map((method) => (
+        <div
+          key={method.id}
+          onClick={() => setSelectedMethod(method.id)}
+          className="cursor-pointer mb-3"
+        >
+          <div
+            className={`${selectedMethod === method.id ? "border-[#0056D2]" : "border-gray-300"} bg-[#F6F7F9] font-semibold px-[10px] py-[5px] mb-2 flex items-center gap-[10px] border p-[10px] w-full`}
+          >
+            <input
+              type="radio"
+              name="payment-method"
+              checked={selectedMethod === method.id}
+              onChange={() => setSelectedMethod(method.id)}
+            />
+            {method.icon ? (
+              <Image
+                src={method.icon}
+                width={100}
+                height={50}
+                alt={method.name}
+                className="bg-white border-[1px] border-[oklch(86.72%_0.0192_282.72deg)] p-[5px] rounded-md w-[50px] h-[30px] object-contain"
+              />
+            ) : null}
+            {method.name}
+          </div>
+          {selectedMethod === method.id ? (
+            <div className="border bg-white border-[oklch(86.72%_0.0192_282.72deg)] border-t-0 p-[15px] mt-[-8px]">
+              <p className="text-[14px] text-gray-600">{method.description}</p>
+            </div>
+          ) : null}
+        </div>
+      ))}
+    </div>
   );
 
   const price = course?.price_tier?.title?.toLowerCase() === "free" ? "Free" : `₱${course?.price_tier?.price || 0}`;
@@ -312,6 +376,8 @@ export default function ExpressCheckout() {
               </label>
             </div>
           )}
+
+          {course && mode === "buy" && paymentMethodList}
         </div>
 
         <div className="w-[350px] pl-[10px] py-[50px]">

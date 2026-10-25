@@ -1,4 +1,5 @@
 "use client";
+import { confirmModal } from "@/lib/services/confirm";
 import { useState, useEffect } from "react";
 import {
   Code,
@@ -278,7 +279,13 @@ export default function CurriculumItem({
 
   // --- DELETE
   const handleDelete = async () => {
-    if (!window.confirm("Are you sure you want to delete this curriculum?")) {
+    const ok = await confirmModal({
+      title: "Delete curriculum",
+      message: "Are you sure you want to delete this curriculum?",
+      confirmText: "Delete",
+      variant: "danger",
+    });
+    if (!ok) {
       return;
     }
 
@@ -348,7 +355,7 @@ export default function CurriculumItem({
               )}
               {isVideoUploading && !hasVideoContent && (
                 <span className="ml-2 text-[11px] font-semibold uppercase tracking-wide text-amber-600">
-                  Uploading…
+                  Uploadingâ€¦
                 </span>
               )}
               {!currentItem.isNew && (

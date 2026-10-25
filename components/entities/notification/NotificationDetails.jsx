@@ -353,6 +353,17 @@ export default function NotificationDetails({
       {meta.kind === "ORDER" ? (
         <OrderDetails notification={notification} />
       ) : null}
+      {notification.metadata?.link &&
+      String(meta.kind || "").startsWith("COMMUNITY_") ? (
+        <div className="mt-6">
+          <Link
+            href={notification.metadata.link}
+            className="text-primary font-semibold hover:underline"
+          >
+            View in community
+          </Link>
+        </div>
+      ) : null}
     </article>
   );
 }
