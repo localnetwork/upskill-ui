@@ -55,7 +55,7 @@ export default function ExploreByCategorySection() {
   if (!categories.length) return null;
 
   return (
-    <section className="px-4 py-10 sm:px-6 lg:px-8">
+    <section className="py-10">
       <div className="container">
         <div className="mb-6 flex items-center justify-between gap-4">
           <h2 className="text-2xl font-bold text-slate-900">

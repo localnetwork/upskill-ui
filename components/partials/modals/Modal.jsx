@@ -84,6 +84,7 @@ export default function Modal() {
     md: "max-w-[600px]",
     lg: "max-w-[800px]",
     xl: "max-w-[1000px]",
+    "2xl": "max-w-[1200px]",
   };
 
   const titleClasses = {
@@ -91,6 +92,7 @@ export default function Modal() {
     md: "text-[20px]",
     lg: "text-[24px]",
     xl: "text-[28px]",
+    "2xl": "text-[32px]",
   };
 
   useEffect(() => {
@@ -119,15 +121,17 @@ export default function Modal() {
             : "opacity-0 scale-95 translate-y-4"
         }`}
       >
-        <div className="flex justify-between items-center mb-[20px] gap-[20px]">
-          <X
-            className="absolute top-[12px] right-[12px] cursor-pointer"
-            onClick={handleClose}
-          />
-          <h2 className={`${titleClasses[size]} font-semibold`}>
-            {modalInfo.title}
-          </h2>
-        </div>
+        {modalInfo.title ? (
+          <div className="flex justify-between items-center mb-[20px] gap-[20px]">
+            <h2 className={`${titleClasses[size]} font-semibold`}>
+              {modalInfo.title}
+            </h2>
+          </div>
+        ) : null}
+        <X
+          className="absolute top-[12px] right-[12px] cursor-pointer"
+          onClick={handleClose}
+        />
         {Content}
       </div>
     </div>

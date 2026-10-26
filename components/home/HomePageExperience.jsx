@@ -78,10 +78,11 @@ export default function HomePageExperience() {
   return (
     <div ref={wrapperRef}>
       <HomeHeroSection />
-      <WhyLearnersChooseSection />
+      <ExploreByCategorySection />
+
       <LearningPathsSection />
       <FeaturedCoursesCarouselSection />
-      <ExploreByCategorySection />
+      <WhyLearnersChooseSection />
       <HomePopular />
       <HomepageSkillsTransform />
     </div>

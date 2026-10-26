@@ -24,10 +24,10 @@ export default function UserProfileInstructorCourses({ profile }) {
 
   return (
     <div className="mt-[50px]">
-      <h2 className="font-semibold text-[30px] mb-4">My Courses</h2>
+      <h2 className="font-semibold text-[24px] lg:text-[30px] mb-4">My Courses</h2>
 
       {courses.length > 0 ? (
-        <div className="grid grid-cols-3 gap-[20px]">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[20px]">
           {courses.map((course) => (
             <CourseCard key={course.id} course={course} />
           ))}

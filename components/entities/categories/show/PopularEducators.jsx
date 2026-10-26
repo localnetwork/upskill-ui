@@ -39,7 +39,7 @@ export default function PopularEducators({ category }) {
             </div>
             <Link
               href={`/courses?categorySlug=${encodeURIComponent(category?.slug || "")}`}
-              className="mt-8 md:mt-0 px-8 py-4 bg-on-surface text-surface rounded-xl font-extrabold text-sm hover:bg-primary transition-all duration-300 shadow-lg active:scale-95"
+              className="mt-8 md:mt-0 px-8 py-4 bg-on-surface hover:text-white rounded-xl font-extrabold text-sm hover:bg-primary transition-all duration-300 shadow-lg active:scale-95"
             >
               Browse courses
             </Link>

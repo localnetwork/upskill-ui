@@ -29,6 +29,8 @@ export default function PromoVideo({
   );
 
   useEffect(() => {
+    // A bare id string carries no path; keep the uploaded media object for preview.
+    if (typeof value === "string" && value) return;
     setUploadedFile(value || null);
   }, [value]);
 

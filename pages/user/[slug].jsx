@@ -182,12 +182,14 @@ export default function PublicProfile({ profile }) {
             </div>
           )}
 
-          <h2 className="font-semibold text-[30px] mb-4">About Me</h2>
+          <h2 className="font-semibold text-[24px] lg:text-[30px] mb-4">
+            About Me
+          </h2>
 
           {biographyContent ? (
             <>
               <div
-                className="max-w-[700px] text-[18px]"
+                className="max-w-[700px] text-[16px] lg:text-[18px] break-words"
                 dangerouslySetInnerHTML={{
                   __html: expanded ? biographyContent : visibleBio,
                 }}
@@ -213,7 +215,9 @@ export default function PublicProfile({ profile }) {
 
           {isLearner && (
             <div className="mt-[50px]">
-              <h2 className="font-semibold text-[30px] mb-4">Certifications</h2>
+              <h2 className="font-semibold text-[24px] lg:text-[30px] mb-4">
+                Certifications
+              </h2>
               {certifications.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-[1100px]">
                   {certifications.map((certification) => (
@@ -231,7 +235,7 @@ export default function PublicProfile({ profile }) {
 
           {isLearner && (
             <div className="mt-[50px]">
-              <h2 className="font-semibold text-[30px] mb-4">
+              <h2 className="font-semibold text-[24px] lg:text-[30px] mb-4">
                 Completed courses
               </h2>
               {completedCourses.length > 0 ? (

@@ -1,7 +1,7 @@
 import { Children, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { Loader2, Search, Tag } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2, Search, Tag } from "lucide-react";
 import BaseApi from "@/lib/api/_base.api";
 
 const rowClass =
@@ -44,6 +44,7 @@ function asArray(value) {
 export default function HeaderSearchAutocomplete({ className }) {
   const router = useRouter();
   const containerRef = useRef(null);
+  const favoritesRef = useRef(null);
   const [query, setQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -65,7 +66,7 @@ export default function HeaderSearchAutocomplete({ className }) {
       try {
         const response = await BaseApi.get(
           `${process.env.NEXT_PUBLIC_API_URL}/courses/discovery`,
-          { params: { q: debouncedQuery, limit: 5 } },
+          { params: { q: debouncedQuery, limit: debouncedQuery ? 5 : 12 } },
         );
         if (!cancelled) {
           setResult(response?.data?.data || null);
@@ -116,6 +117,11 @@ export default function HeaderSearchAutocomplete({ className }) {
   const trendingTopics = asArray(result?.trending_topics).slice(0, 12);
   const hasMatches =
     matchedTopics.length + matchedCourses.length + matchedUsers.length > 0;
+
+  const scrollFavorites = (direction) => {
+    const el = favoritesRef.current;
+    if (el) el.scrollBy({ left: direction * el.clientWidth, behavior: "smooth" });
+  };
 
   const navigateToBrowse = () => {
     const trimmed = query.trim();
@@ -183,12 +189,36 @@ export default function HeaderSearchAutocomplete({ className }) {
               {loading && <Loader2 className="w-3 h-3 animate-spin text-slate-400" />}
             </h3>
           )}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {trendingCourses.slice(0, 3).map((course) => (
+          <div className="relative">
+            {trendingCourses.length > 3 && (
+              <>
+                <button
+                  type="button"
+                  aria-label="Previous courses"
+                  onClick={() => scrollFavorites(-1)}
+                  className="absolute -left-3 top-1/3 z-10 flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white shadow hover:bg-slate-50"
+                >
+                  <ChevronLeft size={18} />
+                </button>
+                <button
+                  type="button"
+                  aria-label="Next courses"
+                  onClick={() => scrollFavorites(1)}
+                  className="absolute -right-3 top-1/3 z-10 flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white shadow hover:bg-slate-50"
+                >
+                  <ChevronRight size={18} />
+                </button>
+              </>
+            )}
+          <div
+            ref={favoritesRef}
+            className="flex gap-3 overflow-x-auto snap-x snap-mandatory scroll-smooth pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          >
+            {trendingCourses.slice(0, 12).map((course) => (
               <Link
                 key={`fav-${course.id}`}
                 href={`/courses/${course.slug}`}
-                className="rounded-xl border border-slate-200 p-2.5 hover:shadow-md transition-shadow"
+                className="snap-start shrink-0 basis-[calc((100%-0.75rem)/2)] sm:basis-[calc((100%-1.5rem)/3)] rounded-xl border border-slate-200 p-2.5 hover:shadow-md transition-shadow"
                 onClick={() => setIsOpen(false)}
               >
                 <div className="aspect-[16/9] w-full overflow-hidden rounded-lg bg-slate-100">
@@ -211,6 +241,7 @@ export default function HeaderSearchAutocomplete({ className }) {
                 </p>
               </Link>
             ))}
+          </div>
           </div>
 
           <div className="mt-6 text-sm text-slate-700">

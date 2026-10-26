@@ -1,172 +1,139 @@
 import Link from "next/link";
-import UserAvatar from "../../user/UserAvatar";
-import {
-  ChevronDown,
-  Medal,
-  MonitorPlay,
-  School,
-  Star,
-  StarIcon,
-  StarOff,
-  UsersRound,
-  UserStar,
-} from "lucide-react";
-import { useRouter } from "next/router";
-import { useEffect, useState } from "react";
+import { ChevronDown, School, Star, UsersRound, UserStar } from "lucide-react";
+import { useMemo, useState } from "react";
 import Image from "next/image";
+
+const COLLAPSED_TEXT_LIMIT = 280;
+
+function resolvePicture(path) {
+  if (!path) return null;
+  if (/^https?:\/\//.test(path)) return path;
+  return `${process.env.NEXT_PUBLIC_API_DOMAIN || ""}${path}`;
+}
+
+function formatCount(value) {
+  return Number(value || 0).toLocaleString();
+}
+
 export default function CourseAuthor({ author }) {
   const [expanded, setExpanded] = useState(false);
-  const [visibleBio, setVisibleBio] = useState("");
 
-  useEffect(() => {
-    if (author?.biography) {
-      // Split by <p> tags and keep first 3 paragraphs
-      const paragraphs = author.biography
-        .split(/<\/p>/i)
-        .filter((p) => p.trim().length > 0)
-        .map((p) => (p.endsWith("</p>") ? p : `${p}</p>`));
+  const fullName = `${author?.firstname || ""} ${author?.lastname || ""}`.trim();
+  const initials =
+    `${author?.firstname?.[0] || ""}${author?.lastname?.[0] || ""}`.toUpperCase();
+  const pictureSrc = resolvePicture(author?.user_picture?.path);
+  const stats = author?.stats || {};
+  const biography = author?.biography || "";
 
-      const firstThree = paragraphs.slice(0, 2).join("");
-      const full = paragraphs.join("");
+  const isLongBio = useMemo(() => {
+    const plainText = biography.replace(/<[^>]*>/g, "").trim();
+    const paragraphs = biography.split(/<\/p>/i).filter((p) => p.trim()).length;
+    return plainText.length > COLLAPSED_TEXT_LIMIT || paragraphs > 2;
+  }, [biography]);
 
-      setVisibleBio(firstThree);
-    }
-  }, [author]);
+  if (!author) return null;
 
-  const handleToggle = () => {
-    setExpanded((prev) => !prev);
-  };
-
-  const biographyContent = author?.biography || "";
-  const paragraphsCount = biographyContent
-    .split(/<\/p>/i)
-    .filter(Boolean).length;
+  const statItems = [
+    {
+      icon: Star,
+      value: Number(stats.average_rating || 0).toFixed(1),
+      label: "Instructor Rating",
+      iconClass: "text-yellow-500 fill-yellow-500",
+    },
+    {
+      icon: UserStar,
+      value: formatCount(stats.total_reviews),
+      label: "Reviews",
+    },
+    {
+      icon: UsersRound,
+      value: formatCount(stats.total_learners),
+      label: "Learners",
+    },
+    {
+      icon: School,
+      value: formatCount(stats.published_courses),
+      label: Number(stats.published_courses) === 1 ? "Course" : "Courses",
+    },
+  ];
 
   return (
-    <div className="p-8 border border-gray-200 rounded-2xl">
-      <div className="flex flex-col md:flex-row gap-8 items-start">
-        {author?.user_picture?.path ? (
+    <div className="rounded-2xl border border-gray-200 p-5 sm:p-8">
+      <div className="flex flex-col items-start gap-6 md:flex-row md:gap-8">
+        {pictureSrc ? (
           <Image
             width={400}
             height={400}
-            alt={`${author?.firstname} ${author?.lastname}`}
-            className="w-32 h-32 rounded-full object-cover ring-4 ring-slate-50"
-            src={author?.user_picture?.path}
+            alt={fullName || "Instructor"}
+            className="h-32 w-32 shrink-0 rounded-full object-cover ring-4 ring-slate-50"
+            src={pictureSrc}
           />
         ) : (
-          <div></div>
+          <div className="flex h-32 w-32 shrink-0 items-center justify-center rounded-full bg-[#0056D2] text-4xl font-semibold text-white ring-4 ring-slate-50">
+            {initials || "?"}
+          </div>
         )}
 
-        <div className="flex-1">
-          <h3 className="text-2xl font-bold mb-1 font-secondary">
-            {author?.firstname} {author?.lastname}
+        <div className="min-w-0 flex-1">
+          <h3 className="mb-1 font-secondary text-2xl font-bold">
+            {author?.username ? (
+              <Link
+                href={`/user/${author.username}`}
+                className="hover:text-[#0056D2] hover:underline"
+              >
+                {fullName || author.username}
+              </Link>
+            ) : (
+              fullName
+            )}
           </h3>
-          <p className="text-slate-500 font-medium mb-4">{author?.headline}</p>
-          <div className="flex flex-wrap gap-6 mb-6">
-            <div className="flex items-center gap-2">
-              <StarIcon className="text-yellow-500 fill-1" />
-              <span className="text-sm font-bold">4.9 Instructor Rating</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <UserStar className="text-slate-500" />
-              <span className="text-sm font-bold">85,230 Reviews</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <School className="text-slate-500" />
-              <span className="text-sm font-bold">12 Courses</span>
-            </div>
+          {author?.headline ? (
+            <p className="mb-4 font-medium text-slate-500">{author.headline}</p>
+          ) : null}
+
+          <div className="mb-6 flex flex-wrap gap-x-6 gap-y-3">
+            {statItems.map(({ icon: Icon, value, label, iconClass }) => (
+              <div key={label} className="flex items-center gap-2">
+                <Icon size={20} className={iconClass || "text-slate-500"} />
+                <span className="text-sm font-bold">
+                  {value} {label}
+                </span>
+              </div>
+            ))}
           </div>
 
-          <div
-            className="text-slate-600 leading-relaxed"
-            dangerouslySetInnerHTML={{
-              __html: expanded ? biographyContent : visibleBio,
-            }}
-          />
-
-          {console.log("paragraphsCount", paragraphsCount)}
-          {paragraphsCount > 3 && (
-            <button
-              type="button"
-              onClick={handleToggle}
-              className="mt-3 flex text-[18px] items-center gap-[5px] text-[#0056D2] cursor-pointer font-medium hover:bg-[#F0F6FF] px-[5px] outline-none py-[5px] rounded-md"
-            >
-              {expanded ? "Show less" : "Show more"}{" "}
-              <ChevronDown
-                className={`${expanded ? "rotate-180" : ""}`}
-                size={16}
-              />
-            </button>
+          {biography ? (
+            <>
+              <div className="relative">
+                <div
+                  className={`description-content leading-relaxed text-slate-600 break-words ${
+                    isLongBio && !expanded ? "max-h-[8.5rem] overflow-hidden" : ""
+                  }`}
+                  dangerouslySetInnerHTML={{ __html: biography }}
+                />
+                {isLongBio && !expanded ? (
+                  <div className="pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-white to-transparent" />
+                ) : null}
+              </div>
+              {isLongBio ? (
+                <button
+                  type="button"
+                  onClick={() => setExpanded((prev) => !prev)}
+                  className="mt-3 flex cursor-pointer items-center gap-[5px] rounded-md px-[5px] py-[5px] font-medium text-[#0056D2] outline-none hover:bg-[#F0F6FF]"
+                >
+                  {expanded ? "Read less" : "Read more"}
+                  <ChevronDown
+                    className={expanded ? "rotate-180" : ""}
+                    size={16}
+                  />
+                </button>
+              ) : null}
+            </>
+          ) : (
+            <p className="italic text-gray-500">No biography available.</p>
           )}
         </div>
       </div>
-    </div>
-  );
-  return (
-    <div>
-      <div className="mb-2">
-        <Link
-          href={`/user/${author?.username}`}
-          className="font-semibold underline text-[#0056D2] text-[20px]"
-        >
-          {author?.firstname} {author?.lastname}
-        </Link>
-      </div>
-      {author?.headline && (
-        <p className="font-light text-[18px]">{author?.headline}</p>
-      )}
-
-      <div className="flex mt-4">
-        <div>
-          <UserAvatar profile={author} size="xxl" />
-        </div>
-        <div className="pl-[30px]">
-          <div className="flex items-center gap-2">
-            <Star className="inline" size={15} />
-            <p>4.7 Instructor Rating</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Medal className="inline" size={15} />
-            <p>10,000+ Reviews</p>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <UsersRound className="inline" size={15} />
-            <p>1,000,000+ Students</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <MonitorPlay className="inline" size={15} />
-            <p>50+ Courses</p>
-          </div>
-        </div>
-      </div>
-
-      {biographyContent ? (
-        <>
-          <div
-            className="mt-4 description-content font-light"
-            dangerouslySetInnerHTML={{
-              __html: expanded ? biographyContent : visibleBio,
-            }}
-          />
-
-          {paragraphsCount > 3 && (
-            <button
-              type="button"
-              onClick={handleToggle}
-              className="mt-3 flex text-[18px] items-center gap-[5px] text-[#0056D2] cursor-pointer font-medium hover:bg-[#F0F6FF] px-[5px] outline-none py-[5px] rounded-md"
-            >
-              {expanded ? "Show less" : "Show more"}{" "}
-              <ChevronDown
-                className={`${expanded ? "rotate-180" : ""}`}
-                size={16}
-              />
-            </button>
-          )}
-        </>
-      ) : (
-        <p className="text-gray-500 italic">No biography available.</p>
-      )}
     </div>
   );
 }

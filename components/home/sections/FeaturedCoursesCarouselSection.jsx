@@ -13,6 +13,14 @@ function FeaturedCard({ course }) {
   );
   const instructor =
     `${course?.author?.data?.firstname || ""} ${course?.author?.data?.lastname || ""}`.trim();
+  const author = course?.author?.data;
+  const initials =
+    `${author?.firstname?.[0] || ""}${author?.lastname?.[0] || ""}`.toUpperCase();
+  const rawPicture = author?.user_picture?.path;
+  const picturePath =
+    rawPicture && !/^https?:\/\//.test(rawPicture)
+      ? `${process.env.NEXT_PUBLIC_API_DOMAIN || ""}${rawPicture}`
+      : rawPicture;
   const price = course?.price_tier?.price;
   const isFree = price === "0.00";
 
@@ -32,9 +40,31 @@ function FeaturedCard({ course }) {
         <h3 className="line-clamp-2 min-h-[2.5rem] text-sm font-semibold text-slate-900">
           {course.title}
         </h3>
-        <p className="mt-1 line-clamp-1 text-xs text-slate-500">
-          {instructor || "Instructor"}
-        </p>
+        <div className="mt-1 flex items-center gap-2">
+          {picturePath ? (
+            <Image
+              src={picturePath}
+              alt={instructor || "Instructor"}
+              width={24}
+              height={24}
+              className="h-6 w-6 shrink-0 rounded-full object-cover"
+            />
+          ) : (
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-[10px] font-semibold text-white">
+              {initials || "?"}
+            </span>
+          )}
+          <div className="min-w-0">
+            <p className="line-clamp-1 text-xs text-slate-500 !mb-0">
+              {instructor || "Instructor"}
+            </p>
+            {author?.headline && (
+              <p className="line-clamp-1 text-[11px] text-slate-400">
+                {author.headline}
+              </p>
+            )}
+          </div>
+        </div>
         <div className="mt-2 flex items-center gap-1 text-xs">
           <span className="font-semibold">{rating.toFixed(1)}</span>
           <Star size={12} className="fill-yellow-400 text-yellow-400" />

@@ -154,23 +154,23 @@ export default function UserProfileBanner({ profile }) {
   };
 
   return (
-    <div className="bg-[#F0F6FF] px-[50px] pt-[30px] pb-[50px]">
+    <div className="bg-[#F0F6FF] px-4 sm:px-8 lg:px-[50px] pt-[30px] pb-[30px] lg:pb-[50px]">
       <div className="container relative">
-        <div className="flex justify-between items-center">
-          <div>
-            <div className="roles uppercase font-bold text-[15px]">
+        <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center">
+          <div className="min-w-0 break-words lg:pr-[400px]">
+            <div className="roles uppercase font-bold text-[13px] lg:text-[15px]">
               {extractedRoleNames?.join(", ")}
             </div>
-            <div className="name text-[35px] mt-[5px] font-semibold">
+            <div className="name text-[26px] sm:text-[30px] lg:text-[35px] mt-[5px] font-semibold">
               {profile?.firstname} {profile?.lastname}
             </div>
             {profile?.headline && (
-              <div className="headline text-[18px] font-semibold mt-[5px] text-gray-600">
+              <div className="headline text-[16px] lg:text-[18px] font-semibold mt-[5px] text-gray-600">
                 {profile?.headline}
               </div>
             )}
           </div>
-          <div className="absolute flex flex-col items-center justify-center top-0 right-0 card test bg-white shadow-md max-w-[400px] min-w-[350px] p-[30px] rounded-lg min-h-[250px]">
+          <div className="relative mt-6 lg:mt-0 lg:absolute flex flex-col items-center justify-center lg:top-0 lg:right-0 card test bg-white shadow-md w-full lg:w-auto max-w-[400px] lg:min-w-[350px] mx-auto lg:mx-0 p-5 sm:p-[30px] rounded-lg min-h-[250px]">
             <UserAvatar
               className="w-[130px] h-[128px] text-[40px]"
               profile={profile}

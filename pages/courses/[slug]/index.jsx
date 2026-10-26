@@ -1,4 +1,5 @@
 import CourseAuthor from "@/components/entities/course/show/CourseAuthor";
+import CourseAlsoBought from "@/components/entities/course/show/CourseAlsoBought";
 import CourseDescription from "@/components/entities/course/show/CourseDescription";
 import CourseInclusions from "@/components/entities/course/show/CourseInclusions";
 import CourseLearnings from "@/components/entities/course/show/CourseLearnings";
@@ -100,7 +101,7 @@ function CoursePageSkeleton() {
 
       <div className="container mx-auto px-4 lg:px-8 relative">
         <div className="grid lg:grid-cols-[1fr_400px] gap-12">
-          <main className="py-12 space-y-16">
+          <div className="py-12 space-y-16">
             <section className="space-y-4">
               <div className={`${shimmer} h-10 w-[260px]`} />
               <div className={`${shimmer} h-5 w-full`} />
@@ -127,7 +128,7 @@ function CoursePageSkeleton() {
               <div className={`${shimmer} h-10 w-[150px]`} />
               <div className={`${shimmer} h-24 w-full`} />
             </section>
-          </main>
+          </div>
 
           <aside className="relative lg:-mt-90 z-10">
             <div className="lg:sticky lg:top-24 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden">
@@ -163,8 +164,11 @@ export default function Course() {
   const [purchaseMode, setPurchaseMode] = useState("subscribe");
   const [subPlans, setSubPlans] = useState([]);
   const [hasSubscription, setHasSubscription] = useState(false);
-  const { canStartWithPlan, startWithPlan, starting: startingWithPlan } =
-    useSubscriptionAccess(course, course?.is_enrolled);
+  const {
+    canStartWithPlan,
+    startWithPlan,
+    starting: startingWithPlan,
+  } = useSubscriptionAccess(course, course?.is_enrolled);
   const [catalogCount, setCatalogCount] = useState(0);
   const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
 
@@ -174,7 +178,9 @@ export default function Course() {
 
   const updateCart = cartStore((state) => state.setCartCount);
   const cartItems = cartStore((state) => state.cart);
-  const appliedCourseCoupons = cartStore((state) => state.appliedCourseCoupons || {});
+  const appliedCourseCoupons = cartStore(
+    (state) => state.appliedCourseCoupons || {},
+  );
 
   const profile = persistentStore((state) => state.profile);
   const averageRating = Number(course?.stats?.average_rating || 0);
@@ -182,11 +188,16 @@ export default function Course() {
   const totalEnrollees = Number(course?.stats?.total_enrollees || 0);
   const isBestseller = Boolean(course?.stats?.is_bestseller);
   const topics = Array.isArray(course?.topics) ? course.topics : [];
-  const sectionCount = Array.isArray(course?.sections) ? course.sections.length : 0;
+  const sectionCount = Array.isArray(course?.sections)
+    ? course.sections.length
+    : 0;
   const lectureCount = Array.isArray(course?.sections)
     ? course.sections.reduce(
         (sum, section) =>
-          sum + (Array.isArray(section?.curriculums) ? section.curriculums.length : 0),
+          sum +
+          (Array.isArray(section?.curriculums)
+            ? section.curriculums.length
+            : 0),
         0,
       )
     : 0;
@@ -208,11 +219,17 @@ export default function Course() {
   const appliedCourseCoupon = activeCourseId
     ? appliedCourseCoupons?.[activeCourseId] || null
     : null;
-  const isFreeCourse = String(course?.price_tier?.title || "").toLowerCase() === "free";
+  const isFreeCourse =
+    String(course?.price_tier?.title || "").toLowerCase() === "free";
   const baseCoursePrice = Number(course?.price_tier?.price || 0);
-  const appliedDiscountAmount = Number(appliedCourseCoupon?.discountAmount || 0);
+  const appliedDiscountAmount = Number(
+    appliedCourseCoupon?.discountAmount || 0,
+  );
   const effectiveDiscountAmount = appliedDiscountAmount;
-  const effectiveCoursePrice = Math.max(0, baseCoursePrice - effectiveDiscountAmount);
+  const effectiveCoursePrice = Math.max(
+    0,
+    baseCoursePrice - effectiveDiscountAmount,
+  );
   const hasDiscountedPrice = !isFreeCourse && effectiveDiscountAmount > 0;
 
   useEffect(() => {
@@ -220,9 +237,7 @@ export default function Course() {
     const inCart = cartItems.some(
       (item) => String(item?.course?.id || "") === String(course.id),
     );
-    setCourse((prev) =>
-      prev ? { ...prev, is_in_cart: inCart } : prev,
-    );
+    setCourse((prev) => (prev ? { ...prev, is_in_cart: inCart } : prev));
   }, [cartItems, course?.id]);
 
   const addCurrentCourseToCart = async ({ showModal = true } = {}) => {
@@ -387,7 +402,9 @@ export default function Course() {
       .catch(() => {});
     if (isLoggedIn()) {
       BaseApi.get(`${api}/subscription/me`)
-        .then((res) => setHasSubscription(Boolean(res?.data?.data?.hasSubscription)))
+        .then((res) =>
+          setHasSubscription(Boolean(res?.data?.data?.hasSubscription)),
+        )
         .catch(() => {});
     }
   }, []);
@@ -397,7 +414,8 @@ export default function Course() {
     const priced = subPlans
       .map((plan) => ({
         perMonth:
-          (plan.firstCyclePrice ?? plan.price) / (plan.interval === "YEAR" ? 12 : 1),
+          (plan.firstCyclePrice ?? plan.price) /
+          (plan.interval === "YEAR" ? 12 : 1),
         regular: plan.interval === "YEAR" ? plan.price / 12 : plan.price,
       }))
       .sort((a, b) => a.perMonth - b.perMonth);
@@ -414,7 +432,9 @@ export default function Course() {
       });
       return;
     }
-    router.push(`/checkout/express?slug=${encodeURIComponent(course.slug)}&mode=subscribe`);
+    router.push(
+      `/checkout/express?slug=${encodeURIComponent(course.slug)}&mode=subscribe`,
+    );
   };
 
   const handleBuyNow = async () => {
@@ -564,12 +584,37 @@ export default function Course() {
     );
   }
 
+  const openPromoVideo = () => {
+    modalState.setState({
+      modalInfo: {
+        type: "COURSE_PROMO_VIDEO",
+        title: course?.title,
+        size: "xl",
+        data: { video_path: course?.promo_video?.path },
+      },
+    });
+  };
+
+  const educator = course?.author?.data;
+  const educatorName = `${educator?.firstname || ""} ${educator?.lastname || ""}`.trim();
+  const educatorInitials =
+    `${educator?.firstname?.[0] || ""}${educator?.lastname?.[0] || ""}`.toUpperCase();
+  const educatorPicturePath = educator?.user_picture?.path;
+  const educatorPictureSrc = educatorPicturePath
+    ? /^https?:\/\//.test(educatorPicturePath)
+      ? educatorPicturePath
+      : `${process.env.NEXT_PUBLIC_API_DOMAIN || ""}${educatorPicturePath}`
+    : null;
+  const canShowPurchaseActions = Boolean(
+    profile?.permissions?.includes("view-own-learnings"),
+  );
+
   return (
-    <div className="pb-[50px]">
-      <header className="bg-[#0f172a] text-white py-12 lg:py-20 px-4 lg:px-8">
+    <div className="pb-28 lg:pb-[50px]">
+      <header className="bg-white text-slate-900 lg:bg-[#0f172a] lg:text-white pt-4 pb-6 lg:py-20 px-4 lg:px-8">
         <div className="container mx-auto grid lg:grid-cols-[1fr_400px] gap-12">
           <div className="space-y-6">
-            <nav className="flex items-center gap-2 text-sm font-bold text-[#9dc4ff]">
+            <nav className="flex flex-wrap items-center gap-2 text-sm font-bold text-[#0056D2] lg:text-[#9dc4ff]">
               {[...(course?.categories || [])]
                 .sort((a, b) => (a.parent_id === null ? -1 : 1))
                 .map((cat, index) => (
@@ -591,15 +636,100 @@ export default function Course() {
                   </>
                 ))}
             </nav>
-            <h1 className="text-4xl font-secondary lg:text-6xl font-black serif-heading leading-tight">
+            <div
+              className="relative -mx-4 cursor-pointer lg:hidden"
+              onClick={openPromoVideo}
+            >
+              <Image
+                alt="Course Preview"
+                className="w-full aspect-video object-cover"
+                width={500}
+                height={280}
+                src={
+                  course?.cover_image
+                    ? course.cover_image.path
+                    : "/placeholder-cover.webp"
+                }
+              />
+              <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-xl">
+                  <Play className="text-primary" size={24} />
+                </div>
+              </div>
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-sm font-bold text-white drop-shadow-md">
+                Preview this course
+              </div>
+            </div>
+            <h1 className="text-3xl sm:text-4xl font-secondary lg:text-6xl font-black serif-heading leading-tight">
               {course?.title}
             </h1>
             <div
-              className="text-xl text-slate-300 max-w-2xl"
+              className="text-lg lg:text-xl text-slate-700 lg:text-slate-300 max-w-2xl"
               dangerouslySetInnerHTML={{ __html: course?.subtitle }}
             />
 
-            <div className="flex flex-wrap items-center gap-6">
+            <div className="space-y-4 lg:hidden">
+              {isBestseller ? (
+                <span className="inline-block rounded bg-teal-100 px-3 py-1.5 text-sm font-bold text-teal-900">
+                  Bestseller
+                </span>
+              ) : null}
+              {educatorName ? (
+                <div className="flex items-center gap-4">
+                  {educatorPictureSrc ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={educatorPictureSrc}
+                      alt={educatorName}
+                      className="h-14 w-14 shrink-0 rounded-full object-cover"
+                    />
+                  ) : (
+                    <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-slate-900 font-semibold text-white">
+                      {educatorInitials}
+                    </span>
+                  )}
+                  <div className="min-w-0 text-sm text-slate-700">
+                    <p>Created by</p>
+                    <Link
+                      href={`/user/${educator?.username || ""}`}
+                      className="font-semibold text-primary underline"
+                    >
+                      {educatorName}
+                    </Link>
+                  </div>
+                </div>
+              ) : null}
+              <div className="space-y-3 text-sm text-slate-700">
+                <div className="flex items-center gap-3">
+                  <History className="text-slate-600" size={18} />
+                  <span>Last updated {formatMonthYear(course?.updated_at)}</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Globe className="text-slate-600" size={18} />
+                  <span>{course?.language || "English"}</span>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 divide-x divide-slate-300 rounded-xl border border-slate-300 py-4 text-center">
+                <div className="px-3">
+                  <div className="flex items-center justify-center gap-1 font-bold text-slate-900">
+                    {averageRating.toFixed(1)}
+                    <Star size={16} className="fill-amber-600 text-amber-600" />
+                  </div>
+                  <p className="mt-1 text-sm text-slate-600 underline">
+                    {totalReviews.toLocaleString("en-PH")} ratings
+                  </p>
+                </div>
+                <div className="px-3">
+                  <div className="flex items-center justify-center gap-1 font-bold text-slate-900">
+                    <UsersRound size={16} />
+                    {totalEnrollees.toLocaleString("en-PH")}
+                  </div>
+                  <p className="mt-1 text-sm text-slate-600">learners</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="hidden lg:flex flex-wrap items-center gap-6">
               <div className="flex items-center gap-2">
                 {isBestseller ? (
                   <span className="bg-orange-500 text-white text-[10px] font-black uppercase px-2 py-1 rounded">
@@ -623,7 +753,7 @@ export default function Course() {
                 students enrolled
               </div>
             </div>
-            <div className="flex flex-wrap gap-6 text-sm">
+            <div className="hidden lg:flex flex-wrap gap-6 text-sm">
               <div className="flex items-center gap-2">
                 {/* <span className="material-symbols-outlined text-slate-400"></span> */}
                 <History className="inline text-slate-400" size={18} />
@@ -639,8 +769,8 @@ export default function Course() {
       </header>
 
       <div className="container mx-auto px-4 lg:px-8 relative">
-        <div className="grid lg:grid-cols-[1fr_400px] gap-12">
-          <main className="py-12 space-y-16">
+        <div className="grid lg:grid-cols-[1fr_400px] gap-0 lg:gap-12">
+          <div className="py-12 space-y-16">
             <section id="about">
               <h2 className="text-3xl font-black serif-heading mb-6 font-secondary">
                 About this course
@@ -676,8 +806,8 @@ export default function Course() {
                   Course content
                 </h2>
                 <span className="text-sm font-bold text-slate-500">
-                  {sectionCount} section{sectionCount === 1 ? "" : "s"} • {lectureCount}{" "}
-                  lecture{lectureCount === 1 ? "" : "s"} •{" "}
+                  {sectionCount} section{sectionCount === 1 ? "" : "s"} •{" "}
+                  {lectureCount} lecture{lectureCount === 1 ? "" : "s"} •{" "}
                   {formatTotalLength(totalLengthSeconds)} total length
                 </span>
               </div>
@@ -707,13 +837,14 @@ export default function Course() {
               </h2>
               <CourseFeedback courseId={course?.id} />
             </section> */}
-
-            <CourseReviews courseId={course?.id} />
-          </main>
-          <aside className="relative lg:-mt-90 z-10">
-            <div className="lg:sticky lg:top-24 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden">
+          </div>
+          <aside className="relative order-first lg:order-none pt-8 lg:pt-0 lg:-mt-90 z-10">
+            <h2 className="mb-4 text-2xl font-bold text-slate-900 lg:hidden">
+              Purchase options
+            </h2>
+            <div className="lg:sticky lg:top-24 bg-white rounded-lg lg:rounded-2xl lg:shadow-2xl border border-gray-100 overflow-hidden">
               <div
-                className={`relative group cursor-pointer transition-all ${isScrolled ? "mt-[-225px]" : ""}`}
+                className={`relative group hidden lg:block cursor-pointer transition-all ${isScrolled ? "lg:mt-[-225px]" : ""}`}
                 onClick={() => {
                   modalState.setState({
                     modalInfo: {
@@ -748,8 +879,8 @@ export default function Course() {
                 </div>
               </div>
 
-              <div className="p-8">
-                <div className="flex items-baseline gap-3 mb-6">
+              <div className="p-4 lg:p-8">
+                <div className={`${showSubscribeOption ? "hidden lg:flex" : "flex"} items-baseline gap-3 mb-6`}>
                   {isFreeCourse ? (
                     <span className="text-4xl font-black">Free</span>
                   ) : (
@@ -788,23 +919,42 @@ export default function Course() {
                       <div className="rounded-xl border border-slate-200 divide-y divide-slate-200 overflow-hidden">
                         <label className="block cursor-pointer p-4">
                           <div className="flex items-start gap-3">
-                            <input type="radio" className="mt-1.5 h-4 w-4 accent-primary" checked={purchaseMode === "subscribe"} onChange={() => setPurchaseMode("subscribe")} />
+                            <input
+                              type="radio"
+                              className="mt-1.5 h-4 w-4 accent-primary"
+                              checked={purchaseMode === "subscribe"}
+                              onChange={() => setPurchaseMode("subscribe")}
+                            />
                             <div>
-                              <p className="text-slate-700">Subscribe and save</p>
+                              <p className="text-slate-700">
+                                Subscribe and save
+                              </p>
                               <p className="font-bold text-xl">
-                                From {formatPhpPrice(Math.round(subscriptionOffer.perMonth))}
-                                {subscriptionOffer.regular > subscriptionOffer.perMonth && (
+                                From{" "}
+                                {formatPhpPrice(
+                                  Math.round(subscriptionOffer.perMonth),
+                                )}
+                                {subscriptionOffer.regular >
+                                  subscriptionOffer.perMonth && (
                                   <span className="ml-2 text-base font-normal text-slate-500 line-through">
-                                    {formatPhpPrice(Math.round(subscriptionOffer.regular))}
+                                    {formatPhpPrice(
+                                      Math.round(subscriptionOffer.regular),
+                                    )}
                                   </span>
                                 )}
-                                <span className="ml-1 text-sm font-normal text-slate-600">/month</span>
+                                <span className="ml-1 text-sm font-normal text-slate-600">
+                                  /month
+                                </span>
                               </p>
                             </div>
                           </div>
                           {purchaseMode === "subscribe" && (
                             <div className="mt-4 space-y-2 pl-7 text-sm text-slate-700">
-                              <p>{catalogCount > 0 ? `Access to ${catalogCount}+ top-rated courses` : "Access to our top-rated courses"}</p>
+                              <p>
+                                {catalogCount > 0
+                                  ? `Access to ${catalogCount}+ top-rated courses`
+                                  : "Access to our top-rated courses"}
+                              </p>
                               <p>Cancel anytime</p>
                               <button
                                 type="button"
@@ -818,9 +968,16 @@ export default function Course() {
                         </label>
                         <label className="block cursor-pointer p-4">
                           <div className="flex items-start gap-3">
-                            <input type="radio" className="mt-1.5 h-4 w-4 accent-primary" checked={purchaseMode === "buy"} onChange={() => setPurchaseMode("buy")} />
+                            <input
+                              type="radio"
+                              className="mt-1.5 h-4 w-4 accent-primary"
+                              checked={purchaseMode === "buy"}
+                              onChange={() => setPurchaseMode("buy")}
+                            />
                             <div>
-                              <p className="text-slate-700">Buy individual course</p>
+                              <p className="text-slate-700">
+                                Buy individual course
+                              </p>
                               <p className="font-bold text-xl">
                                 {formatPhpPrice(effectiveCoursePrice)}
                                 {hasDiscountedPrice && (
@@ -834,15 +991,26 @@ export default function Course() {
                           {purchaseMode === "buy" && (
                             <div className="mt-4 space-y-3 pl-7">
                               {course?.is_in_cart ? (
-                                <Link href="/cart" className="block w-full rounded-lg bg-primary py-3.5 text-center font-bold text-white hover:brightness-110">
+                                <Link
+                                  href="/cart"
+                                  className="block w-full rounded-lg bg-primary py-3.5 text-center font-bold text-white hover:brightness-110"
+                                >
                                   Go to Cart
                                 </Link>
                               ) : (
-                                <button type="button" onClick={(e) => handleCart(e)} className="block w-full rounded-lg bg-primary py-3.5 text-center font-bold text-white hover:brightness-110">
+                                <button
+                                  type="button"
+                                  onClick={(e) => handleCart(e)}
+                                  className="block w-full rounded-lg bg-primary py-3.5 text-center font-bold text-white hover:brightness-110"
+                                >
                                   Add to Cart
                                 </button>
                               )}
-                              <button type="button" onClick={handleBuyNow} className="block w-full rounded-lg border border-slate-900 py-3 font-bold text-slate-900 hover:bg-slate-50">
+                              <button
+                                type="button"
+                                onClick={handleBuyNow}
+                                className="block w-full rounded-lg border border-slate-900 py-3 font-bold text-slate-900 hover:bg-slate-50"
+                              >
                                 Buy Now
                               </button>
                             </div>
@@ -855,7 +1023,12 @@ export default function Course() {
                             disabled={isWishlistSubmitting}
                             className={`flex h-9 w-9 items-center justify-center rounded-lg border ${course?.is_in_wishlist ? "border-red-200 bg-red-50 text-red-500" : "border-slate-200 bg-white text-slate-600 hover:text-red-500"}`}
                           >
-                            <Heart size={18} fill={course?.is_in_wishlist ? "currentColor" : "none"} />
+                            <Heart
+                              size={18}
+                              fill={
+                                course?.is_in_wishlist ? "currentColor" : "none"
+                              }
+                            />
                           </button>
                         </div>
                       </div>
@@ -879,7 +1052,10 @@ export default function Course() {
                       </>
                     )}
 
-                    <CourseAccessButton course={course} enabled={!canStartWithPlan} />
+                    <CourseAccessButton
+                      course={course}
+                      enabled={!canStartWithPlan}
+                    />
 
                     {!course?.is_enrolled && !showSubscribeOption && (
                       <div className="flex gap-2">
@@ -949,8 +1125,12 @@ export default function Course() {
                     {appliedCourseCoupon ? (
                       <p className="mt-2 text-[12px] text-emerald-700 font-semibold">
                         Applied:{" "}
-                        {String(appliedCourseCoupon?.code || "").toUpperCase()} (-{" "}
-                        {formatPhpPrice(appliedCourseCoupon?.discountAmount || 0)})
+                        {String(appliedCourseCoupon?.code || "").toUpperCase()}{" "}
+                        (-{" "}
+                        {formatPhpPrice(
+                          appliedCourseCoupon?.discountAmount || 0,
+                        )}
+                        )
                       </p>
                     ) : null}
                   </div>
@@ -974,6 +1154,69 @@ export default function Course() {
           </aside>
         </div>
       </div>
+      <div className="container mx-auto px-4 lg:px-8">
+        <CourseAlsoBought slug={course?.slug} />
+      </div>
+      <div className="container">
+        <CourseReviews courseId={course?.id} />
+      </div>
+
+      {canShowPurchaseActions ? (
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white px-4 pb-4 pt-3 shadow-[0_-4px_12px_rgba(0,0,0,0.08)] lg:hidden">
+          {course?.is_enrolled ? (
+            <Link
+              href={`/courses/${course.slug}/learn`}
+              className="block w-full rounded-lg bg-primary py-3.5 text-center font-bold text-white"
+            >
+              Continue Learning
+            </Link>
+          ) : canStartWithPlan ? (
+            <button
+              type="button"
+              onClick={startWithPlan}
+              disabled={startingWithPlan}
+              className="block w-full rounded-lg bg-primary py-3.5 text-center font-bold text-white disabled:opacity-60"
+            >
+              {startingWithPlan ? "Opening..." : "Start Learning"}
+            </button>
+          ) : showSubscribeOption && purchaseMode === "subscribe" ? (
+            <>
+              <button
+                type="button"
+                onClick={handleStartSubscription}
+                className="block w-full rounded-lg bg-primary py-3.5 text-center font-bold text-white"
+              >
+                Start subscription
+              </button>
+              <p className="mt-2 text-center text-sm text-slate-600">
+                Starting at{" "}
+                {subscriptionOffer.regular > subscriptionOffer.perMonth ? (
+                  <span className="line-through">
+                    {formatPhpPrice(Math.round(subscriptionOffer.regular))}
+                  </span>
+                ) : null}{" "}
+                {formatPhpPrice(Math.round(subscriptionOffer.perMonth))} per
+                month. Cancel anytime.
+              </p>
+            </>
+          ) : course?.is_in_cart ? (
+            <Link
+              href="/cart"
+              className="block w-full rounded-lg bg-primary py-3.5 text-center font-bold text-white"
+            >
+              Go to Cart
+            </Link>
+          ) : (
+            <button
+              type="button"
+              onClick={(e) => handleCart(e)}
+              className="block w-full rounded-lg bg-primary py-3.5 text-center font-bold text-white"
+            >
+              Add to Cart
+            </button>
+          )}
+        </div>
+      ) : null}
     </div>
   );
 }
