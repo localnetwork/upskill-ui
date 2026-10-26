@@ -2,6 +2,8 @@ import FeaturedCourse from "@/components/entities/categories/show/FeaturedCourse
 import PopularEducators from "@/components/entities/categories/show/PopularEducators";
 import TopicsCarousel from "@/components/entities/categories/show/TopicsCarousel";
 import BaseApi from "@/lib/api/_base.api";
+import Seo from "@/components/partials/Seo";
+import { breadcrumbJsonLd, stripHtml } from "@/lib/seo";
 
 function asNumber(value) {
   return Number(value || 0);
@@ -50,9 +52,31 @@ export async function getServerSideProps(context) {
 export default function Page({ category, topics = [] }) {
   const expertCourses = asNumber(category?.expert_courses);
   const totalEnrolled = asNumber(category?.total_enrolled);
+  const categoryDescription =
+    stripHtml(category?.category_description || category?.description) ||
+    `Explore ${category.title} courses taught by expert instructors. Build practical, job-ready ${category.title} skills at your own pace.`;
 
   return (
     <>
+      <Seo
+        title={`${category.title} Courses`}
+        description={categoryDescription}
+        image={category?.image}
+        jsonLd={[
+          {
+            "@context": "https://schema.org",
+            "@type": "CollectionPage",
+            name: `${category.title} Courses`,
+            description: categoryDescription,
+            about: category.title,
+          },
+          breadcrumbJsonLd([
+            { name: "Home", path: "/" },
+            { name: "Courses", path: "/courses" },
+            { name: category.title, path: `/categories/${category.slug}` },
+          ]),
+        ]}
+      />
       <section className="py-16 md:py-20 bg-[#F8FAFC]">
         <div className="container">
           <div className="max-w-4xl">

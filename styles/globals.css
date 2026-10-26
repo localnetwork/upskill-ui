@@ -16,6 +16,7 @@ p:not(:last-of-type) {
 
 .bg-primary {
   background-color: var(--color-primary) !important;
+  color: #fff;
 }
 
 .text-primary {

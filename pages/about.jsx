@@ -1,8 +1,13 @@
 import Image from "next/image";
+import Seo from "@/components/partials/Seo";
 
 export default function About() {
   return (
     <>
+      <Seo
+        title="About Us"
+        description="Learn about Upskill's mission to help people build in-demand skills through affordable, project-based online courses."
+      />
       {/* Hero Section */}
       <section className="relative flex items-center overflow-hidden px-4 py-12 sm:px-6 sm:py-16 lg:min-h-[618px] lg:px-8 lg:py-20">
         <div className="mx-auto grid w-full max-w-7xl grid-cols-1 items-center gap-10 lg:grid-cols-12 lg:gap-8">

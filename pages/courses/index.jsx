@@ -7,6 +7,7 @@ import Select from "@/components/forms/Select";
 import Checkbox from "@/components/forms/Checkbox";
 import Radio from "@/components/forms/Radio";
 import BaseApi from "@/lib/api/_base.api";
+import Seo from "@/components/partials/Seo";
 
 function asArray(value) {
   return Array.isArray(value) ? value : [];
@@ -297,6 +298,11 @@ export default function CoursesPage() {
 
   return (
     <div className="py-[50px] bg-[#F9FAFB]">
+      <Seo
+        title="Browse online courses"
+        description="Explore online courses in web development, design, business, data, and more. Learn from expert instructors at your own pace."
+        noindex={Object.keys(router.query || {}).length > 0}
+      />
       <div className="container">
         <div className="w-full mb-8">
           <div className="relative flex items-center bg-white shadow-xl shadow-slate-200/50 rounded-2xl border border-gray-100 p-2">

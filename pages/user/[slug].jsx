@@ -13,6 +13,8 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/router";
 import { useEffect, useMemo, useState } from "react";
+import Seo from "@/components/partials/Seo";
+import { absoluteUrl, mediaUrl, stripHtml, truncate } from "@/lib/seo";
 
 export const getServerSideProps = async (context) => {
   const safeSlug = context.params.slug
@@ -79,6 +81,11 @@ export default function PublicProfile({ profile }) {
   );
 
   const educatorStats = profile?.stats?.educator || {};
+  const profileName =
+    `${profile?.firstname || ""} ${profile?.lastname || ""}`.trim() ||
+    profile?.username ||
+    "";
+  const profileImage = mediaUrl(profile?.user_picture);
   const learnerStats = profile?.stats?.learner || {};
   const completedCourses = Array.isArray(profile?.completed_courses)
     ? profile.completed_courses
@@ -89,6 +96,38 @@ export default function PublicProfile({ profile }) {
 
   return (
     <div>
+      <Seo
+        title={`${profileName || "Profile"}${profile?.headline ? ` - ${stripHtml(profile.headline)}` : ""}`}
+        description={
+          stripHtml(profile?.biography) ||
+          `${profileName} is a member of the Upskill learning community.`
+        }
+        image={profileImage}
+        type="profile"
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "ProfilePage",
+          mainEntity: {
+            "@type": "Person",
+            name: profileName,
+            ...(profile?.headline
+              ? { jobTitle: stripHtml(profile.headline) }
+              : {}),
+            ...(profile?.biography
+              ? { description: truncate(profile.biography, 300) }
+              : {}),
+            ...(profileImage ? { image: profileImage } : {}),
+            url: absoluteUrl(`/user/${profile?.username || safeSlug}`),
+            sameAs: [
+              profile?.link_website,
+              profile?.link_linkedin,
+              profile?.link_github,
+              profile?.link_x,
+              profile?.link_youtube,
+            ].filter((link) => /^https?:\/\//i.test(String(link || ""))),
+          },
+        }}
+      />
       <UserProfileBanner profile={profile} />
 
       <div className="container">

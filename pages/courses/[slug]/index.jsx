@@ -45,6 +45,14 @@ import CourseReviews from "@/components/entities/course/show/CourseReviews";
 import persistentStore from "@/lib/store/persistentStore";
 import { trackAnalyticsEvent } from "@/lib/services/analytics";
 import useSubscriptionAccess from "@/lib/hooks/useSubscriptionAccess";
+import Seo from "@/components/partials/Seo";
+import {
+  absoluteUrl,
+  breadcrumbJsonLd,
+  mediaUrl,
+  stripHtml,
+  truncate,
+} from "@/lib/seo";
 const shimmer =
   "animate-pulse bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 rounded";
 
@@ -152,12 +160,92 @@ function CoursePageSkeleton() {
   );
 }
 
-export default function Course() {
+export async function getServerSideProps({ params }) {
+  const raw = params?.slug;
+  const slug = Array.isArray(raw) ? raw[0] : raw;
+  try {
+    const response = await BaseApi.get(
+      `${process.env.NEXT_PUBLIC_API_URL}/courses/route/${encodeURIComponent(slug)}`,
+    );
+    if (!response?.data?.id) return { notFound: true };
+    return { props: { initialCourse: response.data } };
+  } catch (error) {
+    if (error?.status === 404) return { notFound: true };
+    return { props: { initialCourse: null } };
+  }
+}
+
+function buildCourseJsonLd(course) {
+  if (!course?.slug) return null;
+  const author = course.author?.data || {};
+  const authorName =
+    `${author.firstname || ""} ${author.lastname || ""}`.trim() ||
+    author.username;
+  const rating = Number(course.stats?.average_rating || 0);
+  const reviews = Number(course.stats?.total_reviews || 0);
+  const price = course.price_tier?.price;
+  return {
+    "@context": "https://schema.org",
+    "@type": "Course",
+    name: course.title,
+    description: truncate(course.subtitle || course.description, 300),
+    url: absoluteUrl(`/courses/${course.slug}`),
+    inLanguage: course.language || undefined,
+    educationalLevel: course.instructional_level?.title || undefined,
+    image: course.cover_image?.path ? mediaUrl(course.cover_image) : undefined,
+    dateModified: course.updated_at || undefined,
+    provider: {
+      "@type": "Organization",
+      name: "Upskill",
+      sameAs: absoluteUrl("/"),
+    },
+    ...(authorName
+      ? {
+          instructor: {
+            "@type": "Person",
+            name: authorName,
+            url: author.username
+              ? absoluteUrl(`/user/${author.username}`)
+              : undefined,
+          },
+        }
+      : {}),
+    ...(reviews > 0 && rating > 0
+      ? {
+          aggregateRating: {
+            "@type": "AggregateRating",
+            ratingValue: Number(rating.toFixed(1)),
+            reviewCount: reviews,
+            bestRating: 5,
+            worstRating: 1,
+          },
+        }
+      : {}),
+    hasCourseInstance: {
+      "@type": "CourseInstance",
+      courseMode: "online",
+      courseWorkload: undefined,
+    },
+    ...(price !== undefined && price !== null
+      ? {
+          offers: {
+            "@type": "Offer",
+            price: Number(price),
+            priceCurrency: "PHP",
+            availability: "https://schema.org/InStock",
+            url: absoluteUrl(`/courses/${course.slug}`),
+          },
+        }
+      : {}),
+  };
+}
+
+export default function Course({ initialCourse = null }) {
   const router = useRouter();
   const rawSlug = router.query.slug;
   const slug = Array.isArray(rawSlug) ? rawSlug[0] : rawSlug;
-  const [course, setCourse] = useState(null);
-  const [isCourseLoading, setIsCourseLoading] = useState(true);
+  const [course, setCourse] = useState(initialCourse);
+  const [isCourseLoading, setIsCourseLoading] = useState(!initialCourse);
   const [isWishlistSubmitting, setIsWishlistSubmitting] = useState(false);
   const [isShareSubmitting, setIsShareSubmitting] = useState(false);
   const [couponCodeInput, setCouponCodeInput] = useState("");
@@ -513,7 +601,9 @@ export default function Course() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        setIsCourseLoading(true);
+        if (!initialCourse || initialCourse.slug !== slug) {
+          setIsCourseLoading(true);
+        }
         setNotFound(false);
         const response = await BaseApi.get(
           `${process.env.NEXT_PUBLIC_API_URL}/courses/route/${encodeURIComponent(slug)}`,
@@ -611,6 +701,30 @@ export default function Course() {
 
   return (
     <div className="pb-28 lg:pb-[50px]">
+      <Seo
+        title={course?.title}
+        description={course?.subtitle || stripHtml(course?.description)}
+        image={course?.cover_image?.path ? mediaUrl(course.cover_image) : undefined}
+        path={course?.slug ? `/courses/${course.slug}` : undefined}
+        type="article"
+        noindex={
+          course?.workflow_status ? course.workflow_status !== "PUBLISHED" : false
+        }
+        jsonLd={[
+          buildCourseJsonLd(course),
+          breadcrumbJsonLd([
+            { name: "Home", path: "/" },
+            { name: "Courses", path: "/courses" },
+            ...(course?.categories || [])
+              .filter((cat) => cat?.slug)
+              .map((cat) => ({
+                name: cat.title,
+                path: `/categories/${cat.slug}`,
+              })),
+            { name: course?.title || "Course", path: `/courses/${slug}` },
+          ]),
+        ]}
+      />
       <header className="bg-white text-slate-900 lg:bg-[#0f172a] lg:text-white pt-4 pb-6 lg:py-20 px-4 lg:px-8">
         <div className="container mx-auto grid lg:grid-cols-[1fr_400px] gap-12">
           <div className="space-y-6">
