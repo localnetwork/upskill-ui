@@ -14,6 +14,7 @@ import Password from "@/components/forms/Password";
 import Link from "next/link";
 import GoogleAuthButton from "@/components/auth/GoogleAuthButton";
 import { validateAuthField, validateAuthForm } from "@/lib/services/authInlineValidation";
+import { applyPendingPreferences } from "@/lib/services/pendingPreferences";
 
 export default function Register({ googleClientId }) {
   const router = useRouter();
@@ -98,6 +99,7 @@ export default function Register({ googleClientId }) {
     try {
       const response = await AUTHAPI.register(body);
       persistentStore.setState({ profile: response?.data?.user });
+      await applyPendingPreferences();
       router.push("/");
     } catch (error) {
       console.log("Error", error);
@@ -149,6 +151,7 @@ export default function Register({ googleClientId }) {
           });
 
           toast.success("Registration successful!");
+          await applyPendingPreferences();
           window.location.href = "/";
           return;
         }

@@ -1,5 +1,9 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import HomeHeroSection from "./sections/HomeHeroSection";
+import HomeWelcomeBanner from "./sections/HomeWelcomeBanner";
+import HomeLearnerSections from "./sections/HomeLearnerSections";
+import HomeGoalsBar from "./sections/HomeGoalsBar";
+import persistentStore from "@/lib/store/persistentStore";
 import CompanyLogosSection from "./sections/CompanyLogosSection";
 import FeaturedCoursesSection from "./sections/FeaturedCoursesSection";
 import PopularSkillsSection from "./sections/PopularSkillsSection";
@@ -8,9 +12,7 @@ import CategoriesSection from "./sections/CategoriesSection";
 import CertificationPrepSection from "./sections/CertificationPrepSection";
 import FinalCTA from "@/components/blocks/FinalCTA";
 import usePrefersReducedMotion from "./usePrefersReducedMotion";
-import HomePopular from "./sections/HomePopular";
 import ExploreByCategorySection from "./sections/ExploreByCategorySection";
-import HomepageSkillsTransform from "./sections/HomepageSkillsTransform";
 import PopularSkillsByCategorySection from "./sections/PopularSkillsByCategorySection";
 import WhyLearnersChooseSection from "./sections/WhyLearnersChooseSection";
 import LearningPathsSection from "./sections/LearningPathsSection";
@@ -19,7 +21,10 @@ import FeaturedCoursesCarouselSection from "./sections/FeaturedCoursesCarouselSe
 export default function HomePageExperience() {
   const wrapperRef = useRef(null);
   const prefersReducedMotion = usePrefersReducedMotion();
+  const profile = persistentStore((state) => state.profile);
+  const [mounted, setMounted] = useState(false);
 
+  useEffect(() => setMounted(true), []);
   useEffect(() => {
     if (!wrapperRef.current || prefersReducedMotion) return;
 
@@ -78,15 +83,26 @@ export default function HomePageExperience() {
 
   return (
     <div ref={wrapperRef}>
-      <HomeHeroSection />
-      <ExploreByCategorySection />
+      {mounted && profile ? (
+        <HomeWelcomeBanner profile={profile} />
+      ) : (
+        <>
+          <HomeHeroSection />
+          <HomeGoalsBar />
+        </>
+      )}
 
       <LearningPathsSection />
+      {mounted && profile && (
+        <HomeLearnerSections
+          trendingOnly={(profile.roles || []).includes("EDUCATOR")}
+        />
+      )}
+      <ExploreByCategorySection />
+
       <FeaturedCoursesCarouselSection />
       <PopularSkillsByCategorySection />
       <WhyLearnersChooseSection />
-      <HomePopular />
-      <HomepageSkillsTransform />
     </div>
   );
 }

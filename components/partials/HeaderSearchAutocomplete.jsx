@@ -9,7 +9,11 @@ const rowClass =
 
 function CourseRow({ course, onNavigate }) {
   return (
-    <Link href={`/courses/${course.slug}`} className={rowClass} onClick={onNavigate}>
+    <Link
+      href={`/courses/${course.slug}`}
+      className={rowClass}
+      onClick={onNavigate}
+    >
       <span className="h-10 w-16 shrink-0 overflow-hidden rounded-md bg-slate-100">
         {course.cover_image?.path && (
           // eslint-disable-next-line @next/next/no-img-element
@@ -53,7 +57,10 @@ export default function HeaderSearchAutocomplete({ className }) {
   const [debouncedQuery, setDebouncedQuery] = useState("");
 
   useEffect(() => {
-    const timeoutId = window.setTimeout(() => setDebouncedQuery(query.trim()), 350);
+    const timeoutId = window.setTimeout(
+      () => setDebouncedQuery(query.trim()),
+      350,
+    );
     return () => window.clearTimeout(timeoutId);
   }, [query]);
 
@@ -120,7 +127,8 @@ export default function HeaderSearchAutocomplete({ className }) {
 
   const scrollFavorites = (direction) => {
     const el = favoritesRef.current;
-    if (el) el.scrollBy({ left: direction * el.clientWidth, behavior: "smooth" });
+    if (el)
+      el.scrollBy({ left: direction * el.clientWidth, behavior: "smooth" });
   };
 
   const navigateToBrowse = () => {
@@ -134,7 +142,10 @@ export default function HeaderSearchAutocomplete({ className }) {
   };
 
   return (
-    <div className={`relative ${className || "w-48 lg:w-64"}`} ref={containerRef}>
+    <div
+      className={`relative ${className || "w-48 lg:w-64"}`}
+      ref={containerRef}
+    >
       <Search
         className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg z-[71]"
         size={15}
@@ -148,7 +159,7 @@ export default function HeaderSearchAutocomplete({ className }) {
       )}
       <input
         className="relative z-[70] w-full pl-9 pr-4 py-2 bg-slate-100 border-transparent rounded-full text-sm focus:bg-white focus:border-primary focus:ring-1 focus:ring-primary transition-all"
-        placeholder="Search..."
+        placeholder="What do you want to learn?"
         type="text"
         value={query}
         onFocus={() => setIsOpen(true)}
@@ -186,7 +197,9 @@ export default function HeaderSearchAutocomplete({ className }) {
           {(trendingCourses.length > 0 || loading) && (
             <h3 className="text-base font-bold text-slate-900 mb-3 flex items-center gap-2">
               Start with these learner favorites
-              {loading && <Loader2 className="w-3 h-3 animate-spin text-slate-400" />}
+              {loading && (
+                <Loader2 className="w-3 h-3 animate-spin text-slate-400" />
+              )}
             </h3>
           )}
           <div className="relative">
@@ -210,38 +223,42 @@ export default function HeaderSearchAutocomplete({ className }) {
                 </button>
               </>
             )}
-          <div
-            ref={favoritesRef}
-            className="flex gap-3 overflow-x-auto snap-x snap-mandatory scroll-smooth pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          >
-            {trendingCourses.slice(0, 12).map((course) => (
-              <Link
-                key={`fav-${course.id}`}
-                href={`/courses/${course.slug}`}
-                className="snap-start shrink-0 basis-[calc((100%-0.75rem)/2)] sm:basis-[calc((100%-1.5rem)/3)] rounded-xl border border-slate-200 p-2.5 hover:shadow-md transition-shadow"
-                onClick={() => setIsOpen(false)}
-              >
-                <div className="aspect-[16/9] w-full overflow-hidden rounded-lg bg-slate-100">
-                  {course.cover_image?.path && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={course.cover_image.path}
-                      alt={course.title}
-                      className="h-full w-full object-cover"
-                    />
-                  )}
-                </div>
-                <p className="mt-2 line-clamp-2 text-sm font-bold text-slate-900">
-                  {course.title}
-                </p>
-                <p className="mt-1 text-xs text-slate-500 line-clamp-1">
-                  {[course.category?.title, course.educator && `${course.educator.first_name} ${course.educator.last_name}`.trim()]
-                    .filter(Boolean)
-                    .join(" · ")}
-                </p>
-              </Link>
-            ))}
-          </div>
+            <div
+              ref={favoritesRef}
+              className="flex gap-3 overflow-x-auto snap-x snap-mandatory scroll-smooth pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            >
+              {trendingCourses.slice(0, 12).map((course) => (
+                <Link
+                  key={`fav-${course.id}`}
+                  href={`/courses/${course.slug}`}
+                  className="snap-start shrink-0 basis-[calc((100%-0.75rem)/2)] sm:basis-[calc((100%-1.5rem)/3)] rounded-xl border border-slate-200 p-2.5 hover:shadow-md transition-shadow"
+                  onClick={() => setIsOpen(false)}
+                >
+                  <div className="aspect-[16/9] w-full overflow-hidden rounded-lg bg-slate-100">
+                    {course.cover_image?.path && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={course.cover_image.path}
+                        alt={course.title}
+                        className="h-full w-full object-cover"
+                      />
+                    )}
+                  </div>
+                  <p className="mt-2 line-clamp-2 text-sm font-bold text-slate-900">
+                    {course.title}
+                  </p>
+                  <p className="mt-1 text-xs text-slate-500 line-clamp-1">
+                    {[
+                      course.category?.title,
+                      course.educator &&
+                        `${course.educator.first_name} ${course.educator.last_name}`.trim(),
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </p>
+                </Link>
+              ))}
+            </div>
           </div>
 
           <div className="mt-6 text-sm text-slate-700">
@@ -297,7 +314,11 @@ export default function HeaderSearchAutocomplete({ className }) {
             <Section title="Matched courses">
               {matchedCourses.length > 0
                 ? matchedCourses.map((course) => (
-                    <CourseRow key={course.id} course={course} onNavigate={() => setIsOpen(false)} />
+                    <CourseRow
+                      key={course.id}
+                      course={course}
+                      onNavigate={() => setIsOpen(false)}
+                    />
                   ))
                 : null}
             </Section>

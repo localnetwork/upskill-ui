@@ -261,7 +261,7 @@ export default function Page() {
             {isMenuOpen && (
               <div
                 role="menu"
-                className="absolute right-0 top-full z-50 mt-2 w-full min-w-0 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg sm:w-72"
+                className="absolute right-0 top-full z-50 mt-2 w-full min-w-0 overflow-hidden rounded-xl border border-gray-100 bg-white shadow-lg sm:w-72"
               >
                 <Link
                   role="menuitem"

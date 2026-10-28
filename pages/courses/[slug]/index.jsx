@@ -255,6 +255,7 @@ export default function Course({ initialCourse = null }) {
   const [hasSubscription, setHasSubscription] = useState(false);
   const {
     canStartWithPlan,
+    canStartWithTrial,
     startWithPlan,
     starting: startingWithPlan,
   } = useSubscriptionAccess(course, course?.is_enrolled);
@@ -1025,14 +1026,18 @@ export default function Course({ initialCourse = null }) {
                       >
                         Continue Learning
                       </Link>
-                    ) : canStartWithPlan ? (
+                    ) : canStartWithPlan || canStartWithTrial ? (
                       <button
                         type="button"
                         onClick={startWithPlan}
                         disabled={startingWithPlan}
                         className="block px-4 text-center w-full py-4 bg-primary text-white font-black text-lg rounded-xl hover:brightness-110 active:scale-95 transition-all disabled:opacity-60"
                       >
-                        {startingWithPlan ? "Opening..." : "Start Learning"}
+                        {startingWithPlan
+                          ? "Opening..."
+                          : canStartWithTrial
+                            ? "Enroll"
+                            : "Start Learning"}
                       </button>
                     ) : showSubscribeOption ? (
                       <div className="rounded-xl border border-slate-200 divide-y divide-slate-200 overflow-hidden">
@@ -1173,17 +1178,19 @@ export default function Course({ initialCourse = null }) {
 
                     <CourseAccessButton
                       course={course}
-                      enabled={!canStartWithPlan}
+                      enabled={!canStartWithPlan && !canStartWithTrial}
                     />
 
                     {!course?.is_enrolled && !showSubscribeOption && (
                       <div className="flex gap-2">
-                        <button
-                          onClick={handleBuyNow}
-                          className="flex-1 py-3 border border-slate-900 text-slate-900 font-bold rounded-xl hover:bg-slate-50 transition-colors"
-                        >
-                          Buy Now
-                        </button>
+                        {!canStartWithTrial && (
+                          <button
+                            onClick={handleBuyNow}
+                            className="flex-1 py-3 border border-slate-900 text-slate-900 font-bold rounded-xl hover:bg-slate-50 transition-colors"
+                          >
+                            Buy Now
+                          </button>
+                        )}
                         <button
                           onClick={handleWishlist}
                           disabled={isWishlistSubmitting}
@@ -1308,14 +1315,18 @@ export default function Course({ initialCourse = null }) {
             >
               Continue Learning
             </Link>
-          ) : canStartWithPlan ? (
+          ) : canStartWithPlan || canStartWithTrial ? (
             <button
               type="button"
               onClick={startWithPlan}
               disabled={startingWithPlan}
               className="block w-full rounded-lg bg-primary py-3.5 text-center font-bold text-white disabled:opacity-60"
             >
-              {startingWithPlan ? "Opening..." : "Start Learning"}
+              {startingWithPlan
+                ? "Opening..."
+                : canStartWithTrial
+                  ? "Enroll"
+                  : "Start Learning"}
             </button>
           ) : showSubscribeOption && purchaseMode === "subscribe" ? (
             <>

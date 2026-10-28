@@ -168,7 +168,7 @@ export default function MobileNav({ open, onClose }) {
                 onClick={onClose}
                 className="flex items-center justify-center gap-2 bg-[#0056D2] text-white text-sm font-bold px-6 py-2.5 rounded-full hover:bg-slate-800 transition-all"
               >
-                <UserPlus size={18} /> Register
+                <UserPlus size={18} /> Join for Free
               </Link>
             </div>
           ) : (

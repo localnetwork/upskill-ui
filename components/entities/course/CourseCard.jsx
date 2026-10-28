@@ -33,10 +33,8 @@ export default function CourseCard({ course }) {
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const profile = persistentStore((state) => state.profile);
   const cartItems = cartStore((state) => state.cart);
-  const { canStartWithPlan, startWithPlan, starting } = useSubscriptionAccess(
-    course,
-    isEnrolled,
-  );
+  const { canStartWithPlan, canStartWithTrial, startWithPlan, starting } =
+    useSubscriptionAccess(course, isEnrolled);
 
   useEffect(() => {
     setMounted(true);
@@ -323,14 +321,18 @@ export default function CourseCard({ course }) {
                   >
                     Continue Learning
                   </Link>
-                ) : canStartWithPlan ? (
+                ) : canStartWithPlan || canStartWithTrial ? (
                   <button
                     onClick={startWithPlan}
                     disabled={starting}
                     className="border-[2px] hover:text-white text-[#0056D2] border-[#0056D2] flex items-center justify-center gap-[5px] text-center font-semibold px-[20px] py-[5px] rounded-[5px] hover:bg-[#1d6de0] disabled:opacity-60"
                   >
                     <PlayCircle className="h-4 w-4" />
-                    {starting ? "Opening..." : "Start Learning"}
+                    {starting
+                      ? "Opening..."
+                      : canStartWithTrial
+                        ? "Enroll"
+                        : "Start Learning"}
                   </button>
                 ) : isInCart ? (
                   <Link

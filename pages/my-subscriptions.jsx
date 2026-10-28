@@ -48,6 +48,7 @@ const isLearner = (profile) =>
   });
 
 const endLabel = (sub) => {
+  if (sub.isTrial) return sub.status === "EXPIRED" ? "Ended" : "Trial ends";
   if (sub.status === "EXPIRED") return "Ended";
   if (sub.status === "CANCELED" || sub.cancelAtPeriodEnd) return "Access ends";
   return "Renews on";
@@ -144,8 +145,9 @@ export default function MySubscriptions() {
                   <td className="px-4 py-4">
                     <p className="font-semibold text-slate-900">{sub.planName}</p>
                     <p className="text-xs text-slate-500">
-                      {formatMoney(sub.price, sub.currency)} /{" "}
-                      {String(sub.interval).toLowerCase()}
+                      {sub.isTrial
+                        ? `Free · ${sub.interval}`
+                        : `${formatMoney(sub.price, sub.currency)} / ${String(sub.interval).toLowerCase()}`}
                     </p>
                   </td>
                   <td className="px-4 py-4">
@@ -167,7 +169,7 @@ export default function MySubscriptions() {
                     {formatDate(sub.currentPeriodEnd)}
                   </td>
                   <td className="px-4 py-4 text-right">
-                    {sub.status === "ACTIVE" && !sub.cancelAtPeriodEnd && (
+                    {sub.status === "ACTIVE" && !sub.isTrial && !sub.cancelAtPeriodEnd && (
                       <button
                         type="button"
                         onClick={() => cancel(sub.id)}
@@ -177,7 +179,15 @@ export default function MySubscriptions() {
                         {cancelingId === sub.id ? "Canceling..." : "Cancel"}
                       </button>
                     )}
-                    {sub.status === "EXPIRED" && (
+                    {sub.isTrial && sub.status === "TRIALING" && (
+                      <Link
+                        href="/courses"
+                        className="text-xs font-bold text-primary hover:underline"
+                      >
+                        Browse courses
+                      </Link>
+                    )}
+                    {!sub.isTrial && sub.status === "EXPIRED" && (
                       <Link
                         href="/courses"
                         className="text-xs font-bold text-primary hover:underline"
