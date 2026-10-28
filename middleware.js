@@ -200,6 +200,26 @@ const guardEmployeeRoute = (req, token, roles, decoded) => {
   return null;
 };
 
+const guardMyCoursesRoute = (req, token, roles, decoded) => {
+  const pathname = req.nextUrl.pathname;
+  if (pathname !== "/my-courses" && !pathname.startsWith("/my-courses/"))
+    return null;
+
+  const url = req.nextUrl.clone();
+  if (!token) {
+    url.pathname = "/login";
+    return NextResponse.redirect(url);
+  }
+
+  if (!decoded) return null;
+
+  if (!hasRole(roles, "LEARNER")) {
+    url.pathname = "/";
+    return NextResponse.redirect(url);
+  }
+  return null;
+};
+
 const isLoggedInBlock = (req, token) => {
   const restrictedPaths = [
     "/login",
@@ -269,6 +289,10 @@ export async function middleware(req) {
   if (employeeGuardResponse)
     return applyCookieMutations(employeeGuardResponse, cookieMutations);
 
+  const myCoursesGuardResponse = guardMyCoursesRoute(req, token, roles, decoded);
+  if (myCoursesGuardResponse)
+    return applyCookieMutations(myCoursesGuardResponse, cookieMutations);
+
   const loggedInBlockResponse = isLoggedInBlock(req, token);
   if (loggedInBlockResponse)
     return applyCookieMutations(loggedInBlockResponse, cookieMutations);
@@ -288,6 +312,8 @@ export const config = {
     "/forgot",
     "/profile",
     "/profile/:path*",
+    "/my-courses",
+    "/my-courses/:path*",
     "/my-orders",
     "/my-subscriptions",
     "/settings",

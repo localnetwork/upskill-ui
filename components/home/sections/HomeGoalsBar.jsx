@@ -33,7 +33,7 @@ export default function HomeGoalsBar() {
               key={id}
               type="button"
               onClick={() => setOpen(true)}
-              className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-2 pr-5 text-sm font-semibold text-slate-900 transition hover:border-primary hover:shadow-sm"
+              className="flex grow items-center gap-3 rounded-xl border border-slate-200 bg-white p-2 pr-5 text-xs font-semibold text-slate-900 transition hover:border-primary hover:shadow-sm"
             >
               <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-white">
                 <Icon size={20} />

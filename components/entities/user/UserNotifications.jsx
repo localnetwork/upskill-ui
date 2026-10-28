@@ -4,7 +4,7 @@ import BaseApi from "@/lib/api/_base.api";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { notificationTarget } from "@/lib/notificationTarget";
-import NotificationAvatar from "../notification/NotificationVisual";
+import NotificationAvatar, { getSenderLabel } from "../notification/NotificationVisual";
 
 function toRelativeTime(dateValue) {
   if (!dateValue) return "Just now";
@@ -26,6 +26,7 @@ function getNotificationTypeLabel(notification) {
   if (kind === "COURSE_CONGRATULATIONS_MESSAGE") return "Congratulations";
   if (kind === "COURSE_NEW_ENROLLMENT") return "New Enrollment";
   if (kind === "SECURITY_NEW_DEVICE_LOGIN") return "Security";
+  if (kind === "INSTRUCTOR_ANNOUNCEMENT") return "Announcement";
   if (notification?.type === "ORDER") {
     return notification?.metadata?.freeCheckout ? "Enrollment" : "Payment";
   }
@@ -115,8 +116,11 @@ export default function UserNotifications({
                   {notification.message}
                 </p>
                 <p className="text-[10px] text-gray-500">
-                  {getNotificationTypeLabel(notification)} •{" "}
-                  {toRelativeTime(notification.createdAt)}
+                  {getNotificationTypeLabel(notification)}
+                  {getSenderLabel(notification)
+                    ? ` • ${getSenderLabel(notification)}`
+                    : ""}{" "}
+                  • {toRelativeTime(notification.createdAt)}
                 </p>
                 {notification?.metadata?.notificationKind ===
                   "FRIEND_REQUEST" &&

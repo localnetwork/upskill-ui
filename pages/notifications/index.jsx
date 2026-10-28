@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/router";
 import toast from "react-hot-toast";
 import { notificationTarget } from "@/lib/notificationTarget";
-import NotificationAvatar from "@/components/entities/notification/NotificationVisual";
+import NotificationAvatar, { getSenderLabel } from "@/components/entities/notification/NotificationVisual";
 import persistentStore from "@/lib/store/persistentStore";
 
 const ALL_TYPE_OPTIONS = [
@@ -36,6 +36,7 @@ const ALL_KIND_OPTIONS = [
     roles: ["LEARNER"],
   },
   { label: "New Enrollment", value: "COURSE_NEW_ENROLLMENT", roles: ["EDUCATOR", "STAFF"] },
+  { label: "Instructor Announcements", value: "INSTRUCTOR_ANNOUNCEMENT", roles: ["LEARNER"] },
   { label: "Security (New Device Login)", value: "SECURITY_NEW_DEVICE_LOGIN" },
 ];
 
@@ -79,6 +80,7 @@ function notificationTypeLabel(notification) {
   if (kind === "COURSE_CONGRATULATIONS_MESSAGE") return "Congratulations";
   if (kind === "COURSE_NEW_ENROLLMENT") return "New Enrollment";
   if (kind === "SECURITY_NEW_DEVICE_LOGIN") return "Security";
+  if (kind === "INSTRUCTOR_ANNOUNCEMENT") return "Announcement";
   if (notification?.type === "ORDER") {
     return notification?.metadata?.freeCheckout ? "Enrollment" : "Payment";
   }
@@ -366,6 +368,11 @@ export default function NotificationsPage() {
                   <h3 className="font-bold text-[16px] text-on-surface">
                     {notification.title}
                   </h3>
+                  {getSenderLabel(notification) ? (
+                    <p className="text-[12px] font-medium text-[#64748b] mt-0.5">
+                      From {getSenderLabel(notification)}
+                    </p>
+                  ) : null}
                   <p className="text-[14px] text-[#475569] mt-1 leading-relaxed">
                     {resolveNotificationMessage(notification)}
                   </p>

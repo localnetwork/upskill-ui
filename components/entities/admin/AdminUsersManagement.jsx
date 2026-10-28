@@ -1,7 +1,17 @@
 import Select from "@/components/forms/Select";
 import { confirmModal } from "@/lib/services/confirm";
 import BaseApi from "@/lib/api/_base.api";
-import { Ban, BookOpen, Edit, Lock, MoreVertical, Search, ShieldCheck, UserPlus, X } from "lucide-react";
+import {
+  Ban,
+  BookOpen,
+  Edit,
+  Lock,
+  MoreVertical,
+  Search,
+  ShieldCheck,
+  UserPlus,
+  X,
+} from "lucide-react";
 import toast from "react-hot-toast";
 import { useEffect, useMemo, useState } from "react";
 import AdminRolesGuide from "./AdminRolesGuide";
@@ -107,7 +117,12 @@ export default function AdminUsersManagement() {
   const [myRoles, setMyRoles] = useState([]);
   const [myId, setMyId] = useState(null);
   const [editing, setEditing] = useState(null);
-  const [form, setForm] = useState({ firstName: "", lastName: "", headline: "", biography: "" });
+  const [form, setForm] = useState({
+    firstName: "",
+    lastName: "",
+    headline: "",
+    biography: "",
+  });
   const [saving, setSaving] = useState(false);
   const [busyId, setBusyId] = useState(null);
   const [reloadKey, setReloadKey] = useState(0);
@@ -395,7 +410,7 @@ export default function AdminUsersManagement() {
               </tr>
             </thead>
 
-            <tbody className="divide-y divide-outline">
+            <tbody className="divide-y divide-outline bg-white">
               {users.map((user) => (
                 <tr
                   key={user.id}
@@ -471,7 +486,8 @@ export default function AdminUsersManagement() {
                         onClick={(event) => {
                           event.stopPropagation();
                           if (menu?.id === user.id) return setMenu(null);
-                          const rect = event.currentTarget.getBoundingClientRect();
+                          const rect =
+                            event.currentTarget.getBoundingClientRect();
                           setMenu({
                             id: user.id,
                             top: rect.bottom + 4,
@@ -522,7 +538,9 @@ export default function AdminUsersManagement() {
               <button
                 type="button"
                 role="menuitem"
-                title={menuUser.id === myId ? "You cannot change your own roles" : ""}
+                title={
+                  menuUser.id === myId ? "You cannot change your own roles" : ""
+                }
                 disabled={menuUser.id === myId}
                 onClick={() => {
                   setMenu(null);
@@ -537,7 +555,10 @@ export default function AdminUsersManagement() {
               type="button"
               role="menuitem"
               title={suspendBlockedReason(menuUser)}
-              disabled={Boolean(suspendBlockedReason(menuUser)) || busyId === menuUser.id}
+              disabled={
+                Boolean(suspendBlockedReason(menuUser)) ||
+                busyId === menuUser.id
+              }
               onClick={() => {
                 setMenu(null);
                 toggleSuspend(menuUser);
@@ -545,7 +566,9 @@ export default function AdminUsersManagement() {
               className={`flex w-full items-center gap-2 px-4 py-2 text-left text-sm hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 ${menuUser.status === "Suspended" ? "text-slate-700" : "text-error"}`}
             >
               <Ban size={16} />
-              {menuUser.status === "Suspended" ? "Reactivate account" : "Suspend account"}
+              {menuUser.status === "Suspended"
+                ? "Reactivate account"
+                : "Suspend account"}
             </button>
           </div>
         ) : null}
@@ -633,7 +656,11 @@ export default function AdminUsersManagement() {
           >
             <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
               <h2 className="text-lg font-bold">Edit user</h2>
-              <button type="button" onClick={() => setEditing(null)} className="text-slate-400 hover:text-slate-700">
+              <button
+                type="button"
+                onClick={() => setEditing(null)}
+                className="text-slate-400 hover:text-slate-700"
+              >
                 <X size={18} />
               </button>
             </div>
@@ -657,46 +684,70 @@ export default function AdminUsersManagement() {
                 </label>
               ))}
               <div className="grid grid-cols-2 gap-3">
-                {[["firstName", "First name"], ["lastName", "Last name"]].map(([key, label]) => (
+                {[
+                  ["firstName", "First name"],
+                  ["lastName", "Last name"],
+                ].map(([key, label]) => (
                   <label key={key} className="block text-sm">
-                    <span className="mb-1 block font-semibold text-slate-700">{label}</span>
+                    <span className="mb-1 block font-semibold text-slate-700">
+                      {label}
+                    </span>
                     <input
                       value={form[key]}
                       maxLength={80}
-                      onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, [key]: e.target.value }))
+                      }
                       className="w-full rounded-md border border-slate-300 px-3 py-2"
                     />
                   </label>
                 ))}
               </div>
               <label className="block text-sm">
-                <span className="mb-1 block font-semibold text-slate-700">Headline</span>
+                <span className="mb-1 block font-semibold text-slate-700">
+                  Headline
+                </span>
                 <input
                   value={form.headline}
                   maxLength={100}
-                  onChange={(e) => setForm((f) => ({ ...f, headline: e.target.value }))}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, headline: e.target.value }))
+                  }
                   className="w-full rounded-md border border-slate-300 px-3 py-2"
                 />
               </label>
               <label className="block text-sm">
-                <span className="mb-1 block font-semibold text-slate-700">Biography</span>
+                <span className="mb-1 block font-semibold text-slate-700">
+                  Biography
+                </span>
                 <textarea
                   rows={4}
                   value={form.biography}
                   maxLength={2000}
-                  onChange={(e) => setForm((f) => ({ ...f, biography: e.target.value }))}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, biography: e.target.value }))
+                  }
                   className="w-full rounded-md border border-slate-300 px-3 py-2"
                 />
               </label>
               <p className="text-xs text-slate-500">
-                ID, username, email and role are locked and cannot be changed here.
+                ID, username, email and role are locked and cannot be changed
+                here.
               </p>
             </div>
             <div className="flex justify-end gap-2 border-t border-slate-200 px-5 py-3">
-              <button type="button" onClick={() => setEditing(null)} className="rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-600">
+              <button
+                type="button"
+                onClick={() => setEditing(null)}
+                className="rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-600"
+              >
                 Cancel
               </button>
-              <button type="submit" disabled={saving} className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">
+              <button
+                type="submit"
+                disabled={saving}
+                className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+              >
                 {saving ? "Saving..." : "Save changes"}
               </button>
             </div>

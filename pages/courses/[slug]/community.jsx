@@ -15,7 +15,7 @@ export default function CourseCommunityPage() {
           <ChevronLeft size={16} /> Back to course
         </Link>
       </div>
-      <CommunityView slug={String(slug)} courseHref={`/courses/${slug}`} />
+      <CommunityView slug={String(slug)} courseHref={`/courses/${slug}`} redirectIfRestricted />
     </div>
   );
 }

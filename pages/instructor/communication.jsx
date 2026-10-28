@@ -1,7 +1,17 @@
 import InstructorLayout from "../../components/partials/InstructorLayout";
+import dynamic from "next/dynamic";
+import Input from "@/components/forms/Input";
+import Select from "@/components/forms/Select";
+import Checkbox from "@/components/forms/Checkbox";
+import InstructorQaPanel from "@/components/entities/instructor/InstructorQaPanel";
+import InstructorMessagesPanel from "@/components/entities/instructor/InstructorMessagesPanel";
 import COMMUNICATIONAPI from "@/lib/api/communication/request";
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
+
+const TextEditor = dynamic(() => import("@/components/forms/TextEditor"), {
+  ssr: false,
+});
 
 const TABS = [
   { key: "qa", label: "Q&A" },
@@ -56,27 +66,8 @@ export default function Page() {
   const [announcements, setAnnouncements] = useState([]);
   const [isAnnouncementsLoading, setIsAnnouncementsLoading] = useState(false);
 
-  const [qaRows, setQaRows] = useState([]);
-  const [isQaLoading, setIsQaLoading] = useState(false);
-
   const [aiInsights, setAiInsights] = useState(null);
   const [isAiLoading, setIsAiLoading] = useState(false);
-
-  const [messageFilters, setMessageFilters] = useState({
-    unread: false,
-    important: false,
-    notAnswered: false,
-    showAutomated: true,
-    sort: "recent",
-  });
-  const [messages, setMessages] = useState([]);
-  const [messagesMeta, setMessagesMeta] = useState({ page: 1, total: 0 });
-  const [messagesSummary, setMessagesSummary] = useState({
-    totalMessages: 0,
-    unreadMessages: 0,
-    unansweredMessages: 0,
-  });
-  const [isMessagesLoading, setIsMessagesLoading] = useState(false);
 
   const [assignments, setAssignments] = useState([]);
   const [isAssignmentsLoading, setIsAssignmentsLoading] = useState(false);
@@ -126,19 +117,6 @@ export default function Page() {
     }
   };
 
-  const loadQa = async () => {
-    setIsQaLoading(true);
-    try {
-      const response = await COMMUNICATIONAPI.getInstructorQa({ page: 1, limit: 8 });
-      setQaRows(Array.isArray(response?.data?.data) ? response.data.data : []);
-    } catch (error) {
-      toast.error(error?.data?.message || "Failed to load Q&A.");
-      setQaRows([]);
-    } finally {
-      setIsQaLoading(false);
-    }
-  };
-
   const loadAiInsights = async () => {
     setIsAiLoading(true);
     try {
@@ -149,38 +127,6 @@ export default function Page() {
       setAiInsights(null);
     } finally {
       setIsAiLoading(false);
-    }
-  };
-
-  const loadMessages = async () => {
-    setIsMessagesLoading(true);
-    try {
-      const response = await COMMUNICATIONAPI.getInstructorMessages({
-        page: 1,
-        limit: 20,
-        unread: messageFilters.unread,
-        important: messageFilters.important,
-        notAnswered: messageFilters.notAnswered,
-        showAutomated: messageFilters.showAutomated,
-        sort: messageFilters.sort,
-      });
-      setMessages(Array.isArray(response?.data?.data) ? response.data.data : []);
-      setMessagesMeta({
-        page: Number(response?.data?.meta?.page || 1),
-        total: Number(response?.data?.meta?.total || 0),
-      });
-      setMessagesSummary(
-        response?.data?.summary || {
-          totalMessages: 0,
-          unreadMessages: 0,
-          unansweredMessages: 0,
-        },
-      );
-    } catch (error) {
-      toast.error(error?.data?.message || "Failed to load messages.");
-      setMessages([]);
-    } finally {
-      setIsMessagesLoading(false);
     }
   };
 
@@ -216,17 +162,10 @@ export default function Page() {
   }, []);
 
   useEffect(() => {
-    if (activeTab === "qa") loadQa();
     if (activeTab === "ai") loadAiInsights();
     if (activeTab === "assignments") loadAssignments();
     if (activeTab === "announcements") loadAnnouncements();
   }, [activeTab]);
-
-  useEffect(() => {
-    if (activeTab === "messages") {
-      loadMessages();
-    }
-  }, [activeTab, messageFilters]);
 
   const discardAnnouncement = () => {
     setAnnouncementForm((prev) => ({
@@ -255,7 +194,7 @@ export default function Page() {
   };
 
   const sendAnnouncement = async () => {
-    if (!announcementForm.subject.trim() || !announcementForm.body.trim()) {
+    if (!announcementForm.subject.trim() || !announcementForm.body.replace(/<[^>]*>|&nbsp;/g, "").trim()) {
       toast.error("Subject and body are required.");
       return;
     }
@@ -305,42 +244,7 @@ export default function Page() {
           ))}
         </div>
 
-        {activeTab === "qa" ? (
-          <section className="rounded-lg border border-[#e2e8f0] bg-white p-6">
-            <h2 className="text-lg font-semibold text-on-surface">Q&A</h2>
-            {isQaLoading ? (
-              <p className="mt-4 text-sm text-slate-500">Loading Q&A...</p>
-            ) : qaRows.length === 0 ? (
-              <p className="mt-4 text-sm text-slate-500">No learner questions found.</p>
-            ) : (
-              <div className="mt-4 space-y-3">
-                {qaRows.map((row) => (
-                  <div key={row.id} className="rounded-lg border border-slate-200 p-4">
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="text-sm font-semibold text-on-surface">{row.question}</p>
-                      <span
-                        className={`rounded-full px-2 py-1 text-[10px] font-semibold ${
-                          row.answered
-                            ? "bg-emerald-100 text-emerald-700"
-                            : "bg-amber-100 text-amber-700"
-                        }`}
-                      >
-                        {row.answered ? "Answered" : "Unanswered"}
-                      </span>
-                    </div>
-                    <p className="mt-2 text-xs text-slate-600">
-                      {row.learner?.fullName || "Learner"} • {row.course?.title || "Course"} •{" "}
-                      {formatDateTime(row.createdAt)}
-                    </p>
-                    <p className="mt-2 text-sm text-slate-700 whitespace-pre-wrap">
-                      {row.details || "No additional details."}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
-        ) : null}
+        {activeTab === "qa" ? <InstructorQaPanel courses={courses} /> : null}
 
         {activeTab === "ai" ? (
           <section className="rounded-lg border border-[#e2e8f0] bg-white p-6">
@@ -394,131 +298,7 @@ export default function Page() {
           </section>
         ) : null}
 
-        {activeTab === "messages" ? (
-          <section className="rounded-lg border border-[#e2e8f0] bg-white p-6">
-            <h2 className="text-lg font-semibold text-on-surface">Messages (students)</h2>
-
-            <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
-              <label className="flex items-center gap-2 text-sm text-slate-700">
-                <input
-                  type="checkbox"
-                  checked={messageFilters.unread}
-                  onChange={(event) =>
-                    setMessageFilters((prev) => ({ ...prev, unread: event.target.checked }))
-                  }
-                />
-                Unread
-              </label>
-              <label className="flex items-center gap-2 text-sm text-slate-700">
-                <input
-                  type="checkbox"
-                  checked={messageFilters.important}
-                  onChange={(event) =>
-                    setMessageFilters((prev) => ({ ...prev, important: event.target.checked }))
-                  }
-                />
-                Important
-              </label>
-              <label className="flex items-center gap-2 text-sm text-slate-700">
-                <input
-                  type="checkbox"
-                  checked={messageFilters.notAnswered}
-                  onChange={(event) =>
-                    setMessageFilters((prev) => ({ ...prev, notAnswered: event.target.checked }))
-                  }
-                />
-                Not answered
-              </label>
-              <label className="flex items-center gap-2 text-sm text-slate-700">
-                <input
-                  type="checkbox"
-                  checked={messageFilters.showAutomated}
-                  onChange={(event) =>
-                    setMessageFilters((prev) => ({
-                      ...prev,
-                      showAutomated: event.target.checked,
-                    }))
-                  }
-                />
-                Show automated messages
-              </label>
-              <label className="text-sm text-slate-700">
-                Sort
-                <select
-                  value={messageFilters.sort}
-                  onChange={(event) =>
-                    setMessageFilters((prev) => ({ ...prev, sort: event.target.value }))
-                  }
-                  className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
-                >
-                  <option value="recent">Most recent</option>
-                  <option value="oldest">Oldest</option>
-                </select>
-              </label>
-            </div>
-
-            <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
-              <div className="rounded-lg border border-slate-200 p-3 text-sm">
-                <p className="text-slate-500">Total</p>
-                <p className="font-semibold text-on-surface">
-                  {Number(messagesSummary.totalMessages || 0)}
-                </p>
-              </div>
-              <div className="rounded-lg border border-slate-200 p-3 text-sm">
-                <p className="text-slate-500">Unread</p>
-                <p className="font-semibold text-on-surface">
-                  {Number(messagesSummary.unreadMessages || 0)}
-                </p>
-              </div>
-              <div className="rounded-lg border border-slate-200 p-3 text-sm">
-                <p className="text-slate-500">Not answered</p>
-                <p className="font-semibold text-on-surface">
-                  {Number(messagesSummary.unansweredMessages || 0)}
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-5 space-y-3">
-              {isMessagesLoading ? (
-                <p className="text-sm text-slate-500">Loading messages...</p>
-              ) : messages.length === 0 ? (
-                <p className="text-sm text-slate-500">No messages match your filters.</p>
-              ) : (
-                messages.map((message) => (
-                  <div key={message.id} className="rounded-lg border border-slate-200 p-4">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2">
-                        <p className="font-semibold text-on-surface">{message.subject}</p>
-                        {message.important ? (
-                          <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-semibold text-rose-700">
-                            Important
-                          </span>
-                        ) : null}
-                        {message.automated ? (
-                          <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-semibold text-indigo-700">
-                            Automated
-                          </span>
-                        ) : null}
-                      </div>
-                      <p className="text-xs text-slate-500">{formatDateTime(message.createdAt)}</p>
-                    </div>
-                    <p className="mt-1 text-xs font-semibold text-slate-600">
-                      {message.sender?.name || "Student"}{" "}
-                      {message.course?.title ? `• ${message.course.title}` : ""}
-                    </p>
-                    <p className="mt-2 text-sm text-slate-700 whitespace-pre-wrap">
-                      {message.preview}
-                    </p>
-                  </div>
-                ))
-              )}
-            </div>
-
-            <p className="mt-4 text-xs text-slate-500">
-              Showing {messages.length} of {Number(messagesMeta.total || 0)} messages.
-            </p>
-          </section>
-        ) : null}
+        {activeTab === "messages" ? <InstructorMessagesPanel courses={courseOptions} /> : null}
 
         {activeTab === "assignments" ? (
           <section className="rounded-lg border border-[#e2e8f0] bg-white p-6">
@@ -601,161 +381,132 @@ export default function Page() {
             ) : (
               <>
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <label className="text-sm text-slate-700">
-                    Courses
-                    <select
+                  <div>
+                    <p className="mb-1 text-sm text-slate-700">Courses</p>
+                    <Select
+                      name="courseId"
                       value={announcementForm.courseId}
                       onChange={(event) => setAnnouncementField("courseId", event.target.value)}
-                      className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
-                    >
-                      {courseOptions.map((course) => (
-                        <option key={course.id} value={course.id}>
-                          {course.title}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
+                      options={courseOptions.map((course) => ({
+                        value: course.id,
+                        label: course.title,
+                      }))}
+                      controlClassName="border border-[#4b4c54] rounded-lg min-h-[48px] px-4 py-2 text-sm"
+                    />
+                  </div>
 
-                  <label className="text-sm text-slate-700">
-                    Exclude students by course
-                    <select
+                  <div>
+                    <p className="mb-1 text-sm text-slate-700">Exclude students by course</p>
+                    <Select
+                      name="excludeCourseId"
                       value={announcementForm.excludeCourseId || ""}
                       onChange={(event) =>
                         setAnnouncementField("excludeCourseId", event.target.value)
                       }
-                      className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
-                    >
-                      <option value="">None</option>
-                      {courseOptions
-                        .filter((course) => course.id !== "all")
-                        .map((course) => (
-                          <option key={course.id} value={course.id}>
-                            {course.title}
-                          </option>
-                        ))}
-                    </select>
-                  </label>
+                      options={[
+                        { value: "", label: "None" },
+                        ...courseOptions
+                          .filter((course) => course.id !== "all")
+                          .map((course) => ({ value: course.id, label: course.title })),
+                      ]}
+                      controlClassName="border border-[#4b4c54] rounded-lg min-h-[48px] px-4 py-2 text-sm"
+                    />
+                  </div>
                 </div>
 
                 <div className="rounded-lg border border-slate-200 p-4">
                   <p className="text-sm font-semibold text-slate-800">Filter recipients by</p>
                   <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
-                    <label className="flex items-center gap-2 text-sm text-slate-700">
-                      <input
-                        type="checkbox"
-                        checked={announcementForm.useEnrollmentDate}
-                        onChange={(event) =>
-                          setAnnouncementField("useEnrollmentDate", event.target.checked)
-                        }
-                      />
-                      Enrollment date
-                    </label>
-                    <label className="flex items-center gap-2 text-sm text-slate-700">
-                      <input
-                        type="checkbox"
-                        checked={announcementForm.useCourseProgress}
-                        onChange={(event) =>
-                          setAnnouncementField("useCourseProgress", event.target.checked)
-                        }
-                      />
-                      Course progress
-                    </label>
+                    <Checkbox
+                      label="Enrollment date"
+                      checked={announcementForm.useEnrollmentDate}
+                      onChange={(event) =>
+                        setAnnouncementField("useEnrollmentDate", event.target.checked)
+                      }
+                    />
+                    <Checkbox
+                      label="Course progress"
+                      checked={announcementForm.useCourseProgress}
+                      onChange={(event) =>
+                        setAnnouncementField("useCourseProgress", event.target.checked)
+                      }
+                    />
                   </div>
 
                   {announcementForm.useCourseProgress ? (
-                    <div className="mt-4 grid grid-cols-1 gap-2 md:grid-cols-2">
+                    <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
                       <p className="md:col-span-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
                         Include students who have progressed
                       </p>
-                      <label className="flex items-center gap-2 text-sm text-slate-700">
-                        <input
-                          type="checkbox"
-                          checked={announcementForm.progressZero}
-                          onChange={(event) =>
-                            setAnnouncementField("progressZero", event.target.checked)
-                          }
-                        />
-                        0% (Not started)
-                      </label>
-                      <label className="flex items-center gap-2 text-sm text-slate-700">
-                        <input
-                          type="checkbox"
-                          checked={announcementForm.progressOneToFortyNine}
-                          onChange={(event) =>
-                            setAnnouncementField("progressOneToFortyNine", event.target.checked)
-                          }
-                        />
-                        1-49%
-                      </label>
-                      <label className="flex items-center gap-2 text-sm text-slate-700">
-                        <input
-                          type="checkbox"
-                          checked={announcementForm.progressFiftyToNinetyNine}
-                          onChange={(event) =>
-                            setAnnouncementField("progressFiftyToNinetyNine", event.target.checked)
-                          }
-                        />
-                        50-99%
-                      </label>
-                      <label className="flex items-center gap-2 text-sm text-slate-700">
-                        <input
-                          type="checkbox"
-                          checked={announcementForm.progressCompleted}
-                          onChange={(event) =>
-                            setAnnouncementField("progressCompleted", event.target.checked)
-                          }
-                        />
-                        100% completed
-                      </label>
+                      <Checkbox
+                        label="0% (Not started)"
+                        checked={announcementForm.progressZero}
+                        onChange={(event) =>
+                          setAnnouncementField("progressZero", event.target.checked)
+                        }
+                      />
+                      <Checkbox
+                        label="1-49%"
+                        checked={announcementForm.progressOneToFortyNine}
+                        onChange={(event) =>
+                          setAnnouncementField("progressOneToFortyNine", event.target.checked)
+                        }
+                      />
+                      <Checkbox
+                        label="50-99%"
+                        checked={announcementForm.progressFiftyToNinetyNine}
+                        onChange={(event) =>
+                          setAnnouncementField("progressFiftyToNinetyNine", event.target.checked)
+                        }
+                      />
+                      <Checkbox
+                        label="100% completed"
+                        checked={announcementForm.progressCompleted}
+                        onChange={(event) =>
+                          setAnnouncementField("progressCompleted", event.target.checked)
+                        }
+                      />
                     </div>
                   ) : null}
 
                   {announcementForm.useEnrollmentDate ? (
                     <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
-                      <label className="text-sm text-slate-700">
-                        Include students who enrolled after
-                        <input
-                          type="date"
-                          value={announcementForm.includeAfter}
-                          onChange={(event) => setAnnouncementField("includeAfter", event.target.value)}
-                          className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
-                        />
-                      </label>
-                      <label className="text-sm text-slate-700">
-                        Include students who enrolled before
-                        <input
-                          type="date"
-                          value={announcementForm.includeBefore}
-                          onChange={(event) => setAnnouncementField("includeBefore", event.target.value)}
-                          className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
-                        />
-                      </label>
+                      <Input
+                        type="date"
+                        name="includeAfter"
+                        label="Enrolled after"
+                        value={announcementForm.includeAfter}
+                        onChange={(event) => setAnnouncementField("includeAfter", event.target.value)}
+                      />
+                      <Input
+                        type="date"
+                        name="includeBefore"
+                        label="Enrolled before"
+                        value={announcementForm.includeBefore}
+                        onChange={(event) => setAnnouncementField("includeBefore", event.target.value)}
+                      />
                     </div>
                   ) : null}
                 </div>
 
                 <div className="space-y-4 rounded-lg border border-slate-200 p-4">
                   <h3 className="font-semibold text-on-surface">Content</h3>
-                  <label className="block text-sm text-slate-700">
-                    Subject
-                    <input
-                      type="text"
-                      value={announcementForm.subject}
-                      onChange={(event) => setAnnouncementField("subject", event.target.value)}
-                      className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
-                      placeholder="Announcement subject"
-                    />
-                  </label>
-                  <label className="block text-sm text-slate-700">
-                    Body
-                    <textarea
+                  <Input
+                    name="subject"
+                    label="Subject"
+                    value={announcementForm.subject}
+                    onChange={(event) => setAnnouncementField("subject", event.target.value)}
+                  />
+                  <div>
+                    <p className="mb-1 text-sm text-slate-700">Body</p>
+                    <TextEditor
+                      name="body"
                       value={announcementForm.body}
+                      initialValue={announcementForm.body}
+                      height={280}
                       onChange={(event) => setAnnouncementField("body", event.target.value)}
-                      className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
-                      rows={7}
-                      placeholder="Write your announcement..."
                     />
-                  </label>
+                  </div>
 
                   <div className="flex flex-wrap justify-end gap-2">
                     <button

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/router";
 import toast from "react-hot-toast";
 import { FileText, Lock, Users } from "lucide-react";
 import COMMUNITYAPI from "@/lib/api/community/request";
@@ -43,7 +44,9 @@ export default function CommunityView({
   slug,
   allowSettings = false,
   courseHref,
+  redirectIfRestricted = false,
 }) {
+  const router = useRouter();
   const [state, setState] = useState(null);
   const [error, setError] = useState("");
   const [tab, setTab] = useState("discussion");
@@ -56,13 +59,24 @@ export default function CommunityView({
       setState(res?.data?.data);
       setError("");
     } catch (e) {
+      if (redirectIfRestricted && courseHref && e?.status === 403) {
+        router.replace(courseHref);
+        return;
+      }
       setError(errorMessage(e, "Failed to load community"));
     }
-  }, [slug]);
+  }, [slug, redirectIfRestricted, courseHref, router]);
 
   useEffect(() => {
     load();
   }, [load]);
+
+  // Learners without live access (trial ended, no subscription, not purchased) are sent to the course page.
+  const blocked = Boolean(redirectIfRestricted && state && state.enrolled === false);
+  useEffect(() => {
+    if (blocked && courseHref) router.replace(courseHref);
+  }, [blocked, courseHref, router]);
+  if (blocked) return null;
 
   const act = async (fn, success) => {
     setBusy(true);

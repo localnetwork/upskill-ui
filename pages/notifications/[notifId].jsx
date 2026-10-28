@@ -92,7 +92,7 @@ export default function NotificationDetailPage() {
   };
 
   return (
-    <main className="mt-16 px-4 pt-4 max-w-3xl mx-auto">
+    <main className="mt-16 px-4 pt-4 pb-10 max-w-3xl mx-auto">
       <div className="mb-6">
         <Link
           href="/notifications"

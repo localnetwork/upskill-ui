@@ -5,6 +5,7 @@ import {
   GraduationCap,
   Laptop,
   MessageCircle,
+  Megaphone,
   Monitor,
   PartyPopper,
   ShieldAlert,
@@ -81,6 +82,9 @@ export function getNotificationMeta(notification) {
   if (kind === "LEARNER_NUDGE") {
     return { kind, label: "Reminder", Icon: Flame, tone: "amber" };
   }
+  if (kind === "INSTRUCTOR_ANNOUNCEMENT") {
+    return { kind, label: "Announcement", Icon: Megaphone, tone: "blue" };
+  }
 
   if (type === "ORDER") {
     const isFree = Boolean(metadata.freeCheckout);
@@ -121,7 +125,16 @@ export function getNotificationMeta(notification) {
 
 export function getPersonFromNotification(notification) {
   const metadata = notification?.metadata || {};
-  return metadata.requester || metadata.responder || null;
+  return metadata.requester || metadata.responder || metadata.sender || null;
+}
+
+export function getSenderLabel(notification) {
+  const metadata = notification?.metadata || {};
+  if (metadata.notificationKind !== "INSTRUCTOR_ANNOUNCEMENT") return "";
+  const sender = metadata.sender || {};
+  const name =
+    `${sender.firstName || ""} ${sender.lastName || ""}`.trim() || sender.username || "Instructor";
+  return metadata.courseTitle ? `${name} · ${metadata.courseTitle}` : name;
 }
 
 function getInitials(person) {
@@ -134,7 +147,9 @@ function getInitials(person) {
 export default function NotificationAvatar({ notification, size = 40 }) {
   const meta = getNotificationMeta(notification);
   const person =
-    meta.kind === "FRIEND_REQUEST" || meta.kind === "FRIEND_REQUEST_RESPONSE"
+    meta.kind === "FRIEND_REQUEST" ||
+    meta.kind === "FRIEND_REQUEST_RESPONSE" ||
+    meta.kind === "INSTRUCTOR_ANNOUNCEMENT"
       ? getPersonFromNotification(notification)
       : null;
   const dimension = { width: size, height: size };

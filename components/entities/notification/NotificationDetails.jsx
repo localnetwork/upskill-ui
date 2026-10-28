@@ -11,6 +11,7 @@ import NotificationAvatar, {
   getDeviceIcon,
   getNotificationMeta,
   getPersonFromNotification,
+  getSenderLabel,
 } from "./NotificationVisual";
 
 const PROVIDER_LABELS = {
@@ -330,6 +331,11 @@ export default function NotificationDetails({
           <h1 className="text-2xl font-bold text-on-surface">
             {notification.title}
           </h1>
+          {getSenderLabel(notification) ? (
+            <p className="text-sm font-medium text-[#475569] mt-0.5">
+              From {getSenderLabel(notification)}
+            </p>
+          ) : null}
           <p className="text-xs text-[#64748b] mt-1">
             {formatDateTime(notification.createdAt)}
           </p>
@@ -352,6 +358,16 @@ export default function NotificationDetails({
       ) : null}
       {meta.kind === "ORDER" ? (
         <OrderDetails notification={notification} />
+      ) : null}
+      {notification.metadata?.link && meta.kind === "INSTRUCTOR_ANNOUNCEMENT" ? (
+        <div className="mt-6">
+          <Link
+            href={notification.metadata.link}
+            className="text-primary font-semibold hover:underline"
+          >
+            Go to {notification.metadata.courseTitle || "course"}
+          </Link>
+        </div>
       ) : null}
       {notification.metadata?.link &&
       String(meta.kind || "").startsWith("COMMUNITY_") ? (

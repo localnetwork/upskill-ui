@@ -8,6 +8,7 @@ export default function Input({
   placeholder,
   error,
   payload,
+  type = "text",
   onBlur: onBlurProp,
 }) {
   const [isFocused, setIsFocused] = useState({});
@@ -24,7 +25,7 @@ export default function Input({
   return (
     <div className="relative">
       <input
-        type="text"
+        type={type}
         id={name}
         name={name}
         onChange={onChange}
@@ -39,7 +40,7 @@ export default function Input({
       <label
         htmlFor={name} // ✅ match the input id dynamically
         className={`absolute left-[20px] font-medium transition-all text-[#2a2b3f] ${
-          isFocused?.[name] || value || error
+          isFocused?.[name] || value || error || type === "date"
             ? "top-[5px] text-[8px]"
             : "top-[18px] cursor-pointer text-[16px]"
         }`}

@@ -1,108 +1,29 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import BaseApi from "@/lib/api/_base.api";
 import { setContext } from "@/lib/api/interceptor";
 import toast from "react-hot-toast";
 import Link from "next/link";
-import { Banknote, ChevronDown, GraduationCap, ShoppingCart, User } from "lucide-react";
+import {
+  ArrowUpRight,
+  Banknote,
+  Clock,
+  GraduationCap,
+  Minus,
+  ShieldCheck,
+  ShoppingCart,
+  TrendingDown,
+  TrendingUp,
+  User,
+  Wallet,
+} from "lucide-react";
+import AdminShell from "@/components/entities/admin/AdminShell";
 import AdminUsersManagement from "@/components/entities/admin/AdminUsersManagement";
 import AdminCoursesManagement from "@/components/entities/admin/AdminCoursesManagement";
+import AdminOrdersManagement from "@/components/entities/admin/AdminOrdersManagement";
 import AdminCategoriesManagement from "@/components/entities/admin/AdminCategoriesManagement";
 import AdminTagsManagement from "@/components/entities/admin/AdminTagsManagement";
 
-const ADMIN_TABS = ["overview", "users", "courses", "categories", "tags", "payouts"];
-const VISIBLE_TAB_COUNT = 3;
-
-function AdminTabPills({ activeTab }) {
-  const [open, setOpen] = useState(false);
-  const menuRef = useRef(null);
-  const visibleTabs = ADMIN_TABS.slice(0, VISIBLE_TAB_COUNT);
-  const hiddenTabs = ADMIN_TABS.slice(VISIBLE_TAB_COUNT);
-  const hiddenActive = hiddenTabs.includes(activeTab);
-
-  useEffect(() => {
-    if (!open) return undefined;
-    const onPointerDown = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
-        setOpen(false);
-      }
-    };
-    const onKeyDown = (event) => {
-      if (event.key === "Escape") setOpen(false);
-    };
-    document.addEventListener("mousedown", onPointerDown);
-    document.addEventListener("keydown", onKeyDown);
-    return () => {
-      document.removeEventListener("mousedown", onPointerDown);
-      document.removeEventListener("keydown", onKeyDown);
-    };
-  }, [open]);
-
-  return (
-    <div className="flex rounded-full bg-slate-100 p-1.5">
-      {visibleTabs.map((tab) => (
-        <Link
-          key={tab}
-          href={`/admin?tab=${tab}`}
-          className={`rounded-full px-5 py-2 text-sm font-semibold capitalize ${activeTab === tab ? "bg-[#0056d2] text-white" : "text-slate-600"}`}
-        >
-          {tab}
-        </Link>
-      ))}
-
-      <div className="relative" ref={menuRef}>
-        <button
-          type="button"
-          aria-haspopup="menu"
-          aria-expanded={open}
-          onClick={() => setOpen((prev) => !prev)}
-          className={`inline-flex items-center gap-1 rounded-full px-5 py-2 text-sm font-semibold capitalize ${hiddenActive ? "bg-[#0056d2] text-white" : "text-slate-600"}`}
-        >
-          {hiddenActive ? activeTab : "More"}
-          <ChevronDown
-            size={14}
-            className={`transition-transform ${open ? "rotate-180" : ""}`}
-          />
-        </button>
-
-        {open && (
-          <div
-            role="menu"
-            className="absolute right-0 z-30 mt-2 min-w-[160px] overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-lg"
-          >
-            {hiddenTabs.map((tab) => (
-              <Link
-                key={tab}
-                role="menuitem"
-                href={`/admin?tab=${tab}`}
-                onClick={() => setOpen(false)}
-                className={`block px-4 py-2 text-sm font-semibold capitalize hover:bg-slate-50 ${activeTab === tab ? "text-[#0056d2]" : "text-slate-600"}`}
-              >
-                {tab}
-              </Link>
-            ))}
-            <div className="my-1 border-t border-slate-100" />
-            <Link
-              role="menuitem"
-              href="/admin/roles"
-              onClick={() => setOpen(false)}
-              className="block px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
-            >
-              Roles
-            </Link>
-            <Link
-              role="menuitem"
-              href="/admin/permissions"
-              onClick={() => setOpen(false)}
-              className="block px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
-            >
-              Permissions
-            </Link>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
+const ADMIN_TABS = ["overview", "users", "courses", "orders", "categories", "tags", "payouts"];
 const DEFAULT_PLATFORM_CURRENCY = "PHP";
 
 const normalizeRoleNames = (roles) => {
@@ -148,6 +69,40 @@ function getPayoutStatusClass(status) {
   if (normalized === "REJECTED") return "bg-rose-100 text-rose-700";
   if (normalized === "FAILED") return "bg-orange-100 text-orange-700";
   return "bg-amber-100 text-amber-700";
+}
+
+function getTrend(trends, key) {
+  if (!trends) return null;
+  const current = Number(trends.current?.[key] || 0);
+  const previous = Number(trends.previous?.[key] || 0);
+  if (current === previous) return { direction: "balanced", label: "Balanced" };
+  if (previous === 0) return { direction: "up", label: "New" };
+  const percent = ((current - previous) / previous) * 100;
+  if (Math.abs(percent) < 0.5) return { direction: "balanced", label: "Balanced" };
+  return {
+    direction: percent > 0 ? "up" : "down",
+    label: `${percent > 0 ? "+" : ""}${percent.toFixed(Math.abs(percent) < 10 ? 1 : 0)}%`,
+  };
+}
+
+const TREND_STYLES = {
+  up: { Icon: TrendingUp, className: "bg-emerald-50 text-emerald-700" },
+  down: { Icon: TrendingDown, className: "bg-rose-50 text-rose-700" },
+  balanced: { Icon: Minus, className: "bg-slate-100 text-slate-600" },
+};
+
+function TrendBadge({ trend }) {
+  if (!trend) return null;
+  const { Icon, className } = TREND_STYLES[trend.direction];
+  return (
+    <span
+      title="This month vs the same period last month"
+      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ${className}`}
+    >
+      <Icon className="h-3.5 w-3.5" />
+      {trend.label}
+    </span>
+  );
 }
 
 export async function getServerSideProps(context) {
@@ -196,6 +151,7 @@ export default function AdminDashboard({ initialTab }) {
     totalPayouts: 0,
   });
 
+  const [trends, setTrends] = useState(null);
   const [payoutRows, setPayoutRows] = useState([]);
   const [payoutMeta, setPayoutMeta] = useState({ page: 1, totalPages: 1, total: 0 });
   const [payoutStatus, setPayoutStatus] = useState("");
@@ -213,6 +169,9 @@ export default function AdminDashboard({ initialTab }) {
 
   const loadOverview = async () => {
     setOverviewLoading(true);
+    BaseApi.get(`${process.env.NEXT_PUBLIC_API_URL}/admin/reports/overview-trends`)
+      .then((res) => setTrends(res?.data?.data || null))
+      .catch(() => setTrends(null));
     try {
       const [usersRes, coursesRes, revenueRes, pendingPayoutsRes, totalPayoutsRes] =
         await Promise.all([
@@ -379,82 +338,163 @@ export default function AdminDashboard({ initialTab }) {
   const overviewCards = useMemo(
     () => [
       {
+        label: "Total revenue",
+        value: formatCurrency(overviewData.totalRevenue),
+        hint: `${overviewData.paidOrders} paid orders`,
+        icon: Banknote,
+        tone: "bg-emerald-50 text-emerald-600",
+        href: "/admin?tab=payouts",
+        wide: true,
+        trendKey: "revenue",
+      },
+      {
         label: "Users",
-        value: overviewData.usersCount,
-        icon: <User className="h-5 w-5" />,
+        value: overviewData.usersCount.toLocaleString(),
+        hint: "Registered accounts",
+        icon: User,
+        tone: "bg-blue-50 text-[#0056d2]",
+        href: "/admin?tab=users",
+        trendKey: "users",
       },
       {
         label: "Courses",
-        value: overviewData.coursesCount,
-        icon: <GraduationCap className="h-5 w-5" />,
+        value: overviewData.coursesCount.toLocaleString(),
+        hint: "Across all instructors",
+        icon: GraduationCap,
+        tone: "bg-violet-50 text-violet-600",
+        href: "/admin?tab=courses",
+        trendKey: "courses",
       },
       {
-        label: "Paid Orders",
-        value: overviewData.paidOrders,
-        icon: <ShoppingCart className="h-5 w-5" />,
+        label: "Paid orders",
+        value: overviewData.paidOrders.toLocaleString(),
+        hint: "Completed purchases",
+        icon: ShoppingCart,
+        tone: "bg-sky-50 text-sky-600",
+        href: "/admin?tab=orders",
+        trendKey: "paidOrders",
       },
       {
-        label: "Revenue",
-        value: formatCurrency(overviewData.totalRevenue),
-        icon: <Banknote className="h-5 w-5" />,
-      },
-      {
-        label: "Pending Payouts",
-        value: overviewData.pendingPayouts,
-        icon: <Banknote className="h-5 w-5" />,
-      },
-      {
-        label: "Total Payout Requests",
-        value: overviewData.totalPayouts,
-        icon: <Banknote className="h-5 w-5" />,
+        label: "Payout requests",
+        value: overviewData.totalPayouts.toLocaleString(),
+        hint: `${overviewData.pendingPayouts} awaiting review`,
+        icon: Wallet,
+        tone: "bg-amber-50 text-amber-600",
+        href: "/admin?tab=payouts",
+        trendKey: "payoutRequests",
       },
     ],
     [overviewData],
   );
 
+  const quickActions = [
+    { label: "Review courses", href: "/admin?tab=courses", icon: GraduationCap },
+    { label: "Manage users", href: "/admin?tab=users", icon: User },
+    { label: "Process payouts", href: "/admin?tab=payouts", icon: Wallet },
+    { label: "Roles & permissions", href: "/admin/roles", icon: ShieldCheck },
+  ];
+
   return (
-    <div className="container py-8">
-      <div className="mb-10 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
-        <div>
-          <h1 className="text-[2.25rem] font-extrabold tracking-tight text-on-surface">
-            Admin Dashboard
-          </h1>
-          <p className="mt-2 max-w-2xl text-on-surface-variant">
-            Manage users, courses, categories, tags, and instructor payout requests.
-          </p>
-        </div>
-
-        <AdminTabPills activeTab={activeTab} />
-      </div>
-
+    <AdminShell
+      activeKey={activeTab}
+      description={
+        activeTab === "overview"
+          ? "A snapshot of users, courses, sales and payout activity."
+          : undefined
+      }
+    >
       {activeTab === "overview" && (
         <div className="space-y-6">
-          {overviewLoading ? (
-            <p>Loading admin overview...</p>
-          ) : (
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {overviewCards.map((card) => (
-                <div
-                  key={card.label}
-                  className="rounded-lg border border-[#e2e8f0] bg-white p-5"
-                >
-                  <div className="mb-2 flex items-center justify-between text-slate-500">
-                    <p className="text-xs font-semibold uppercase tracking-wide">
-                      {card.label}
-                    </p>
-                    {card.icon}
-                  </div>
-                  <p className="text-2xl font-bold text-[#0056d2]">{card.value}</p>
-                </div>
-              ))}
-            </div>
+          {overviewData.pendingPayouts > 0 && !overviewLoading && (
+            <Link
+              href="/admin?tab=payouts"
+              className="flex items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm"
+            >
+              <span className="flex items-center gap-3 font-semibold text-amber-800">
+                <Clock className="h-5 w-5" />
+                {overviewData.pendingPayouts} payout request
+                {overviewData.pendingPayouts === 1 ? "" : "s"} waiting for review
+              </span>
+              <span className="flex items-center gap-1 font-semibold text-amber-800">
+                Review <ArrowUpRight className="h-4 w-4" />
+              </span>
+            </Link>
           )}
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {overviewLoading
+              ? Array.from({ length: 5 }).map((_, index) => (
+                  <div
+                    key={index}
+                    className="h-[132px] animate-pulse rounded-2xl bg-white/80"
+                  />
+                ))
+              : overviewCards.map((card) => {
+                  const Icon = card.icon;
+                  const content = (
+                    <>
+                      <div className="flex items-start justify-between">
+                        <p className="text-sm font-semibold text-slate-500">
+                          {card.label}
+                        </p>
+                        <span
+                          className={`flex h-10 w-10 items-center justify-center rounded-xl ${card.tone}`}
+                        >
+                          <Icon className="h-5 w-5" />
+                        </span>
+                      </div>
+                      <p className="mt-4 text-3xl font-bold tracking-tight text-slate-900">
+                        {card.value}
+                      </p>
+                      <div className="mt-1 flex items-center justify-between gap-2">
+                        <p className="text-xs text-slate-500">{card.hint}</p>
+                        <TrendBadge trend={getTrend(trends, card.trendKey)} />
+                      </div>
+                    </>
+                  );
+                  const className = `rounded-2xl border border-slate-200 bg-white p-5 ${card.wide ? "sm:col-span-2 xl:col-span-1" : ""}`;
+                  return card.href ? (
+                    <Link
+                      key={card.label}
+                      href={card.href}
+                      className={`${className} transition hover:border-slate-300 hover:shadow-sm`}
+                    >
+                      {content}
+                    </Link>
+                  ) : (
+                    <div key={card.label} className={className}>
+                      {content}
+                    </div>
+                  );
+                })}
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-5">
+            <h2 className="text-base font-semibold text-slate-900">Quick actions</h2>
+            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              {quickActions.map((action) => {
+                const Icon = action.icon;
+                return (
+                  <Link
+                    key={action.label}
+                    href={action.href}
+                    className="flex items-center gap-3 rounded-xl bg-[#f6f5f1] px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-200/60"
+                  >
+                    <Icon className="h-4 w-4 text-[#0056d2]" />
+                    {action.label}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
         </div>
       )}
 
       {activeTab === "users" && <AdminUsersManagement />}
 
       {activeTab === "courses" && <AdminCoursesManagement />}
+
+      {activeTab === "orders" && <AdminOrdersManagement />}
 
       {activeTab === "categories" && <AdminCategoriesManagement />}
 
@@ -735,6 +775,6 @@ export default function AdminDashboard({ initialTab }) {
           </div>
         </div>
       )}
-    </div>
+    </AdminShell>
   );
 }

@@ -2,7 +2,20 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import toast from "react-hot-toast";
-import { Banknote, GraduationCap, ShieldCheck, ShoppingCart, User } from "lucide-react";
+import {
+  Banknote,
+  BarChart3,
+  FolderTree,
+  GraduationCap,
+  LayoutDashboard,
+  Settings,
+  ShieldCheck,
+  ShoppingCart,
+  Tag,
+  User,
+  Users,
+  Wallet,
+} from "lucide-react";
 import BaseApi from "@/lib/api/_base.api";
 import { setContext } from "@/lib/api/interceptor";
 import {
@@ -21,6 +34,18 @@ import EmployeeSubscriptionsPanel from "@/components/entities/employee/EmployeeS
 import PlatformSettingsPanel from "@/components/entities/employee/PlatformSettingsPanel";
 
 const API = process.env.NEXT_PUBLIC_API_URL;
+
+const SECTION_ICONS = {
+  overview: LayoutDashboard,
+  courses: GraduationCap,
+  users: Users,
+  categories: FolderTree,
+  tags: Tag,
+  payouts: Wallet,
+  subscriptions: Banknote,
+  reports: BarChart3,
+  settings: Settings,
+};
 
 const normalizeRoleNames = (roles) => {
   if (!Array.isArray(roles)) return [];
@@ -212,50 +237,86 @@ export default function EmployeeDashboard({
   };
 
   const staffRoles = roles.filter((role) => !["EDUCATOR", "LEARNER"].includes(role));
+  const activeSection = sections.find((section) => section.key === activeTab);
 
   return (
-    <div className="container py-8">
-      <div className="mb-8 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
-        <div>
-          <h1 className="text-[2.25rem] font-extrabold tracking-tight text-on-surface">
-            Employee Dashboard
-          </h1>
-          <p className="mt-2 max-w-2xl text-on-surface-variant">
-            {displayName ? `Welcome, ${displayName}. ` : ""}
-            You only see the tools your role has been granted access to.
-          </p>
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            <ShieldCheck className="h-4 w-4 text-[#0056d2]" />
-            {staffRoles.map((role) => (
-              <span
-                key={role}
-                className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-[#0056d2]"
-              >
-                {formatRoleLabel(role)}
+    <div className="bg-[#f6f5f1]">
+      <div className="mx-auto flex max-w-[1600px] flex-col gap-4 px-4 py-6 lg:flex-row lg:gap-6 lg:px-6">
+        <aside className="lg:sticky lg:top-4 lg:h-fit lg:w-[104px] lg:shrink-0">
+          <nav
+            aria-label="Employee sections"
+            className="flex gap-1 overflow-x-auto rounded-2xl bg-white/70 p-2 lg:flex-col lg:overflow-visible"
+          >
+            {sections.map((section) => {
+              const Icon = SECTION_ICONS[section.key] || LayoutDashboard;
+              const active = activeTab === section.key;
+              return (
+                <button
+                  key={section.key}
+                  type="button"
+                  onClick={() => selectTab(section.key)}
+                  aria-current={active ? "page" : undefined}
+                  className={`flex min-w-[84px] flex-col items-center gap-1 rounded-xl px-2 py-3 text-center text-[11px] font-semibold leading-tight transition lg:min-w-0 ${active ? "bg-white text-[#0056d2] shadow-sm ring-1 ring-slate-200" : "text-slate-600 hover:bg-white/80"}`}
+                >
+                  <Icon className="h-5 w-5" />
+                  {section.label}
+                </button>
+              );
+            })}
+          </nav>
+        </aside>
+
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-slate-500">
+            <p>
+              <span>Employee</span>
+              <span className="mx-2 text-slate-300">/</span>
+              <span className="font-semibold text-slate-900">
+                {activeSection?.label || "Overview"}
               </span>
-            ))}
-            {isAdmin && (
-              <Link href="/admin" className="text-xs font-semibold text-slate-500 underline">
-                Open admin dashboard
-              </Link>
-            )}
+            </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <ShieldCheck className="h-4 w-4 text-[#0056d2]" />
+              {staffRoles.map((role) => (
+                <span
+                  key={role}
+                  className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-700 ring-1 ring-slate-200"
+                >
+                  {formatRoleLabel(role)}
+                </span>
+              ))}
+              {isAdmin && (
+                <Link
+                  href="/admin"
+                  className="rounded-full bg-white px-4 py-1.5 text-xs font-semibold text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50"
+                >
+                  Admin dashboard
+                </Link>
+              )}
+            </div>
+          </div>
+
+          <div className="mt-5 border-b border-slate-200 pb-5">
+            <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+              {activeSection?.label || "Employee Dashboard"}
+            </h1>
+            <p className="mt-1 max-w-2xl text-sm text-slate-500">
+              {displayName ? `Welcome, ${displayName}. ` : ""}
+              You only see the tools your role has been granted access to.
+            </p>
+          </div>
+
+          <div className="mt-6 [&_table]:bg-white">
+            {renderActiveTab()}
           </div>
         </div>
       </div>
+    </div>
+  );
 
-      <div className="mb-8 flex w-fit max-w-full flex-wrap gap-1 rounded-3xl bg-slate-100 p-1.5">
-        {sections.map((section) => (
-          <button
-            key={section.key}
-            type="button"
-            onClick={() => selectTab(section.key)}
-            className={`rounded-full px-5 py-2 text-sm font-semibold ${activeTab === section.key ? "bg-[#0056d2] text-white" : "text-slate-600"}`}
-          >
-            {section.label}
-          </button>
-        ))}
-      </div>
-
+  function renderActiveTab() {
+    return (
+      <>
       {activeTab === "overview" && <EmployeeOverview can={can} />}
       {activeTab === "courses" && can.courses && <AdminCoursesManagement />}
       {activeTab === "users" && can.users && <AdminUsersManagement />}
@@ -281,6 +342,7 @@ export default function EmployeeDashboard({
         sections.some((section) => section.key === "settings") && (
           <PlatformSettingsPanel canManage={can.manageSettings} />
         )}
-    </div>
-  );
+      </>
+    );
+  }
 }

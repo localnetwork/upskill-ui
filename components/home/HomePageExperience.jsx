@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import HomeHeroSection from "./sections/HomeHeroSection";
 import HomeWelcomeBanner from "./sections/HomeWelcomeBanner";
-import HomeLearnerSections from "./sections/HomeLearnerSections";
 import HomeGoalsBar from "./sections/HomeGoalsBar";
+import HomeLearnerSections from "./sections/HomeLearnerSections";
 import persistentStore from "@/lib/store/persistentStore";
 import CompanyLogosSection from "./sections/CompanyLogosSection";
 import FeaturedCoursesSection from "./sections/FeaturedCoursesSection";
@@ -23,6 +23,9 @@ export default function HomePageExperience() {
   const prefersReducedMotion = usePrefersReducedMotion();
   const profile = persistentStore((state) => state.profile);
   const [mounted, setMounted] = useState(false);
+  const showWelcomeBanner = (profile?.roles || []).some(
+    (role) => role === "EDUCATOR" || role === "LEARNER",
+  );
 
   useEffect(() => setMounted(true), []);
   useEffect(() => {
@@ -83,12 +86,12 @@ export default function HomePageExperience() {
 
   return (
     <div ref={wrapperRef}>
-      {mounted && profile ? (
+      {mounted && profile && showWelcomeBanner ? (
         <HomeWelcomeBanner profile={profile} />
       ) : (
         <>
           <HomeHeroSection />
-          <HomeGoalsBar />
+          {mounted && !profile && <HomeGoalsBar />}
         </>
       )}
 

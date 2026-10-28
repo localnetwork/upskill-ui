@@ -3,11 +3,13 @@ import { confirmModal } from "@/lib/services/confirm";
 import Link from "next/link";
 import toast from "react-hot-toast";
 import BaseApi from "@/lib/api/_base.api";
+import SubscribeModal from "./SubscribeModal";
 
 const API = process.env.NEXT_PUBLIC_API_URL;
 
 export default function AccessBanner() {
   const [summary, setSummary] = useState(null);
+  const [subscribeOpen, setSubscribeOpen] = useState(false);
 
   useEffect(() => {
     BaseApi.get(`${API}/subscription/me`)
@@ -73,14 +75,26 @@ export default function AccessBanner() {
 
   if (trial.used) {
     return (
-      <div className="mb-6 flex items-center justify-between rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-        <span>
-          Your free trial has ended. Subscribe or buy a course to keep learning.
-        </span>
-        <Link href="/courses" className="font-bold underline">
-          Browse courses
-        </Link>
-      </div>
+      <>
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+          <span>
+            Your free trial has ended. Subscribe or buy a course to keep learning.
+          </span>
+          <span className="flex items-center gap-4">
+            <button
+              type="button"
+              onClick={() => setSubscribeOpen(true)}
+              className="rounded-full bg-[#0056d2] px-4 py-1.5 font-semibold text-white"
+            >
+              Subscribe
+            </button>
+            <Link href="/courses" className="font-bold underline">
+              Browse courses
+            </Link>
+          </span>
+        </div>
+        <SubscribeModal open={subscribeOpen} onClose={() => setSubscribeOpen(false)} />
+      </>
     );
   }
 

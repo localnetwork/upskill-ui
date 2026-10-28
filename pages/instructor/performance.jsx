@@ -2,12 +2,10 @@ import { useEffect, useMemo, useState } from "react";
 import InstructorLayout from "@/components/partials/InstructorLayout";
 import BaseApi from "@/lib/api/_base.api";
 import {
-  Area,
-  AreaChart,
+  Bar,
+  BarChart,
   CartesianGrid,
   Legend,
-  Line,
-  LineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -64,6 +62,63 @@ function Card({ label, value, hint }) {
       <p className="text-xs font-bold uppercase tracking-wide text-slate-500">{label}</p>
       <p className="mt-2 text-2xl font-black text-slate-900">{value}</p>
       {hint ? <p className="mt-1 text-xs text-slate-500">{hint}</p> : null}
+    </div>
+  );
+}
+
+function shorten(text, max = 26) {
+  const value = String(text || "");
+  return value.length > max ? `${value.slice(0, max - 1)}…` : value;
+}
+
+function Empty({ children }) {
+  return <p className="rounded-lg border border-dashed border-slate-300 p-8 text-center text-sm text-slate-500">{children}</p>;
+}
+
+function Section({ title, description, children }) {
+  return (
+    <div className="space-y-4">
+      <div>
+        <h2 className="text-lg font-bold text-slate-900">{title}</h2>
+        {description ? <p className="text-sm text-slate-500">{description}</p> : null}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+// Per-course comparison: one row per course with its full name, same unit on every series.
+function CourseBars({ data, series, formatter }) {
+  if (!data.length) return <Empty>No data yet.</Empty>;
+  return (
+    <div style={{ height: data.length * (series.length > 1 ? 56 : 38) + 50 }}>
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart data={data} layout="vertical" margin={{ left: 8, right: 24 }}>
+          <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+          <XAxis type="number" allowDecimals={false} tickFormatter={formatter} />
+          <YAxis
+            type="category"
+            dataKey="name"
+            width={170}
+            tick={{ fontSize: 12 }}
+            tickFormatter={(value) => shorten(value)}
+          />
+          <Tooltip formatter={formatter ? (value) => formatter(value) : undefined} />
+          {series.length > 1 ? <Legend /> : null}
+          {series.map((item) => (
+            <Bar key={item.key} dataKey={item.key} name={item.name} fill={item.color} radius={[0, 3, 3, 0]} />
+          ))}
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+function ScoreBar({ value, max, color = "bg-blue-600" }) {
+  const pct = max > 0 ? Math.min(100, (value / max) * 100) : 0;
+  return (
+    <div className="h-2 w-full rounded bg-slate-100">
+      <div className={`h-2 rounded ${color}`} style={{ width: `${pct}%` }} />
     </div>
   );
 }
@@ -316,14 +371,22 @@ export default function PerformancePage() {
           const hasPromo = course?.promo_video?.path ? 1 : 0;
           const goalsCount = asArray(course?.goals?.what_you_will_learn_data).length > 0 ? 1 : 0;
           const sections = toNumber(course?.resources_count?.section_count) > 0 ? 1 : 0;
-          const score = hasSubtitle + hasDescription + hasPromo + goalsCount + sections;
+          const checks = [
+            ["Subtitle", hasSubtitle],
+            ["Description", hasDescription],
+            ["Promo video", hasPromo],
+            ["Learning goals", goalsCount],
+            ["Sections", sections],
+          ];
+          const score = checks.reduce((sum, [, ok]) => sum + ok, 0);
           return {
             name: course?.title || "Course",
             score,
             max: 5,
+            missing: checks.filter(([, ok]) => !ok).map(([label]) => label),
           };
         })
-        .sort((a, b) => b.score - a.score)
+        .sort((a, b) => a.score - b.score)
         .slice(0, 12),
     [courses],
   );
@@ -397,19 +460,13 @@ export default function PerformancePage() {
                   <Card label="Revenue" value={formatCurrency(overview.totalRevenue)} />
                   <Card label="Impressions" value={overview.totalImpressions.toLocaleString("en-PH")} hint={`${overview.totalUniqueVisitors.toLocaleString("en-PH")} unique visitors`} />
                 </div>
-                <div className="h-80">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={topCoursesByRevenue}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" hide />
-                      <YAxis />
-                      <Tooltip formatter={(value) => formatCurrency(value)} />
-                      <Legend />
-                      <Area type="monotone" dataKey="revenue" stroke="#2563eb" fill="#93c5fd" name="Revenue" />
-                      <Area type="monotone" dataKey="students" stroke="#16a34a" fill="#86efac" name="Students" />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </div>
+                <Section title="Revenue by course" description="Top courses by total revenue.">
+                  <CourseBars
+                    data={topCoursesByRevenue}
+                    series={[{ key: "revenue", name: "Revenue", color: "#2563eb" }]}
+                    formatter={(value) => formatCurrency(value)}
+                  />
+                </Section>
               </div>
             ) : null}
 
@@ -420,155 +477,157 @@ export default function PerformancePage() {
                   <Card label="Recent income" value={formatCurrency(payoutSummary?.thisMonthEarnings)} />
                   <Card label="Payout cycle" value={String(payoutSummary?.payoutCycle || "ANYTIME")} />
                 </div>
-                <div className="h-80">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={revenueTrend}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="label" />
-                      <YAxis />
-                      <Tooltip formatter={(value) => formatCurrency(value)} />
-                      <Legend />
-                      <Area type="monotone" dataKey="earnings" stroke="#2563eb" fill="#93c5fd" name="Earnings" />
-                      <Area type="monotone" dataKey="payouts" stroke="#16a34a" fill="#86efac" name="Payouts" />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </div>
+                <Section title="Earnings by month" description="Payout requests per month, with the amount already approved or paid.">
+                  {revenueTrend.length === 0 ? (
+                    <Empty>No earnings recorded yet.</Empty>
+                  ) : (
+                    <div className="h-80">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={revenueTrend}>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                          <XAxis dataKey="label" />
+                          <YAxis tickFormatter={(value) => formatCurrency(value)} width={90} />
+                          <Tooltip formatter={(value) => formatCurrency(value)} />
+                          <Legend />
+                          <Bar dataKey="earnings" name="Requested" fill="#93c5fd" radius={[3, 3, 0, 0]} />
+                          <Bar dataKey="payouts" name="Paid out" fill="#2563eb" radius={[3, 3, 0, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  )}
+                </Section>
               </div>
             ) : null}
 
             {!isLoading && activeTab === "students" ? (
-              <div className="space-y-6">
-                <h2 className="text-xl font-bold text-slate-900">Student distribution by course</h2>
-                <div className="h-96">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={studentsByCourse}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" hide />
-                      <YAxis />
-                      <Tooltip />
-                      <Legend />
-                      <Area type="monotone" dataKey="students" stroke="#2563eb" fill="#93c5fd" name="Total students" />
-                      <Area type="monotone" dataKey="newEnrollments" stroke="#06b6d4" fill="#67e8f9" name="New this month" />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
+              <Section title="Students by course" description="Total learners and enrollments gained this month.">
+                <CourseBars
+                  data={studentsByCourse}
+                  series={[
+                    { key: "students", name: "Total students", color: "#2563eb" },
+                    { key: "newEnrollments", name: "New this month", color: "#06b6d4" },
+                  ]}
+                />
+              </Section>
             ) : null}
 
             {!isLoading && activeTab === "reviews" ? (
-              <div className="space-y-6">
-                <h2 className="text-xl font-bold text-slate-900">Rating distribution</h2>
-                <div className="h-80">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={reviewDistribution}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="rating" />
-                      <YAxis />
-                      <Tooltip />
-                      <Area type="monotone" dataKey="count" stroke="#f59e0b" fill="#fde68a" name="Reviews" />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
+              <Section title="Rating distribution" description="Number of reviews per star rating across all your courses.">
+                {reviewDistribution.every((row) => row.count === 0) ? (
+                  <Empty>No reviews yet.</Empty>
+                ) : (
+                  <div className="h-80">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={reviewDistribution}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                        <XAxis dataKey="rating" />
+                        <YAxis allowDecimals={false} />
+                        <Tooltip />
+                        <Bar dataKey="count" name="Reviews" fill="#f59e0b" radius={[3, 3, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+              </Section>
             ) : null}
 
             {!isLoading && activeTab === "engagement" ? (
-              <div className="space-y-6">
-                <h2 className="text-xl font-bold text-slate-900">Impressions vs unique visitors</h2>
-                <div className="h-96">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={engagementRows}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" hide />
-                      <YAxis />
-                      <Tooltip />
-                      <Legend />
-                      <Area type="monotone" dataKey="impressions" stroke="#0ea5e9" fill="#7dd3fc" name="Impressions" />
-                      <Area type="monotone" dataKey="visitors" stroke="#22c55e" fill="#86efac" name="Unique visitors" />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
+              <Section title="Impressions and unique visitors" description="How often each course page was seen, and by how many people.">
+                <CourseBars
+                  data={engagementRows}
+                  series={[
+                    { key: "impressions", name: "Impressions", color: "#0ea5e9" },
+                    { key: "visitors", name: "Unique visitors", color: "#22c55e" },
+                  ]}
+                />
+              </Section>
             ) : null}
 
             {!isLoading && activeTab === "coding" ? (
-              <div className="space-y-6">
-                <h2 className="text-xl font-bold text-slate-900">Coding exercise coverage</h2>
-                <div className="h-96">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={codingRows}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" hide />
-                      <YAxis />
-                      <Tooltip />
-                      <Legend />
-                      <Area type="monotone" dataKey="codingExercises" stroke="#7c3aed" fill="#c4b5fd" name="Coding exercises" />
-                      <Area type="monotone" dataKey="videos" stroke="#94a3b8" fill="#cbd5e1" name="Video lessons" />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
+              <Section title="Coding exercise coverage" description="Coding exercises versus video lessons in each course.">
+                <CourseBars
+                  data={codingRows}
+                  series={[
+                    { key: "codingExercises", name: "Coding exercises", color: "#7c3aed" },
+                    { key: "videos", name: "Video lessons", color: "#94a3b8" },
+                  ]}
+                />
+              </Section>
             ) : null}
 
             {!isLoading && activeTab === "practice" ? (
-              <div className="space-y-6">
-                <h2 className="text-xl font-bold text-slate-900">Practice test insights</h2>
-                <div className="h-96">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={practiceRows}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" hide />
-                      <YAxis />
-                      <Tooltip />
-                      <Legend />
-                      <Area type="monotone" dataKey="quizzes" stroke="#f97316" fill="#fdba74" name="Practice tests (quizzes)" />
-                      <Area type="monotone" dataKey="reviews" stroke="#0ea5e9" fill="#7dd3fc" name="Reviews" />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
+              <Section title="Practice tests" description="Number of quizzes in each course.">
+                <CourseBars
+                  data={practiceRows}
+                  series={[{ key: "quizzes", name: "Quizzes", color: "#f97316" }]}
+                />
+              </Section>
             ) : null}
 
             {!isLoading && activeTab === "content_quality" ? (
-              <div className="space-y-6">
-                <h2 className="text-xl font-bold text-slate-900">Content quality score</h2>
-                <p className="text-sm text-slate-500">
-                  Score is based on subtitle, description, promo video, learning goals, and sections.
-                </p>
-                <div className="h-96">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={qualityRows}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" hide />
-                      <YAxis domain={[0, 5]} />
-                      <Tooltip />
-                      <Legend />
-                      <Area type="monotone" dataKey="score" stroke="#16a34a" fill="#86efac" name="Quality score" />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
+              <Section
+                title="Content quality"
+                description="Each course is scored out of 5: subtitle, description, promo video, learning goals and sections. Weakest courses first."
+              >
+                {qualityRows.length === 0 ? (
+                  <Empty>No courses yet.</Empty>
+                ) : (
+                  <ul className="divide-y divide-slate-200 rounded-lg border border-slate-200">
+                    {qualityRows.map((row) => (
+                      <li key={row.name} className="grid items-center gap-3 px-4 py-3 md:grid-cols-[1fr_160px_1fr]">
+                        <span className="truncate text-sm font-semibold text-slate-900">{row.name}</span>
+                        <div className="flex items-center gap-2">
+                          <ScoreBar
+                            value={row.score}
+                            max={row.max}
+                            color={row.score >= 4 ? "bg-emerald-600" : row.score >= 3 ? "bg-amber-500" : "bg-rose-500"}
+                          />
+                          <span className="w-8 text-xs font-semibold text-slate-600">{row.score}/{row.max}</span>
+                        </div>
+                        <span className="text-xs text-slate-500">
+                          {row.missing.length ? `Missing: ${row.missing.join(", ")}` : "Complete"}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </Section>
             ) : null}
 
             {!isLoading && activeTab === "traffic" ? (
-              <div className="space-y-6">
-                <h2 className="text-xl font-bold text-slate-900">Traffic & conversion</h2>
-                <div className="h-96">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={conversionRows}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" hide />
-                      <YAxis yAxisId="left" />
-                      <YAxis yAxisId="right" orientation="right" />
-                      <Tooltip />
-                      <Legend />
-                      <Line yAxisId="left" type="monotone" dataKey="impressions" stroke="#0ea5e9" name="Impressions" />
-                      <Line yAxisId="left" type="monotone" dataKey="students" stroke="#16a34a" name="Students" />
-                      <Line yAxisId="right" type="monotone" dataKey="conversion" stroke="#f97316" name="Conversion %" />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
+              <Section title="Traffic and conversion" description="Conversion is students divided by impressions.">
+                {conversionRows.length === 0 ? (
+                  <Empty>No traffic data yet.</Empty>
+                ) : (
+                  <div className="overflow-x-auto rounded-lg border border-slate-200">
+                    <table className="w-full text-sm">
+                      <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+                        <tr>
+                          <th className="px-4 py-2">Course</th>
+                          <th className="px-4 py-2 text-right">Impressions</th>
+                          <th className="px-4 py-2 text-right">Students</th>
+                          <th className="px-4 py-2 w-48">Conversion</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-200">
+                        {conversionRows.map((row) => (
+                          <tr key={row.name}>
+                            <td className="max-w-xs truncate px-4 py-2 font-medium text-slate-900">{row.name}</td>
+                            <td className="px-4 py-2 text-right">{row.impressions.toLocaleString("en-PH")}</td>
+                            <td className="px-4 py-2 text-right">{row.students.toLocaleString("en-PH")}</td>
+                            <td className="px-4 py-2">
+                              <div className="flex items-center gap-2">
+                                <ScoreBar value={row.conversion} max={Math.max(10, ...conversionRows.map((item) => item.conversion))} color="bg-orange-500" />
+                                <span className="w-12 text-right text-xs font-semibold">{row.conversion}%</span>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </Section>
             ) : null}
           </section>
         </div>
