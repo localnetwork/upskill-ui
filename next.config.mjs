@@ -1,6 +1,34 @@
+import { readFileSync } from "node:fs";
+import { execSync } from "node:child_process";
+
+const pkg = JSON.parse(
+  readFileSync(new URL("./package.json", import.meta.url), "utf8"),
+);
+
+// Every production build gets a new version (git commit, else build time), so deploys clear client caches automatically.
+function resolveAppVersion() {
+  if (process.env.NEXT_PUBLIC_APP_VERSION) {
+    return process.env.NEXT_PUBLIC_APP_VERSION;
+  }
+  if (process.env.NODE_ENV !== "production") return `${pkg.version}-dev`;
+  try {
+    const sha = execSync("git rev-parse --short HEAD", {
+      stdio: ["ignore", "pipe", "ignore"],
+    })
+      .toString()
+      .trim();
+    if (sha) return `${pkg.version}-${sha}`;
+  } catch {}
+  return `${pkg.version}-${Date.now()}`;
+}
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+
+  env: {
+    NEXT_PUBLIC_APP_VERSION: resolveAppVersion(),
+  },
 
   // ✅ Remote image whitelist using env
   images: {

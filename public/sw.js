@@ -1,5 +1,7 @@
 /* Upskill service worker: offline-first caching. Registered from components/partials/OfflineProvider.jsx */
-const VERSION = "v1";
+// The app version comes from the registration URL so each release gets fresh caches.
+const params = new URL(self.location.href).searchParams;
+const VERSION = params.get("v") || "v1";
 const STATIC_CACHE = `upskill-static-${VERSION}`;
 const PAGES_CACHE = `upskill-pages-${VERSION}`;
 const API_CACHE = `upskill-api-${VERSION}`;
@@ -8,7 +10,6 @@ const MEDIA_CACHE = "upskill-media";
 const OFFLINE_URL = "/offline";
 const NETWORK_TIMEOUT_MS = 6000;
 
-const params = new URL(self.location.href).searchParams;
 const API_BASE = params.get("api") || "";
 const API_ORIGIN = API_BASE ? new URL(API_BASE).origin : "";
 const API_PATH = API_BASE ? new URL(API_BASE).pathname.replace(/\/$/, "") : "";

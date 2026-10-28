@@ -9,6 +9,7 @@ import {
   onQueueChange,
 } from "@/lib/offline/queue";
 import { warmLinkedPages } from "@/lib/offline/warmPages";
+import { APP_VERSION, clearCacheIfVersionChanged } from "@/lib/appVersion";
 
 const swEnabled =
   process.env.NODE_ENV === "production" ||
@@ -20,12 +21,21 @@ export default function OfflineProvider() {
   const [pending, setPending] = useState(0);
 
   useEffect(() => {
-    if (swEnabled && "serviceWorker" in navigator) {
-      const api = encodeURIComponent(process.env.NEXT_PUBLIC_API_URL || "");
-      navigator.serviceWorker
-        .register(`/sw.js?api=${api}`, { scope: "/" })
-        .catch((error) => console.error("Service worker failed", error));
-    }
+    let cancelled = false;
+    (async () => {
+      const reloading = await clearCacheIfVersionChanged();
+      if (reloading || cancelled) return;
+      if (swEnabled && "serviceWorker" in navigator) {
+        const api = encodeURIComponent(process.env.NEXT_PUBLIC_API_URL || "");
+        const version = encodeURIComponent(APP_VERSION);
+        navigator.serviceWorker
+          .register(`/sw.js?api=${api}&v=${version}`, { scope: "/" })
+          .catch((error) => console.error("Service worker failed", error));
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // After each navigation, quietly store the pages it links to.
