@@ -315,7 +315,7 @@ export default function CourseCard({ course }) {
 
             {(!profile ||
               profile?.permissions?.includes("view-own-learnings")) && (
-              <div className="text-[14px] flex justify-end items-center max-w-[350px]">
+              <div className="text-[14px] flex flex-wrap justify-end items-center gap-y-2 max-w-[350px]">
                 {isEnrolled ? (
                   <Link
                     href={`/courses/${course.slug}/learn`}
@@ -341,7 +341,14 @@ export default function CourseCard({ course }) {
                   </Link>
                 ) : (
                   <>
-                    {isAddingToCart ? (
+                    {!profile ? (
+                      <Link
+                        href={`/courses/${course.slug}`}
+                        className="bg-[#0056D2] border-[2px] border-[#0056D2] text-white flex items-center justify-center text-center font-semibold px-[20px] py-[5px] rounded-[5px] hover:bg-[#1d6de0]"
+                      >
+                        Enroll Now
+                      </Link>
+                    ) : isAddingToCart ? (
                       <span
                         disabled
                         className="opacity-50 border-[2px] hover:text-white text-[#0056D2] border-[#0056D2] flex items-center justify-center gap-[5px] text-center font-semibold px-[20px] py-[5px] rounded-[5px] hover:bg-[#1d6de0]"

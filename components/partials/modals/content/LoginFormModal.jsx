@@ -3,7 +3,8 @@ import AUTHAPI from "@/lib/api/auth/request";
 import Image from "next/image";
 import persistentStore from "@/lib/store/persistentStore";
 import { useRouter } from "next/router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import GoogleAuthButton from "@/components/auth/GoogleAuthButton";
 import Spinner from "@/components/icons/Spinner";
 import { extractErrors } from "@/lib/services/errorsExtractor";
 import toast from "react-hot-toast";
@@ -83,6 +84,48 @@ export default function LoginFormModal() {
     }
   };
 
+  const onGoogleCredential = useCallback(
+    async (idToken) => {
+      toast.dismiss();
+      setIsLoading(true);
+
+      try {
+        const response = await AUTHAPI.googleAuth({ idToken, intent: "login" });
+
+        if (response?.data?.requires_2fa) {
+          persistentStore.setState({
+            preAuthToken: response.data.pre_auth_token,
+          });
+          toast.success("Enter your 2FA code");
+          modalState.setState({ modalInfo: null });
+          router.push("/verify-2fa");
+          return;
+        }
+
+        if (response?.data?.token && response?.data?.user) {
+          persistentStore.setState({
+            profile: response.data.user,
+            token: response.data.token,
+            preAuthToken: null,
+          });
+          modalState.setState({ modalInfo: null });
+          toast.success("Login successful!");
+          window.location.href = "/";
+          return;
+        }
+
+        toast.error("Unexpected response from server");
+      } catch (error) {
+        toast.error(
+          error?.data?.message || "Google login failed. Please try again.",
+        );
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [router],
+  );
+
   useEffect(() => {
     if (modalInfo) {
       document.body.style.overflow = "hidden";
@@ -147,6 +190,20 @@ export default function LoginFormModal() {
           </button>
         </div>
       </form>
+
+      <div className="my-6 flex items-center gap-4">
+        <div className="h-px flex-1 bg-gray-200" />
+        <span className="text-xs text-gray-400">OR CONTINUE WITH</span>
+        <div className="h-px flex-1 bg-gray-200" />
+      </div>
+
+      <GoogleAuthButton
+        clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || ""}
+        onCredential={onGoogleCredential}
+        disabled={isLoading}
+        label="Continue with Google"
+        buttonText="signin_with"
+      />
 
       <div className="divider border-b border-[2px] border-[#f5f5f5] my-[40px]" />
 

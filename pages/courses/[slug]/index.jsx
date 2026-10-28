@@ -1,5 +1,6 @@
 import CourseAuthor from "@/components/entities/course/show/CourseAuthor";
 import CourseAlsoBought from "@/components/entities/course/show/CourseAlsoBought";
+import CourseMoreByAuthor from "@/components/entities/course/show/CourseMoreByAuthor";
 import CourseDescription from "@/components/entities/course/show/CourseDescription";
 import CourseInclusions from "@/components/entities/course/show/CourseInclusions";
 import CourseLearnings from "@/components/entities/course/show/CourseLearnings";
@@ -943,6 +944,10 @@ export default function Course({ initialCourse = null }) {
                 Instructor
               </h2>
               <CourseAuthor author={course?.author?.data} />
+              <CourseMoreByAuthor
+                slug={course?.slug}
+                author={course?.author?.data}
+              />
             </section>
 
             {/* <section id="ratings">
@@ -1197,6 +1202,25 @@ export default function Course({ initialCourse = null }) {
                         </button>
                       </div>
                     )}
+                  </div>
+                )}
+
+                {!profile && (
+                  <div className="mb-8">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        modalState.setState({
+                          modalInfo: {
+                            type: "LOGIN",
+                            message: "Please log in to enroll in this course.",
+                          },
+                        })
+                      }
+                      className="block px-4 text-center w-full py-4 bg-primary text-white font-black text-lg rounded-xl hover:brightness-110 active:scale-95 transition-all"
+                    >
+                      Enroll Now
+                    </button>
                   </div>
                 )}
 

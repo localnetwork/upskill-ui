@@ -11,7 +11,10 @@ import {
   ZoomOut,
   ChevronLeft,
   ChevronRight,
+  Play,
   FileText,
+  Send,
+  RefreshCcw,
 } from "lucide-react";
 import { useRouter } from "next/router";
 import toast from "react-hot-toast";
@@ -19,9 +22,22 @@ import COMMUNITYAPI from "@/lib/api/community/request";
 import { confirmModal } from "@/lib/services/confirm";
 import persistentStore from "@/lib/store/persistentStore";
 import UserAvatar from "@/components/entities/user/UserAvatar";
-import { Avatar, RoleBadge, timeAgo, errorMessage } from "./CommunityShared";
+import {
+  Avatar,
+  RoleBadge,
+  timeAgo,
+  errorMessage,
+  isVideoUrl,
+} from "./CommunityShared";
 
-function Comments({ post, me, isStaff, onCountChange, onReport, mediaIndex = null }) {
+function Comments({
+  post,
+  me,
+  isStaff,
+  onCountChange,
+  onReport,
+  mediaIndex = null,
+}) {
   const [items, setItems] = useState(null);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
@@ -43,7 +59,12 @@ function Comments({ post, me, isStaff, onCountChange, onReport, mediaIndex = nul
     if (!text.trim() || sending) return;
     setSending(true);
     try {
-      const res = await COMMUNITYAPI.createComment(post.id, text.trim(), replyTo?.id, mediaIndex);
+      const res = await COMMUNITYAPI.createComment(
+        post.id,
+        text.trim(),
+        replyTo?.id,
+        mediaIndex,
+      );
       setItems((prev) => [...(prev || []), res?.data?.data]);
       setText("");
       setReplyTo(null);
@@ -65,8 +86,12 @@ function Comments({ post, me, isStaff, onCountChange, onReport, mediaIndex = nul
     if (!ok) return;
     try {
       await COMMUNITYAPI.deleteComment(comment.id);
-      const removed = items.filter((c) => c.id === comment.id || c.parentId === comment.id).length;
-      setItems((prev) => prev.filter((c) => c.id !== comment.id && c.parentId !== comment.id));
+      const removed = items.filter(
+        (c) => c.id === comment.id || c.parentId === comment.id,
+      ).length;
+      setItems((prev) =>
+        prev.filter((c) => c.id !== comment.id && c.parentId !== comment.id),
+      );
       onCountChange(-removed);
     } catch (e) {
       toast.error(errorMessage(e, "Failed to delete comment"));
@@ -93,14 +118,20 @@ function Comments({ post, me, isStaff, onCountChange, onReport, mediaIndex = nul
           {c.author?.id !== me && (
             <button
               type="button"
-              onClick={() => onReport({ targetType: "COMMENT", targetId: c.id })}
+              onClick={() =>
+                onReport({ targetType: "COMMENT", targetId: c.id })
+              }
               className="hover:text-red-600"
             >
               Report
             </button>
           )}
           {(c.author?.id === me || isStaff) && (
-            <button type="button" onClick={() => remove(c)} className="hover:text-red-600">
+            <button
+              type="button"
+              onClick={() => remove(c)}
+              className="hover:text-red-600"
+            >
               Delete
             </button>
           )}
@@ -116,7 +147,9 @@ function Comments({ post, me, isStaff, onCountChange, onReport, mediaIndex = nul
       ) : items.length === 0 ? (
         <div className="flex flex-col items-center py-6 text-center text-slate-500">
           <FileText size={56} strokeWidth={1.5} className="text-slate-400" />
-          <p className="mt-3 text-base font-bold text-slate-600">No comments yet</p>
+          <p className="mt-3 text-base font-bold text-slate-600">
+            No comments yet
+          </p>
           <p className="text-sm">Be the first to comment.</p>
         </div>
       ) : (
@@ -125,14 +158,20 @@ function Comments({ post, me, isStaff, onCountChange, onReport, mediaIndex = nul
           .map((c) => (
             <div key={c.id}>
               {renderComment(c, false)}
-              {items.filter((r) => r.parentId === c.id).map((r) => renderComment(r, true))}
+              {items
+                .filter((r) => r.parentId === c.id)
+                .map((r) => renderComment(r, true))}
             </div>
           ))
       )}
       {replyTo ? (
         <p className="flex items-center gap-2 px-2 text-xs text-slate-500">
           Replying to {replyTo.name}
-          <button type="button" onClick={() => setReplyTo(null)} className="font-semibold hover:text-slate-900">
+          <button
+            type="button"
+            onClick={() => setReplyTo(null)}
+            className="font-semibold hover:text-slate-900"
+          >
             Cancel
           </button>
         </p>
@@ -148,10 +187,18 @@ function Comments({ post, me, isStaff, onCountChange, onReport, mediaIndex = nul
         <button
           type="submit"
           disabled={!text.trim() || sending}
-          className="rounded-full px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+          className="rounded-full px-4 py-2 text-sm font-semibold text-white disabled:opacity-50 cursor-pointer"
           style={{ background: "var(--cm)" }}
         >
-          Send
+          {sending ? (
+            <RefreshCcw
+              size={16}
+              strokeWidth={1.5}
+              className="inline-block animate-spin"
+            />
+          ) : (
+            <Send size={16} strokeWidth={1.5} className="inline-block" />
+          )}
         </button>
       </form>
     </div>
@@ -177,7 +224,9 @@ function PostSkeletons({ count = 3 }) {
         <div className="h-3 w-11/12 rounded bg-slate-200" />
         <div className="h-3 w-2/3 rounded bg-slate-200" />
       </div>
-      {i % 2 === 0 ? <div className="mt-4 h-48 w-full rounded-lg bg-slate-200" /> : null}
+      {i % 2 === 0 ? (
+        <div className="mt-4 h-48 w-full rounded-lg bg-slate-200" />
+      ) : null}
       <div className="mt-4 flex gap-5 border-t border-slate-100 pt-3">
         <div className="h-4 w-12 rounded bg-slate-200" />
         <div className="h-4 w-12 rounded bg-slate-200" />
@@ -188,17 +237,34 @@ function PostSkeletons({ count = 3 }) {
 
 const MAX_ZOOM = 4;
 
-function PostViewer({ post, me, isStaff, initialIndex = 0, onClose, onIndexChange, onLike, onReport, onCountChange }) {
+function PostViewer({
+  post,
+  me,
+  isStaff,
+  initialIndex = 0,
+  onClose,
+  onIndexChange,
+  onLike,
+  onReport,
+  onCountChange,
+}) {
   const [zoom, setZoom] = useState(1);
   const [fitWidth, setFitWidth] = useState(0);
   const imgRef = useRef(null);
   const zoomBy = (dir) => {
-    if (zoom === 1 && imgRef.current) setFitWidth(imgRef.current.getBoundingClientRect().width);
+    if (zoom === 1 && imgRef.current)
+      setFitWidth(imgRef.current.getBoundingClientRect().width);
     setZoom((z) => Math.min(MAX_ZOOM, Math.max(1, z + dir * 0.5)));
   };
-  const images = post.imageUrls?.length ? post.imageUrls : post.imageUrl ? [post.imageUrl] : [];
+  const images = post.imageUrls?.length
+    ? post.imageUrls
+    : post.imageUrl
+      ? [post.imageUrl]
+      : [];
   const multiple = images.length > 1;
-  const [index, setIndex] = useState(Math.min(Math.max(initialIndex, 0), Math.max(images.length - 1, 0)));
+  const [index, setIndex] = useState(
+    Math.min(Math.max(initialIndex, 0), Math.max(images.length - 1, 0)),
+  );
   const go = useCallback(
     (delta) => {
       setZoom(1);
@@ -242,75 +308,93 @@ function PostViewer({ post, me, isStaff, initialIndex = 0, onClose, onIndexChang
       }}
     >
       {hasMedia ? (
-      <div className="relative min-h-0 flex-1">
-        <div className="absolute inset-0 flex overflow-auto">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            ref={imgRef}
-            src={images[index]}
-            alt=""
-            draggable={false}
-            className={`m-auto ${zoom > 1 ? "cursor-zoom-out" : "max-h-full max-w-full cursor-zoom-in object-contain"}`}
-            style={
-              zoom > 1 && fitWidth
-                ? { width: fitWidth * zoom, maxWidth: "none", maxHeight: "none", height: "auto" }
-                : undefined
-            }
-            onClick={() => (zoom > 1 ? setZoom(1) : zoomBy(1))}
-          />
-        </div>
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Close"
-          className="absolute left-3 top-3 z-10 rounded-full bg-slate-200 p-2.5 text-slate-700 hover:bg-white"
-        >
-          <X size={22} />
-        </button>
-        <div className="absolute right-3 top-3 z-10 flex gap-2">
+        <div className="relative min-h-0 flex-1">
+          <div className="absolute inset-0 flex overflow-auto">
+            {isVideoUrl(images[index]) ? (
+              <video
+                key={images[index]}
+                src={images[index]}
+                controls
+                autoPlay
+                playsInline
+                className="m-auto max-h-full max-w-full"
+              />
+            ) : (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                ref={imgRef}
+                src={images[index]}
+                alt=""
+                draggable={false}
+                className={`m-auto ${zoom > 1 ? "cursor-zoom-out" : "max-h-full max-w-full cursor-zoom-in object-contain"}`}
+                style={
+                  zoom > 1 && fitWidth
+                    ? {
+                        width: fitWidth * zoom,
+                        maxWidth: "none",
+                        maxHeight: "none",
+                        height: "auto",
+                      }
+                    : undefined
+                }
+                onClick={() => (zoom > 1 ? setZoom(1) : zoomBy(1))}
+              />
+            )}
+          </div>
           <button
             type="button"
-            onClick={() => zoomBy(1)}
-            disabled={zoom >= MAX_ZOOM}
-            aria-label="Zoom in"
-            className="rounded-full bg-white/20 p-2.5 text-white hover:bg-white/30 disabled:opacity-40"
+            onClick={onClose}
+            aria-label="Close"
+            className="absolute left-3 top-3 z-10 rounded-full bg-slate-200 p-2.5 text-slate-700 hover:bg-white"
           >
-            <ZoomIn size={20} />
+            <X size={22} />
           </button>
-          <button
-            type="button"
-            onClick={() => zoomBy(-1)}
-            disabled={zoom <= 1}
-            aria-label="Zoom out"
-            className="rounded-full bg-white/20 p-2.5 text-white hover:bg-white/30 disabled:opacity-40"
+          <div
+            className={`absolute right-3 top-3 z-10 gap-2 ${isVideoUrl(images[index]) ? "hidden" : "flex"}`}
           >
-            <ZoomOut size={20} />
-          </button>
-        </div>
-        {multiple ? (
-          <>
             <button
               type="button"
-              onClick={() => go(-1)}
-              aria-label="Previous photo"
-              className="absolute left-3 top-1/2 z-10 -translate-y-1/2 rounded-full bg-white/20 p-2.5 text-white hover:bg-white/30"
+              onClick={() => zoomBy(1)}
+              disabled={zoom >= MAX_ZOOM}
+              aria-label="Zoom in"
+              className="rounded-full bg-white/20 p-2.5 text-white hover:bg-white/30 disabled:opacity-40"
             >
-              <ChevronLeft size={24} />
+              <ZoomIn size={20} />
             </button>
             <button
               type="button"
-              onClick={() => go(1)}
-              aria-label="Next photo"
-              className="absolute right-3 top-1/2 z-10 -translate-y-1/2 rounded-full bg-white/20 p-2.5 text-white hover:bg-white/30"
+              onClick={() => zoomBy(-1)}
+              disabled={zoom <= 1}
+              aria-label="Zoom out"
+              className="rounded-full bg-white/20 p-2.5 text-white hover:bg-white/30 disabled:opacity-40"
             >
-              <ChevronRight size={24} />
+              <ZoomOut size={20} />
             </button>
-            <span className="absolute bottom-3 left-1/2 z-10 -translate-x-1/2 rounded-full bg-black/60 px-3 py-1 text-xs text-white">
-              {index + 1} / {images.length}
-            </span>
-          </>
-        ) : null}
-      </div>
+          </div>
+          {multiple ? (
+            <>
+              <button
+                type="button"
+                onClick={() => go(-1)}
+                aria-label="Previous photo"
+                className="absolute left-3 top-1/2 z-10 -translate-y-1/2 rounded-full bg-white/20 p-2.5 text-white hover:bg-white/30"
+              >
+                <ChevronLeft size={24} />
+              </button>
+              <button
+                type="button"
+                onClick={() => go(1)}
+                aria-label="Next photo"
+                className="absolute right-3 top-1/2 z-10 -translate-y-1/2 rounded-full bg-white/20 p-2.5 text-white hover:bg-white/30"
+              >
+                <ChevronRight size={24} />
+              </button>
+              <span className="absolute bottom-3 left-1/2 z-10 -translate-x-1/2 rounded-full bg-black/60 px-3 py-1 text-xs text-white">
+                {index + 1} / {images.length}
+              </span>
+            </>
+          ) : null}
+        </div>
       ) : null}
       <aside
         className={
@@ -335,9 +419,14 @@ function PostViewer({ post, me, isStaff, initialIndex = 0, onClose, onIndexChang
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="font-semibold">{post.author?.name}</span>
-                <RoleBadge role={post.author?.role} badge={post.author?.badge} />
+                <RoleBadge
+                  role={post.author?.role}
+                  badge={post.author?.badge}
+                />
               </div>
-              <p className="text-xs text-slate-500">{timeAgo(post.createdAt)}</p>
+              <p className="text-xs text-slate-500">
+                {timeAgo(post.createdAt)}
+              </p>
             </div>
           </div>
           <p className="mt-3 whitespace-pre-wrap break-words">{post.body}</p>
@@ -372,7 +461,16 @@ function PostViewer({ post, me, isStaff, initialIndex = 0, onClose, onIndexChang
   );
 }
 
-function PostCard({ post, slug, me, isStaff, onChange, onRemove, onReport, deepLink }) {
+function PostCard({
+  post,
+  slug,
+  me,
+  isStaff,
+  onChange,
+  onRemove,
+  onReport,
+  deepLink,
+}) {
   const [showComments, setShowComments] = useState(false);
   const [viewerIndex, setViewerIndex] = useState(null);
   const viewerOpen = viewerIndex !== null;
@@ -380,13 +478,19 @@ function PostCard({ post, slug, me, isStaff, onChange, onRemove, onReport, deepL
   const articleRef = useRef(null);
   const handledLink = useRef(null);
   const router = useRouter();
-  const images = post.imageUrls?.length ? post.imageUrls : post.imageUrl ? [post.imageUrl] : [];
+  const images = post.imageUrls?.length
+    ? post.imageUrls
+    : post.imageUrl
+      ? [post.imageUrl]
+      : [];
 
   const syncUrl = (media) => {
     const query = { ...router.query, post: post.id };
     delete query.media;
     if (media != null) query.media = String(media);
-    router.replace({ pathname: router.pathname, query }, undefined, { shallow: true });
+    router.replace({ pathname: router.pathname, query }, undefined, {
+      shallow: true,
+    });
   };
 
   const openViewer = (i) => {
@@ -400,7 +504,9 @@ function PostCard({ post, slug, me, isStaff, onChange, onRemove, onReport, deepL
     delete query.post;
     delete query.media;
     delete query.set;
-    router.replace({ pathname: router.pathname, query }, undefined, { shallow: true });
+    router.replace({ pathname: router.pathname, query }, undefined, {
+      shallow: true,
+    });
   };
 
   useEffect(() => {
@@ -410,7 +516,8 @@ function PostCard({ post, slug, me, isStaff, onChange, onRemove, onReport, deepL
     }
     if (handledLink.current === deepLink.key) return;
     handledLink.current = deepLink.key;
-    const media = deepLink.media != null && images[deepLink.media] ? deepLink.media : 0;
+    const media =
+      deepLink.media != null && images[deepLink.media] ? deepLink.media : 0;
     setViewerIndex(media);
     articleRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
   }, [deepLink, images]);
@@ -457,7 +564,10 @@ function PostCard({ post, slug, me, isStaff, onChange, onRemove, onReport, deepL
   };
 
   return (
-    <article ref={articleRef} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+    <article
+      ref={articleRef}
+      className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
+    >
       {post.pinned ? (
         <p className="mb-2 flex items-center gap-1 text-xs font-semibold text-slate-500">
           <Pin size={12} /> Pinned
@@ -500,7 +610,7 @@ function PostCard({ post, slug, me, isStaff, onChange, onRemove, onReport, deepL
               type="button"
               title="Delete"
               onClick={remove}
-              className="rounded p-1 hover:bg-slate-100 hover:text-red-600"
+              className="rounded p-1 hover:bg-slate-100 hover:text-red-600 cursor-pointer"
             >
               <Trash2 size={16} />
             </button>
@@ -508,7 +618,24 @@ function PostCard({ post, slug, me, isStaff, onChange, onRemove, onReport, deepL
         </div>
       </header>
       <p className="mt-3 whitespace-pre-wrap break-words">{post.body}</p>
-      {images.length === 1 ? (
+      {images.length === 1 && isVideoUrl(images[0]) ? (
+        <div className="mt-3">
+          <video
+            src={images[0]}
+            controls
+            preload="metadata"
+            playsInline
+            className="max-h-[460px] w-full rounded-lg bg-black"
+          />
+          <button
+            type="button"
+            onClick={() => openViewer(0)}
+            className="mt-1 text-xs font-semibold text-slate-500 hover:underline"
+          >
+            Open with comments
+          </button>
+        </div>
+      ) : images.length === 1 ? (
         <button
           type="button"
           onClick={() => openViewer(0)}
@@ -532,8 +659,24 @@ function PostCard({ post, slug, me, isStaff, onChange, onRemove, onReport, deepL
               aria-label={`Open photo ${i + 1}`}
               className={`relative cursor-zoom-in ${images.length === 3 && i === 0 ? "col-span-2" : ""}`}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={src} alt="" className="h-52 w-full object-cover" />
+              {isVideoUrl(src) ? (
+                <video
+                  src={src}
+                  preload="metadata"
+                  muted
+                  className="h-52 w-full bg-black object-cover"
+                />
+              ) : (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={src} alt="" className="h-52 w-full object-cover" />
+              )}
+              {isVideoUrl(src) ? (
+                <span className="absolute inset-0 flex items-center justify-center">
+                  <span className="rounded-full bg-black/60 p-3 text-white">
+                    <Play size={24} />
+                  </span>
+                </span>
+              ) : null}
               {i === 3 && images.length > 4 ? (
                 <span className="absolute inset-0 flex items-center justify-center bg-black/50 text-2xl font-semibold text-white">
                   +{images.length - 4}
@@ -667,8 +810,10 @@ export default function CommunityFeed({ slug, me, role }) {
   const [composerOpen, setComposerOpen] = useState(false);
   const router = useRouter();
   const [deepPost, setDeepPost] = useState(null);
-  const linkedPostId = typeof router.query.post === "string" ? router.query.post : null;
-  const linkedMedia = router.query.media !== undefined ? Number(router.query.media) : null;
+  const linkedPostId =
+    typeof router.query.post === "string" ? router.query.post : null;
+  const linkedMedia =
+    router.query.media !== undefined ? Number(router.query.media) : null;
   const profile = persistentStore((state) => state.profile);
   const fullName = [profile?.firstname, profile?.lastname]
     .filter(Boolean)
@@ -711,7 +856,15 @@ export default function CommunityFeed({ slug, me, role }) {
     if (!linkedPostId || loading) return;
     const key = `${linkedPostId}:${linkedMedia ?? ""}`;
     if (posts.some((p) => p.id === linkedPostId)) {
-      setDeepPost((prev) => (prev?.key === key ? prev : { id: linkedPostId, key, media: Number.isInteger(linkedMedia) ? linkedMedia : null }));
+      setDeepPost((prev) =>
+        prev?.key === key
+          ? prev
+          : {
+              id: linkedPostId,
+              key,
+              media: Number.isInteger(linkedMedia) ? linkedMedia : null,
+            },
+      );
       return;
     }
     let cancelled = false;
@@ -719,7 +872,9 @@ export default function CommunityFeed({ slug, me, role }) {
       .then((res) => {
         const post = res?.data?.data;
         if (cancelled || !post) return;
-        setPosts((prev) => (prev.some((p) => p.id === post.id) ? prev : [post, ...prev]));
+        setPosts((prev) =>
+          prev.some((p) => p.id === post.id) ? prev : [post, ...prev],
+        );
       })
       .catch(() => toast.error("That post is no longer available"));
     return () => {
@@ -728,7 +883,10 @@ export default function CommunityFeed({ slug, me, role }) {
   }, [linkedPostId, linkedMedia, loading, posts]);
 
   const pickImage = async (event) => {
-    const files = Array.from(event.target.files || []).slice(0, Math.max(0, 10 - images.length));
+    const files = Array.from(event.target.files || []).slice(
+      0,
+      Math.max(0, 10 - images.length),
+    );
     event.target.value = "";
     if (!files.length) return;
     setUploading(true);
@@ -806,7 +964,7 @@ export default function CommunityFeed({ slug, me, role }) {
             onClick={() => setComposerOpen(true)}
             className="flex w-full items-center justify-center gap-2 rounded-lg py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100"
           >
-            <ImagePlus size={22} className="text-green-500" /> Photo
+            <ImagePlus size={22} className="text-green-500" /> Photo / Video
           </button>
         </div>
       </div>
@@ -851,11 +1009,26 @@ export default function CommunityFeed({ slug, me, role }) {
                 <div className="mt-2 flex flex-wrap gap-2">
                   {images.map((src, i) => (
                     <div key={`${src}-${i}`} className="relative">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={src} alt="" className="h-24 w-24 rounded-lg object-cover" />
+                      {isVideoUrl(src) ? (
+                        <video
+                          src={src}
+                          muted
+                          preload="metadata"
+                          className="h-24 w-24 rounded-lg bg-black object-cover"
+                        />
+                      ) : (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={src}
+                          alt=""
+                          className="h-24 w-24 rounded-lg object-cover"
+                        />
+                      )}
                       <button
                         type="button"
-                        onClick={() => setImages((prev) => prev.filter((_, j) => j !== i))}
+                        onClick={() =>
+                          setImages((prev) => prev.filter((_, j) => j !== i))
+                        }
                         className="absolute right-1 top-1 rounded-full bg-black/60 p-1 text-white"
                       >
                         <X size={14} />
@@ -894,7 +1067,7 @@ export default function CommunityFeed({ slug, me, role }) {
                 <input
                   ref={fileRef}
                   type="file"
-                  accept="image/*"
+                  accept="image/*,video/*"
                   multiple
                   hidden
                   onChange={pickImage}
@@ -903,7 +1076,7 @@ export default function CommunityFeed({ slug, me, role }) {
               <button
                 type="submit"
                 disabled={!body.trim() || posting || uploading}
-                className="mt-4 w-full rounded-lg py-2.5 font-semibold text-white disabled:bg-slate-200 disabled:text-slate-400"
+                className="mt-4 w-full rounded-lg py-2.5 font-semibold !text-white disabled:bg-slate-200 disabled:opacity-50"
                 style={{ background: "var(--cm)" }}
               >
                 {posting ? "Posting…" : "Post"}

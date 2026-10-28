@@ -1,37 +1,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import {
-  ArrowRight,
-  BookOpen,
-  ChevronRight,
-  Crown,
-  Eye,
-  Flame,
-  GraduationCap,
-  TrendingUp,
-  Users,
-} from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import BaseApi from "@/lib/api/_base.api";
-
-const avatarColors = [
-  "bg-slate-900",
-  "bg-purple-600",
-  "bg-teal-700",
-  "bg-blue-600",
-  "bg-rose-600",
-];
-
-const topicTints = [
-  "bg-emerald-100 text-emerald-600",
-  "bg-sky-100 text-sky-600",
-  "bg-violet-100 text-violet-600",
-];
-
-const rankStyles = [
-  "bg-amber-100 text-amber-600",
-  "bg-slate-100 text-slate-500",
-  "bg-orange-100 text-orange-600",
-];
 
 function fullName(person = {}) {
   const name = `${person?.first_name || ""} ${person?.last_name || ""}`.trim();
@@ -48,134 +18,118 @@ function initials(name = "") {
     .toUpperCase();
 }
 
-function PanelHeader({ icon: Icon, tone, title, subtitle, href, linkTone }) {
+function formatCount(value, singular, plural = `${singular}s`) {
+  const count = Number(value || 0);
+  return `${count.toLocaleString("en-PH")} ${count === 1 ? singular : plural}`;
+}
+
+function Column({ title, href, children }) {
   return (
-    <div className="flex items-center gap-3">
-      <span
-        className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${tone}`}
-      >
-        <Icon size={22} />
-      </span>
-      <div className="min-w-0 flex-1">
-        <h3 className="text-xl font-bold text-slate-900">{title}</h3>
-        <p className="line-clamp-1 text-sm text-slate-500">{subtitle}</p>
+    <div>
+      <div className="flex items-baseline justify-between border-b border-slate-900 pb-3">
+        <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900">
+          {title}
+        </h3>
+        <Link
+          href={href}
+          className="group flex items-center gap-1 text-sm text-slate-500 hover:text-primary"
+        >
+          View all
+          <ArrowRight
+            size={14}
+            className="transition-transform group-hover:translate-x-0.5"
+          />
+        </Link>
       </div>
+      <ol className="divide-y divide-slate-200">{children}</ol>
+    </div>
+  );
+}
+
+function Row({ href, rank, children }) {
+  return (
+    <li>
       <Link
         href={href}
-        className={`hidden shrink-0 items-center gap-1 rounded-full px-4 py-2 text-sm font-semibold sm:flex ${linkTone}`}
+        className="group flex items-center gap-4 py-4 transition-colors"
       >
-        View all <ArrowRight size={14} />
+        <span className="w-6 shrink-0 text-2xl font-bold tabular-nums text-slate-300 transition-colors group-hover:text-primary">
+          {rank}
+        </span>
+        {children}
       </Link>
-    </div>
+    </li>
   );
 }
 
-function Panel({ children }) {
+function CourseRow({ item, rank }) {
   return (
-    <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
-      {children}
-    </div>
-  );
-}
-
-function CourseCard({ item, rank }) {
-  return (
-    <Link
-      href={`/courses/${item.slug}`}
-      className="flex items-center gap-4 rounded-xl border border-slate-100 bg-white p-3 transition-shadow hover:shadow-md"
-    >
-      <div className="relative h-[74px] w-[100px] shrink-0 overflow-hidden rounded-lg bg-gradient-to-br from-indigo-100 to-sky-100">
+    <Row href={`/courses/${item.slug}`} rank={rank}>
+      <div className="h-14 w-20 shrink-0 overflow-hidden rounded bg-slate-100">
         {item?.cover_image?.path && (
+          // eslint-disable-next-line @next/next/no-img-element
           <img
             src={item.cover_image.path}
-            alt={item.title}
+            alt=""
             className="h-full w-full object-cover"
           />
         )}
-        <span className="absolute left-1.5 top-1.5 flex items-center gap-0.5 rounded bg-emerald-600 px-1.5 py-0.5 text-[10px] font-bold text-white">
-          <Flame size={10} /> #{rank}
-        </span>
       </div>
       <div className="min-w-0 flex-1">
-        <p className="line-clamp-2 text-sm font-bold leading-snug text-slate-900">
+        <p className="line-clamp-2 font-semibold leading-snug text-slate-900 group-hover:text-primary">
           {item.title}
         </p>
         {item?.category?.title && (
-          <span className="mt-1.5 inline-block rounded-md bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-600">
+          <p className="mt-1 line-clamp-1 text-sm text-slate-500">
             {item.category.title}
-          </span>
+          </p>
         )}
-        <p className="mt-1.5 flex items-center gap-1 text-xs text-slate-500">
-          <Users size={12} /> Popular right now
-        </p>
       </div>
-      <ChevronRight size={16} className="shrink-0 text-slate-400" />
-    </Link>
+    </Row>
   );
 }
 
-function TopicCard({ item, index }) {
-  const Icon = index === 0 ? TrendingUp : index === 1 ? Users : Eye;
+function TopicRow({ item, rank }) {
   return (
-    <Link
-      href={`/courses?topic=${encodeURIComponent(item.slug)}`}
-      className="flex items-center gap-4 rounded-xl border border-slate-100 bg-white p-4 transition-shadow hover:shadow-md"
-    >
-      <span
-        className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${topicTints[index % topicTints.length]}`}
-      >
-        <Icon size={20} />
-      </span>
+    <Row href={`/courses?topic=${encodeURIComponent(item.slug)}`} rank={rank}>
       <div className="min-w-0 flex-1">
-        <p className="line-clamp-1 text-sm font-bold text-slate-900">
+        <p className="line-clamp-1 font-semibold text-slate-900 group-hover:text-primary">
           {item.title}
         </p>
-        <p className="mt-1 flex items-center gap-1 text-xs text-slate-500">
-          <Eye size={12} /> {item.course_count} courses · {item.page_views || 0}{" "}
-          views
+        <p className="mt-1 text-sm text-slate-500">
+          {formatCount(item.course_count, "course")} ·{" "}
+          {formatCount(item.page_views, "view")}
         </p>
       </div>
-      <span className="flex shrink-0 items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-600">
-        <TrendingUp size={12} /> Trending
-      </span>
-      <ChevronRight size={16} className="shrink-0 text-slate-400" />
-    </Link>
+    </Row>
   );
 }
 
-function UserCard({ item, index }) {
+function EducatorRow({ item, rank }) {
   const name = fullName(item);
   return (
-    <Link
-      href={item?.username ? `/user/${item.username}` : "#"}
-      className="flex items-center gap-4 rounded-xl border border-slate-100 bg-white p-4 transition-shadow hover:shadow-md"
-    >
+    <Row href={item?.username ? `/user/${item.username}` : "#"} rank={rank}>
       {item?.user_picture?.path ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={item.user_picture.path}
-          alt={name}
-          className="h-14 w-14 shrink-0 rounded-full object-cover"
+          alt=""
+          className="h-12 w-12 shrink-0 rounded-full object-cover"
         />
       ) : (
-        <span
-          className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-lg font-bold text-white ${avatarColors[index % avatarColors.length]}`}
-        >
+        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-slate-200 text-sm font-bold text-slate-600">
           {initials(name)}
         </span>
       )}
       <div className="min-w-0 flex-1">
-        <p className="line-clamp-1 text-sm font-bold text-slate-900">{name}</p>
-        <p className="mt-1 flex items-center gap-1 text-xs text-slate-500">
-          <BookOpen size={12} /> {item.course_count || 0} trending courses
+        <p className="line-clamp-1 font-semibold text-slate-900 group-hover:text-primary">
+          {name}
+        </p>
+        <p className="mt-1 text-sm text-slate-500">
+          {formatCount(item.course_count, "trending course")}
         </p>
       </div>
-      <span
-        className={`flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold ${rankStyles[index] || rankStyles[1]}`}
-      >
-        <Crown size={12} /> #{index + 1}
-      </span>
-    </Link>
+    </Row>
   );
 }
 
@@ -255,95 +209,51 @@ export default function HomePopular() {
   return (
     <section data-home-section="" className="py-18 md:py-22">
       <div className="container">
-        <div className="mb-8 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
-              <Flame size={28} />
-            </span>
-            <div>
-              <h2 className="text-3xl font-bold tracking-tight text-slate-950 md:text-4xl">
-                Popular right now
-              </h2>
-              <p className="mt-1 text-sm text-slate-500 md:text-base">
-                Live rankings powered by actual course and topic activity data.
-              </p>
-            </div>
-          </div>
-          <span className="hidden shrink-0 items-center gap-2 rounded-full bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700 sm:flex">
-            <span className="h-2 w-2 rounded-full bg-emerald-500" />
-            Live updates
-          </span>
+        <div className="mb-10 max-w-2xl">
+          <h2 className="text-3xl font-bold tracking-tight text-slate-950 md:text-4xl">
+            Popular right now
+          </h2>
+          <p className="mt-2 text-slate-600">
+            The courses, topics and educators learners have engaged with most
+            over the last 30 days.
+          </p>
         </div>
 
         {isLoading ? (
-          <div className="grid gap-5 lg:grid-cols-3">
-            {["Trending Courses", "Hot Topics", "Top Educators"].map((title) => (
-              <Panel key={title}>
-                <div className="h-12 w-3/5 animate-pulse rounded-xl bg-slate-100" />
-                <div className="mt-5 space-y-3">
-                  {Array.from({ length: 3 }).map((_, index) => (
+          <div className="grid gap-10 lg:grid-cols-3 lg:gap-12">
+            {[0, 1, 2].map((col) => (
+              <div key={col}>
+                <div className="h-6 w-1/3 animate-pulse rounded bg-slate-100" />
+                <div className="mt-4 space-y-4">
+                  {[0, 1, 2].map((row) => (
                     <div
-                      key={`${title}-${index}`}
-                      className="h-[92px] animate-pulse rounded-xl bg-slate-100"
+                      key={row}
+                      className="h-16 animate-pulse rounded bg-slate-100"
                     />
                   ))}
                 </div>
-              </Panel>
+              </div>
             ))}
           </div>
         ) : !hasData ? (
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-8 text-slate-700">
-            No popularity data available yet.
-          </div>
+          <p className="text-slate-600">No popularity data available yet.</p>
         ) : (
-          <div className="grid gap-5 lg:grid-cols-3">
-            <Panel>
-              <PanelHeader
-                icon={GraduationCap}
-                tone="bg-emerald-50 text-emerald-600"
-                title="Trending Courses"
-                subtitle="What learners are exploring right now"
-                href="/courses"
-                linkTone="bg-emerald-50 text-emerald-700"
-              />
-              <div className="mt-5 space-y-3">
-                {courses.map((item, index) => (
-                  <CourseCard key={item.id} item={item} rank={index + 1} />
-                ))}
-              </div>
-            </Panel>
-
-            <Panel>
-              <PanelHeader
-                icon={Flame}
-                tone="bg-violet-100 text-violet-600"
-                title="Hot Topics"
-                subtitle="Most active topics in the community"
-                href="/courses"
-                linkTone="bg-violet-50 text-violet-700"
-              />
-              <div className="mt-5 space-y-3">
-                {topics.map((item, index) => (
-                  <TopicCard key={item.id} item={item} index={index} />
-                ))}
-              </div>
-            </Panel>
-
-            <Panel>
-              <PanelHeader
-                icon={GraduationCap}
-                tone="bg-orange-50 text-orange-600"
-                title="Top Educators"
-                subtitle="Learn from the best in the community"
-                href="/courses"
-                linkTone="bg-orange-50 text-orange-700"
-              />
-              <div className="mt-5 space-y-3">
-                {educators.map((item, index) => (
-                  <UserCard key={item.id} item={item} index={index} />
-                ))}
-              </div>
-            </Panel>
+          <div className="grid gap-10 lg:grid-cols-3 lg:gap-12">
+            <Column title="Courses" href="/courses">
+              {courses.map((item, index) => (
+                <CourseRow key={item.id} item={item} rank={index + 1} />
+              ))}
+            </Column>
+            <Column title="Topics" href="/courses">
+              {topics.map((item, index) => (
+                <TopicRow key={item.id} item={item} rank={index + 1} />
+              ))}
+            </Column>
+            <Column title="Educators" href="/courses">
+              {educators.map((item, index) => (
+                <EducatorRow key={item.id} item={item} rank={index + 1} />
+              ))}
+            </Column>
           </div>
         )}
       </div>

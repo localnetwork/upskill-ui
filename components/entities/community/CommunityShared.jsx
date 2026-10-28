@@ -1,3 +1,7 @@
+export function isVideoUrl(url) {
+  return /\.(mp4|webm|mov|m4v|ogv)(\?.*)?$/i.test(String(url || ""));
+}
+
 export function Avatar({ user, size = 40 }) {
   const name = user?.name || "User";
   const initials = name
