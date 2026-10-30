@@ -13,6 +13,63 @@ const IMAGE_CACHE_MAX_ENTRIES = 300;
 const OFFLINE_URL = "/offline";
 const NETWORK_TIMEOUT_MS = 6000;
 
+// Self-contained fallback (no external assets) used when /offline isn't cached.
+const OFFLINE_HTML = `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>You're offline | Upskill</title>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;
+    font-family:'Inter','Segoe UI',-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif;
+    background:linear-gradient(145deg,#f8fafc 0%,#f1f5f9 100%);color:#0f172a}
+  body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.35;
+    background-image:radial-gradient(circle at 1px 1px,#cbd5e1 1px,transparent 0);background-size:28px 28px}
+  .card{position:relative;width:100%;max-width:420px;background:#fff;border-radius:20px;text-align:center;overflow:hidden;
+    box-shadow:0 4px 6px -1px rgba(0,0,0,.05),0 20px 60px -10px rgba(0,0,0,.1),0 0 0 1px rgba(0,0,0,.04)}
+  .head{padding:36px 32px 24px;border-bottom:1px solid #f1f5f9}
+  .icon{width:56px;height:56px;margin:0 auto 18px;border-radius:16px;display:flex;align-items:center;justify-content:center;
+    background:linear-gradient(135deg,#1e293b 0%,#334155 100%)}
+  h1{margin:0;font-size:22px;font-weight:700;letter-spacing:-.01em}
+  .sub{margin:8px 0 0;font-size:14px;line-height:1.6;color:#64748b}
+  .body{padding:24px 32px 32px}
+  .tips{margin:0 0 24px;padding:0;list-style:none;text-align:left;font-size:13px;color:#475569}
+  .tips li{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid #e2e8f0;border-radius:12px;margin-bottom:8px}
+  .tips li:before{content:"";flex:none;width:6px;height:6px;margin-top:6px;border-radius:50%;background:#0f172a}
+  button{width:100%;padding:13px 16px;border:0;border-radius:12px;background:#0f172a;color:#fff;font-size:14px;font-weight:600;cursor:pointer}
+  button:hover{opacity:.9}
+  .status{margin-top:14px;font-size:12px;color:#94a3b8}
+  .dot{display:inline-block;width:8px;height:8px;margin-right:6px;border-radius:50%;background:#f59e0b;vertical-align:middle}
+</style>
+</head>
+<body>
+<main class="card">
+  <div class="head">
+    <div class="icon">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="2" y1="2" x2="22" y2="22"/><path d="M8.5 16.5a5 5 0 0 1 7 0"/><path d="M2 8.8a15 15 0 0 1 4.2-2.6"/>
+        <path d="M10.7 5.1A15 15 0 0 1 22 8.8"/><path d="M5 12.9a10 10 0 0 1 5.2-2.7"/><path d="M13.9 10.4a10 10 0 0 1 5.1 2.5"/><line x1="12" y1="20" x2="12.01" y2="20"/>
+      </svg>
+    </div>
+    <h1>You're offline</h1>
+    <p class="sub">We can't reach Upskill right now. Check your connection and try again.</p>
+  </div>
+  <div class="body">
+    <ul class="tips">
+      <li>Check your Wi-Fi or mobile data connection</li>
+      <li>Lessons you've downloaded are still available in your library</li>
+      <li>We'll reconnect automatically once you're back online</li>
+    </ul>
+    <button type="button" onclick="location.reload()">Try again</button>
+    <p class="status"><span class="dot"></span>Waiting for connection&hellip;</p>
+  </div>
+</main>
+<script>addEventListener("online",function(){location.reload()})</script>
+</body>
+</html>`;
+
 const API_BASE = params.get("api") || "";
 const API_ORIGIN = API_BASE ? new URL(API_BASE).origin : "";
 const API_PATH = API_BASE ? new URL(API_BASE).pathname.replace(/\/$/, "") : "";
@@ -144,9 +201,9 @@ async function serveNavigation(request) {
     const cache = await caches.open(PAGES_CACHE);
     return (
       (await cache.match(OFFLINE_URL)) ||
-      new Response("You are offline.", {
+      new Response(OFFLINE_HTML, {
         status: 503,
-        headers: { "Content-Type": "text/plain" },
+        headers: { "Content-Type": "text/html; charset=utf-8" },
       })
     );
   }

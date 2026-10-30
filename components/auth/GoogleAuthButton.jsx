@@ -77,7 +77,7 @@ export default function GoogleAuthButton({
             theme: "outline",
             size: "large",
             text: buttonText,
-            width: 420,
+            width: "100%",
           });
         }
         setReady(true);

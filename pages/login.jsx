@@ -11,7 +11,10 @@ import Link from "next/link";
 import Input from "@/components/forms/Input";
 import Password from "@/components/forms/Password";
 import GoogleAuthButton from "@/components/auth/GoogleAuthButton";
-import { validateAuthField, validateAuthForm } from "@/lib/services/authInlineValidation";
+import {
+  validateAuthField,
+  validateAuthForm,
+} from "@/lib/services/authInlineValidation";
 
 export default function Login({ googleClientId }) {
   const router = useRouter();
@@ -238,6 +241,8 @@ export default function Login({ googleClientId }) {
                 disabled={isLoading}
                 label="Continue with Google"
                 buttonText="signin_with"
+                className="w-full"
+                style={{ width: "100%" }}
               />
             </div>
 
