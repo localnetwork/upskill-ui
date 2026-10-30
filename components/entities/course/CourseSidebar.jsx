@@ -6,7 +6,10 @@ import toast from "react-hot-toast";
 import courseStore from "@/lib/store/courseStore";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { MoreVertical } from "lucide-react";
-import { getApprovalReadinessSummary } from "./CourseApprovalReadiness";
+import {
+  getApprovalReadinessSummary,
+  usePayoutConnected,
+} from "./CourseApprovalReadiness";
 export default function CourseSidebar({ course }) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -14,6 +17,7 @@ export default function CourseSidebar({ course }) {
   const menuRef = useRef(null);
 
   const courseManagement = courseStore((state) => state.courseManagement);
+  const payoutConnected = usePayoutConnected();
 
   const parseDate = (value) => {
     const timestamp = value ? new Date(value).getTime() : 0;
@@ -114,7 +118,10 @@ export default function CourseSidebar({ course }) {
   });
 
   const handleRequestForReview = async () => {
-    const readiness = getApprovalReadinessSummary(activeCourse);
+    const readiness = getApprovalReadinessSummary({
+      ...activeCourse,
+      payoutConnected,
+    });
     if (readiness.score < 100) {
       toast.error(
         `Approval readiness is ${readiness.score}%. Complete all checklist items and check everything before requesting review.`,

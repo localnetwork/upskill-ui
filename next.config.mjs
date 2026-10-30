@@ -35,7 +35,9 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: new URL(process.env.NEXT_PUBLIC_API_DOMAIN).hostname,
+        hostname: process.env.NEXT_PUBLIC_API_DOMAIN
+          ? new URL(process.env.NEXT_PUBLIC_API_DOMAIN).hostname
+          : "localhost",
       },
       {
         protocol: "https",
@@ -43,7 +45,27 @@ const nextConfig = {
       },
       {
         protocol: "https",
-        hostname: "*.googleusercontent.com",
+        hostname: "**.googleusercontent.com",
+      },
+      {
+        protocol: "https",
+        hostname: "googleusercontent.com",
+      },
+      {
+        protocol: "https",
+        hostname: "lh3.googleusercontent.com",
+      },
+      {
+        protocol: "https",
+        hostname: "lh4.googleusercontent.com",
+      },
+      {
+        protocol: "https",
+        hostname: "lh5.googleusercontent.com",
+      },
+      {
+        protocol: "https",
+        hostname: "lh6.googleusercontent.com",
       },
       {
         protocol: "https",
@@ -51,14 +73,16 @@ const nextConfig = {
       },
     ],
   },
-
   // ✅ Custom security headers
   async headers() {
     return [
       {
         source: "/sw.js",
         headers: [
-          { key: "Cache-Control", value: "no-cache, no-store, must-revalidate" },
+          {
+            key: "Cache-Control",
+            value: "no-cache, no-store, must-revalidate",
+          },
           { key: "Service-Worker-Allowed", value: "/" },
         ],
       },

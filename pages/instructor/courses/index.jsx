@@ -4,7 +4,31 @@ import Select from "@/components/forms/Select";
 import InstructorLayout from "@/components/partials/InstructorLayout";
 import BaseApi from "@/lib/api/_base.api";
 import Link from "next/link";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import PayoutAccountTour from "@/components/entities/instructor/payout/PayoutAccountTour";
+
+const COURSES_TOUR_STEPS = [
+  {
+    target: "tour-new-course",
+    title: "Create your first course",
+    body: "Click New Course to see the ways you can start building a course.",
+  },
+  {
+    target: "tour-create-manual",
+    title: "Create manually",
+    body: "Start from a blank course: add a title and category, then build the curriculum yourself.",
+  },
+  {
+    target: "tour-create-ai",
+    title: "Draft with AI",
+    body: "Describe your course in a brief and AI generates a draft with description and outline.",
+  },
+  {
+    target: "tour-create-bulk",
+    title: "Bulk draft with AI",
+    body: "Generate several draft courses at once, then refine each one.",
+  },
+];
 import { ChevronDown, Search } from "lucide-react";
 import persistentStore from "@/lib/store/persistentStore";
 import { useRouter } from "next/router";
@@ -28,10 +52,22 @@ export default function Page() {
   const [courses, setCourses] = useState([]);
   const [totalPages, setTotalPages] = useState(1);
   const [deletingCourseId, setDeletingCourseId] = useState(null);
+  const [showTour, setShowTour] = useState(false);
+  const tourActiveRef = useRef(false);
+  tourActiveRef.current = showTour;
+
+  const handleTourStep = useCallback((index) => {
+    setIsMenuOpen(index >= 1);
+  }, []);
+
+  const closeTour = () => {
+    setShowTour(false);
+    setIsMenuOpen(false);
+  };
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
+      if (menuRef.current && !menuRef.current.contains(event.target) && !tourActiveRef.current) {
         setIsMenuOpen(false);
       }
     };
@@ -111,6 +147,13 @@ export default function Page() {
 
       setCourses(response.data.data || []);
       setTotalPages(response.data.pagination?.total_pages || 1);
+      if (
+        !overrideParams.title &&
+        !overrideParams.instructional_level &&
+        (response.data.data || []).length === 0
+      ) {
+        setShowTour(true);
+      }
     } catch (error) {
       console.error("Error fetching courses:", error);
 
@@ -177,6 +220,13 @@ export default function Page() {
 
   return (
     <InstructorLayout>
+      {showTour ? (
+        <PayoutAccountTour
+          steps={COURSES_TOUR_STEPS}
+          onStepChange={handleTourStep}
+          onClose={closeTour}
+        />
+      ) : null}
       <main className="mx-auto w-full min-w-0 max-w-[1600px] px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
         {/* PAGE HEADER */}
         <div className="mb-6">
@@ -243,6 +293,7 @@ export default function Page() {
             ref={menuRef}
           >
             <button
+              id="tour-new-course"
               type="button"
               aria-haspopup="menu"
               aria-expanded={isMenuOpen}
@@ -264,6 +315,7 @@ export default function Page() {
                 className="absolute right-0 top-full z-50 mt-2 w-full min-w-0 overflow-hidden rounded-xl border border-gray-100 bg-white shadow-lg sm:w-72"
               >
                 <Link
+                  id="tour-create-manual"
                   role="menuitem"
                   href="/instructor/courses/create"
                   onClick={() => setIsMenuOpen(false)}
@@ -278,10 +330,11 @@ export default function Page() {
                 </Link>
 
                 <Link
+                  id="tour-create-ai"
                   role="menuitem"
                   href="/instructor/courses/ai-draft"
                   onClick={() => setIsMenuOpen(false)}
-                  className="block border-t px-4 py-3 transition hover:bg-gray-50"
+                  className="block border-t border-[#ddd] px-4 py-3 transition hover:bg-gray-50"
                 >
                   <span className="block text-sm font-semibold">
                     ✨ Draft with AI
@@ -292,10 +345,11 @@ export default function Page() {
                 </Link>
 
                 <Link
+                  id="tour-create-bulk"
                   role="menuitem"
                   href="/instructor/courses/bulk-ai-draft"
                   onClick={() => setIsMenuOpen(false)}
-                  className="block border-t px-4 py-3 transition hover:bg-gray-50"
+                  className="block border-t border-[#ddd] px-4 py-3 transition hover:bg-gray-50"
                 >
                   <span className="block text-sm font-semibold">
                     ✨ Bulk draft with AI

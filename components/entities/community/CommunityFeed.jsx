@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  BarChart3,
   Heart,
   ImagePlus,
   MessageCircle,
@@ -15,6 +16,7 @@ import {
   FileText,
   Send,
   RefreshCcw,
+  Vote,
 } from "lucide-react";
 import { useRouter } from "next/router";
 import toast from "react-hot-toast";
@@ -29,6 +31,7 @@ import {
   errorMessage,
   isVideoUrl,
 } from "./CommunityShared";
+import { PollComposer, PollView, isPollValid } from "./CommunityPoll";
 
 function Comments({
   post,
@@ -247,6 +250,7 @@ function PostViewer({
   onLike,
   onReport,
   onCountChange,
+  onChange,
 }) {
   const [zoom, setZoom] = useState(1);
   const [fitWidth, setFitWidth] = useState(0);
@@ -430,6 +434,7 @@ function PostViewer({
             </div>
           </div>
           <p className="mt-3 whitespace-pre-wrap break-words">{post.body}</p>
+          <PollView post={post} onChange={onChange} />
           <div className="mt-3 flex items-center gap-5 border-b border-slate-100 pb-2 text-sm text-slate-600">
             <button
               type="button"
@@ -618,6 +623,7 @@ function PostCard({
         </div>
       </header>
       <p className="mt-3 whitespace-pre-wrap break-words">{post.body}</p>
+      <PollView post={post} onChange={onChange} />
       {images.length === 1 && isVideoUrl(images[0]) ? (
         <div className="mt-3">
           <video
@@ -696,6 +702,7 @@ function PostCard({
           onIndexChange={(i) => syncUrl(i)}
           onLike={like}
           onReport={onReport}
+          onChange={onChange}
           onCountChange={(delta) =>
             onChange({
               ...post,
@@ -805,9 +812,19 @@ export default function CommunityFeed({ slug, me, role }) {
   const [loading, setLoading] = useState(true);
   const [body, setBody] = useState("");
   const [images, setImages] = useState([]);
+  const [poll, setPoll] = useState(null);
+  const newPoll = () => ({ options: ["", ""], endsInDays: null });
   const [uploading, setUploading] = useState(false);
   const [posting, setPosting] = useState(false);
   const [composerOpen, setComposerOpen] = useState(false);
+  const openComposer = (type) => {
+    setPoll(type === "poll" ? newPoll() : null);
+    setComposerOpen(type);
+  };
+
+  useEffect(() => {
+    if (composerOpen === "media") fileRef.current?.click();
+  }, [composerOpen]);
   const router = useRouter();
   const [deepPost, setDeepPost] = useState(null);
   const linkedPostId =
@@ -907,12 +924,20 @@ export default function CommunityFeed({ slug, me, role }) {
 
   const submit = async (event) => {
     event.preventDefault();
-    if (!body.trim() || posting || uploading) return;
+    if (!body.trim() || posting || uploading || !isPollValid(poll)) return;
     setPosting(true);
     try {
       const res = await COMMUNITYAPI.createPost(slug, {
         body: body.trim(),
         imageUrls: images,
+        ...(poll
+          ? {
+              poll: {
+                options: poll.options.map((o) => o.trim()).filter(Boolean),
+                endsInDays: poll.endsInDays,
+              },
+            }
+          : {}),
       });
       const created = res?.data?.data;
       setPosts((prev) => {
@@ -925,6 +950,7 @@ export default function CommunityFeed({ slug, me, role }) {
       });
       setBody("");
       setImages([]);
+      setPoll(null);
       setComposerOpen(false);
     } catch (e) {
       toast.error(errorMessage(e, "Failed to post"));
@@ -952,19 +978,26 @@ export default function CommunityFeed({ slug, me, role }) {
           <UserAvatar size="sm" className="!border-0" />
           <button
             type="button"
-            onClick={() => setComposerOpen(true)}
+            onClick={() => openComposer("text")}
             className="flex-1 rounded-full bg-slate-100 px-4 py-2.5 text-left text-slate-500 hover:bg-slate-200"
           >
             Write something…
           </button>
         </div>
-        <div className="mt-3 border-t border-slate-200 pt-2">
+        <div className="mt-3 border-t grid grid-cols-2 border-slate-200 pt-2">
           <button
             type="button"
-            onClick={() => setComposerOpen(true)}
+            onClick={() => openComposer("media")}
             className="flex w-full items-center justify-center gap-2 rounded-lg py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100"
           >
             <ImagePlus size={22} className="text-green-500" /> Photo / Video
+          </button>
+          <button
+            type="button"
+            onClick={() => openComposer("poll")}
+            className="flex w-full items-center justify-center gap-2 rounded-lg py-2 text-sm font-semibold  hover:bg-slate-100"
+          >
+            <Vote size={22} className="text-blue-500" /> Poll
           </button>
         </div>
       </div>
@@ -978,10 +1011,12 @@ export default function CommunityFeed({ slug, me, role }) {
         >
           <form
             onSubmit={submit}
-            className="w-full max-w-[500px] rounded-xl bg-white shadow-2xl ring-1 ring-black/5"
+            className="flex max-h-full w-full max-w-[500px] flex-col rounded-xl bg-white shadow-2xl ring-1 ring-black/5"
           >
-            <div className="relative border-b border-slate-200 py-4 text-center">
-              <h3 className="text-xl font-bold">Create post</h3>
+            <div className="relative shrink-0 border-b border-slate-200 py-4 text-center">
+              <h3 className="text-xl font-bold">
+                {composerOpen === "poll" ? "Create poll" : "Create post"}
+              </h3>
               <button
                 type="button"
                 onClick={() => setComposerOpen(false)}
@@ -991,7 +1026,7 @@ export default function CommunityFeed({ slug, me, role }) {
                 <X size={20} />
               </button>
             </div>
-            <div className="p-4">
+            <div className="min-h-0 flex-1 overflow-y-auto p-4">
               <div className="flex items-center gap-3">
                 <UserAvatar size="sm" className="!border-0" />
                 <p className="font-semibold">{fullName || "You"}</p>
@@ -1002,7 +1037,13 @@ export default function CommunityFeed({ slug, me, role }) {
                 onChange={(e) => setBody(e.target.value)}
                 maxLength={5000}
                 rows={5}
-                placeholder="Create a post…"
+                placeholder={
+                  composerOpen === "poll"
+                    ? "Ask a question…"
+                    : composerOpen === "media"
+                      ? "Say something about these…"
+                      : "Create a post…"
+                }
                 className="mt-3 w-full resize-none border-0 text-xl outline-none placeholder:text-slate-500"
               />
               {images.length ? (
@@ -1054,16 +1095,33 @@ export default function CommunityFeed({ slug, me, role }) {
               ) : uploading ? (
                 <p className="mt-2 text-sm text-slate-500">Uploading…</p>
               ) : null}
+              {poll ? (
+                <PollComposer
+                  poll={poll}
+                  onChange={setPoll}
+                  onRemove={() => setPoll(null)}
+                />
+              ) : null}
               <div className="mt-4 flex items-center justify-between rounded-lg border border-slate-300 px-4 py-3">
                 <span className="font-semibold">Add to your post</span>
-                <button
-                  type="button"
-                  onClick={() => fileRef.current?.click()}
-                  aria-label="Add photo"
-                  className="rounded-full p-2 text-green-500 hover:bg-slate-100"
-                >
-                  <ImagePlus size={24} />
-                </button>
+                <div className="flex items-center">
+                  <button
+                    type="button"
+                    onClick={() => setPoll((p) => (p ? null : newPoll()))}
+                    aria-label="Add poll"
+                    className={`rounded-full p-2 text-amber-500 hover:bg-slate-100 ${poll ? "bg-slate-100" : ""}`}
+                  >
+                    <BarChart3 size={24} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => fileRef.current?.click()}
+                    aria-label="Add photo"
+                    className="rounded-full p-2 text-green-500 hover:bg-slate-100"
+                  >
+                    <ImagePlus size={24} />
+                  </button>
+                </div>
                 <input
                   ref={fileRef}
                   type="file"
@@ -1075,7 +1133,9 @@ export default function CommunityFeed({ slug, me, role }) {
               </div>
               <button
                 type="submit"
-                disabled={!body.trim() || posting || uploading}
+                disabled={
+                  !body.trim() || posting || uploading || !isPollValid(poll)
+                }
                 className="mt-4 w-full rounded-lg py-2.5 font-semibold !text-white disabled:bg-slate-200 disabled:opacity-50"
                 style={{ background: "var(--cm)" }}
               >

@@ -20,7 +20,12 @@ export const ADMIN_NAV_ITEMS = [
   { key: "tags", label: "Tags", icon: Tag },
   { key: "payouts", label: "Payouts", icon: Wallet },
   { key: "roles", label: "Roles", icon: ShieldCheck, href: "/admin/roles" },
-  { key: "permissions", label: "Permissions", icon: KeyRound, href: "/admin/permissions" },
+  {
+    key: "permissions",
+    label: "Permissions",
+    icon: KeyRound,
+    href: "/admin/permissions",
+  },
 ];
 
 export default function AdminShell({ activeKey, description, children }) {
@@ -32,7 +37,7 @@ export default function AdminShell({ activeKey, description, children }) {
         <aside className="lg:sticky lg:top-4 lg:h-fit lg:w-[104px] lg:shrink-0">
           <nav
             aria-label="Admin sections"
-            className="flex gap-1 overflow-x-auto rounded-2xl bg-white/70 p-2 lg:flex-col lg:overflow-visible"
+            className="flex gap-1 overflow-x-auto rounded-2xl bg-white p-2 lg:flex-col lg:overflow-visible"
           >
             {ADMIN_NAV_ITEMS.map((item) => {
               const Icon = item.icon;
@@ -56,14 +61,18 @@ export default function AdminShell({ activeKey, description, children }) {
           <p className="text-sm text-slate-500">
             <span>Administer</span>
             <span className="mx-2 text-slate-300">/</span>
-            <span className="font-semibold text-slate-900">{active?.label}</span>
+            <span className="font-semibold text-slate-900">
+              {active?.label}
+            </span>
           </p>
           <div className="mt-5 border-b border-slate-200 pb-5">
             <h1 className="text-3xl font-bold tracking-tight text-slate-900">
               {active?.label}
             </h1>
             {description && (
-              <p className="mt-1 max-w-2xl text-sm text-slate-500">{description}</p>
+              <p className="mt-1 max-w-2xl text-sm text-slate-500">
+                {description}
+              </p>
             )}
           </div>
           <div className="mt-6">{children}</div>

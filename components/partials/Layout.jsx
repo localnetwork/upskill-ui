@@ -6,6 +6,7 @@ import Footer from "./Footer";
 import LearnerAIWidget from "./LearnerAIWidget";
 import { useRouter } from "next/router";
 import OfflineProvider from "./OfflineProvider";
+import SecureAccountReminder from "./SecureAccountReminder";
 
 export default function Layout({ children }) {
   const modalInfo = modalState((state) => state.modalInfo);
@@ -19,6 +20,7 @@ export default function Layout({ children }) {
 
       <Toaster position="top-right" reverseOrder={false} />
       <OfflineProvider />
+      {!isCallRoute ? <SecureAccountReminder /> : null}
       {!isCallRoute ? <Footer /> : null}
       {!isCallRoute ? <LearnerAIWidget /> : null}
       {modalInfo && <Modal />}

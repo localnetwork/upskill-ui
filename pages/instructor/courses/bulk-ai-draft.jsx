@@ -3,6 +3,31 @@ import BaseApi from "@/lib/api/_base.api";
 import Spinner from "@/components/icons/Spinner";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import PayoutAccountTour from "@/components/entities/instructor/payout/PayoutAccountTour";
+import useHasNoCourses from "@/lib/hooks/useHasNoCourses";
+
+const BULK_TOUR_STEPS = [
+  {
+    target: "tour-bulk-topics",
+    title: "1. Add course topics",
+    body: "Enter one course topic or brief per field. Press Enter to add another row.",
+  },
+  {
+    target: "tour-bulk-add",
+    title: "2. Add more courses",
+    body: "Use this to add more topics, up to the allowed maximum.",
+  },
+  {
+    target: "tour-bulk-language",
+    title: "3. Pick a language",
+    body: "Choose the language for all generated drafts.",
+  },
+  {
+    target: "tour-bulk-generate",
+    title: "4. Generate drafts",
+    body: "A draft with sections and lessons is created for each topic. Drafts are unpublished and editable.",
+  },
+];
 import { Plus, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
 import useCourseLanguages from "@/lib/hooks/useCourseLanguages";
@@ -20,6 +45,7 @@ const STATUS_STYLES = {
 export default function Page() {
   const languageOptions = useCourseLanguages();
   const [topicRows, setTopicRows] = useState([""]);
+  const [showTour, setShowTour] = useHasNoCourses();
   const [language, setLanguage] = useState("English");
   const [items, setItems] = useState([]);
   const [isRunning, setIsRunning] = useState(false);
@@ -105,6 +131,12 @@ export default function Page() {
 
   return (
     <InstructorLayout>
+      {showTour ? (
+        <PayoutAccountTour
+          steps={BULK_TOUR_STEPS}
+          onClose={() => setShowTour(false)}
+        />
+      ) : null}
       <div className="max-w-3xl">
         <Link
           href="/instructor/courses"
@@ -123,7 +155,7 @@ export default function Page() {
 
         <div className="mb-4">
           <span className="text-sm font-medium">Course topics</span>
-          <div className="mt-1 space-y-2">
+          <div id="tour-bulk-topics" className="mt-1 space-y-2">
             {topicRows.map((row, index) => (
               <div key={index} className="flex items-center gap-2">
                 <span className="w-6 text-sm text-slate-400 text-right">
@@ -161,6 +193,7 @@ export default function Page() {
             ))}
           </div>
           <button
+            id="tour-bulk-add"
             type="button"
             onClick={addRow}
             disabled={!canAddRow || isRunning}
@@ -176,6 +209,7 @@ export default function Page() {
         <label className="block mb-6">
           <span className="text-sm font-medium">Preferred language</span>
           <select
+            id="tour-bulk-language"
             value={language}
             onChange={(e) => setLanguage(e.target.value)}
             disabled={isRunning}
@@ -191,6 +225,7 @@ export default function Page() {
 
         <div className="flex gap-2">
           <button
+            id="tour-bulk-generate"
             type="button"
             onClick={startGeneration}
             disabled={!topics.length || isRunning}

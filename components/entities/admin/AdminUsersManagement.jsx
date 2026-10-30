@@ -414,7 +414,7 @@ export default function AdminUsersManagement() {
               {users.map((user) => (
                 <tr
                   key={user.id}
-                  className="hover:bg-slate-50/50 transition-colors group"
+                  className="hover:bg-slate-50/50 transition-colors group border-b border-[#ddd]"
                 >
                   <td className="px-6 py-5">
                     <div className="flex items-center gap-3">

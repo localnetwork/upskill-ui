@@ -2,6 +2,18 @@ import { useEffect, useMemo, useState } from "react";
 import InstructorLayout from "@/components/partials/InstructorLayout";
 import BaseApi from "@/lib/api/_base.api";
 import {
+  BadgeCheck,
+  Banknote,
+  Code2,
+  Eye,
+  FileCheck2,
+  LayoutDashboard,
+  Megaphone,
+  Star,
+  Users,
+} from "lucide-react";
+import OverviewDashboard from "@/components/entities/instructor/performance/OverviewDashboard";
+import {
   Bar,
   BarChart,
   CartesianGrid,
@@ -13,15 +25,15 @@ import {
 } from "recharts";
 
 const NAV_ITEMS = [
-  { id: "overview", label: "Overview" },
-  { id: "revenue", label: "Revenue" },
-  { id: "students", label: "Students" },
-  { id: "reviews", label: "Reviews" },
-  { id: "engagement", label: "Course engagement" },
-  { id: "coding", label: "Coding exercise insights" },
-  { id: "practice", label: "Practice test insights" },
-  { id: "content_quality", label: "Content Quality", badge: "New" },
-  { id: "traffic", label: "Traffic & conversion" },
+  { id: "overview", label: "Overview", icon: LayoutDashboard },
+  { id: "revenue", label: "Revenue", icon: Banknote },
+  { id: "students", label: "Students", icon: Users },
+  { id: "reviews", label: "Reviews", icon: Star },
+  { id: "engagement", label: "Course engagement", icon: Eye },
+  { id: "coding", label: "Coding exercise insights", icon: Code2 },
+  { id: "practice", label: "Practice test insights", icon: FileCheck2 },
+  { id: "content_quality", label: "Content Quality", icon: BadgeCheck, badge: "New" },
+  { id: "traffic", label: "Traffic & conversion", icon: Megaphone },
 ];
 
 function asArray(value) {
@@ -222,19 +234,6 @@ export default function PerformancePage() {
     };
   }, [courseStats]);
 
-  const topCoursesByRevenue = useMemo(
-    () =>
-      courseStats
-        .map((row) => ({
-          name: row?.title || "Course",
-          revenue: toNumber(row?.overview?.total_revenue),
-          students: toNumber(row?.overview?.total_students),
-        }))
-        .sort((a, b) => b.revenue - a.revenue)
-        .slice(0, 8),
-    [courseStats],
-  );
-
   const revenueTrend = useMemo(() => {
     const byMonth = new Map();
     for (const row of payoutRows) {
@@ -418,31 +417,37 @@ export default function PerformancePage() {
           Unified analytics across revenue, learners, reviews, and course health.
         </p>
 
-        <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
-          <aside className="rounded-2xl border border-slate-200 bg-white p-3 h-fit">
-            <div className="space-y-1">
-              {NAV_ITEMS.map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => setActiveTab(item.id)}
-                  className={`w-full text-left px-4 py-3 rounded-xl text-sm font-semibold transition-colors ${
-                    activeTab === item.id
-                      ? "bg-blue-50 text-blue-700"
-                      : "text-slate-600 hover:bg-slate-50"
-                  }`}
-                >
-                  <span>{item.label}</span>
-                  {item.badge ? (
-                    <span className="ml-2 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
-                      {item.badge}
-                    </span>
-                  ) : null}
-                </button>
-              ))}
-            </div>
-          </aside>
+        <nav
+          aria-label="Performance sections"
+          className="mb-6 flex gap-1 overflow-x-auto border-b border-slate-200"
+        >
+          {NAV_ITEMS.map((item) => {
+            const Icon = item.icon;
+            const isActive = activeTab === item.id;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => setActiveTab(item.id)}
+                className={`-mb-px flex shrink-0 items-center gap-2 border-b-2 px-4 py-3 text-sm font-semibold transition-colors ${
+                  isActive
+                    ? "border-blue-600 text-blue-700"
+                    : "border-transparent text-slate-600 hover:border-slate-300 hover:text-slate-900"
+                }`}
+              >
+                <Icon className="h-4 w-4" />
+                <span>{item.label}</span>
+                {item.badge ? (
+                  <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
+                    {item.badge}
+                  </span>
+                ) : null}
+              </button>
+            );
+          })}
+        </nav>
 
+        <div>
           <section className="rounded-2xl border border-slate-200 bg-white p-5 lg:p-6 min-h-[560px]">
             {isLoading ? (
               <div className="grid gap-4 md:grid-cols-2">
@@ -451,23 +456,15 @@ export default function PerformancePage() {
                 ))}
               </div>
             ) : activeTab === "overview" ? (
-              <div className="space-y-6">
-                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                  <Card label="Published courses" value={courses.length} />
-                  <Card label="Total students" value={overview.totalStudents.toLocaleString("en-PH")} />
-                  <Card label="Total reviews" value={overview.totalReviews.toLocaleString("en-PH")} />
-                  <Card label="Average rating" value={overview.avgRating.toFixed(2)} />
-                  <Card label="Revenue" value={formatCurrency(overview.totalRevenue)} />
-                  <Card label="Impressions" value={overview.totalImpressions.toLocaleString("en-PH")} hint={`${overview.totalUniqueVisitors.toLocaleString("en-PH")} unique visitors`} />
-                </div>
-                <Section title="Revenue by course" description="Top courses by total revenue.">
-                  <CourseBars
-                    data={topCoursesByRevenue}
-                    series={[{ key: "revenue", name: "Revenue", color: "#2563eb" }]}
-                    formatter={(value) => formatCurrency(value)}
-                  />
-                </Section>
-              </div>
+              <OverviewDashboard
+                courses={courses}
+                courseStats={courseStats}
+                payoutRows={payoutRows}
+                payoutSummary={payoutSummary}
+                overview={overview}
+                reviewDistribution={reviewDistribution}
+                qualityRows={qualityRows}
+              />
             ) : null}
 
             {!isLoading && activeTab === "revenue" ? (

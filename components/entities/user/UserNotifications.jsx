@@ -4,7 +4,9 @@ import BaseApi from "@/lib/api/_base.api";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { notificationTarget } from "@/lib/notificationTarget";
-import NotificationAvatar, { getSenderLabel } from "../notification/NotificationVisual";
+import NotificationAvatar, {
+  getSenderLabel,
+} from "../notification/NotificationVisual";
 
 function toRelativeTime(dateValue) {
   if (!dateValue) return "Just now";
@@ -112,9 +114,10 @@ export default function UserNotifications({
                 <span className="font-semibold line-clamp-1 block">
                   {notification.title}
                 </span>
-                <p className="text-[10px] text-gray-700 line-clamp-1">
-                  {notification.message}
-                </p>
+                <p
+                  className="text-[10px] text-gray-700 line-clamp-1"
+                  dangerouslySetInnerHTML={{ __html: notification.message }}
+                />
                 <p className="text-[10px] text-gray-500">
                   {getNotificationTypeLabel(notification)}
                   {getSenderLabel(notification)

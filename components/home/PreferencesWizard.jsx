@@ -215,6 +215,7 @@ export default function PreferencesWizard({
     try {
       const response = await BaseApi.put(`${API}/users/me/preferences`, payload);
       toast.success("Preferences saved");
+      window.dispatchEvent(new Event("preferences-saved"));
       onSaved?.(response?.data?.data);
       onClose?.();
     } catch (error) {

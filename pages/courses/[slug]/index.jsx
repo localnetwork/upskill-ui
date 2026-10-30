@@ -46,6 +46,7 @@ import CourseReviews from "@/components/entities/course/show/CourseReviews";
 import persistentStore from "@/lib/store/persistentStore";
 import { trackAnalyticsEvent } from "@/lib/services/analytics";
 import useSubscriptionAccess from "@/lib/hooks/useSubscriptionAccess";
+import Spinner from "@/components/icons/Spinner";
 import Seo from "@/components/partials/Seo";
 import {
   absoluteUrl,
@@ -247,13 +248,16 @@ export default function Course({ initialCourse = null }) {
   const slug = Array.isArray(rawSlug) ? rawSlug[0] : rawSlug;
   const [course, setCourse] = useState(initialCourse);
   const [isCourseLoading, setIsCourseLoading] = useState(!initialCourse);
+  const [isClientCourseSynced, setIsClientCourseSynced] = useState(false);
   const [isWishlistSubmitting, setIsWishlistSubmitting] = useState(false);
   const [isShareSubmitting, setIsShareSubmitting] = useState(false);
   const [couponCodeInput, setCouponCodeInput] = useState("");
   const [purchaseMode, setPurchaseMode] = useState("subscribe");
   const [subPlans, setSubPlans] = useState([]);
   const [hasSubscription, setHasSubscription] = useState(false);
+  const [isPurchaseStateReady, setIsPurchaseStateReady] = useState(false);
   const {
+    accessLoading,
     canStartWithPlan,
     canStartWithTrial,
     startWithPlan,
@@ -484,19 +488,24 @@ export default function Course({ initialCourse = null }) {
 
   useEffect(() => {
     const api = process.env.NEXT_PUBLIC_API_URL;
-    BaseApi.get(`${api}/subscription/plans`)
-      .then((res) => setSubPlans(res?.data?.data || []))
-      .catch(() => setSubPlans([]));
-    BaseApi.get(`${api}/subscription/catalog-summary`)
-      .then((res) => setCatalogCount(Number(res?.data?.data?.courseCount || 0)))
-      .catch(() => {});
+    const requests = [
+      BaseApi.get(`${api}/subscription/plans`)
+        .then((res) => setSubPlans(res?.data?.data || []))
+        .catch(() => setSubPlans([])),
+      BaseApi.get(`${api}/subscription/catalog-summary`)
+        .then((res) => setCatalogCount(Number(res?.data?.data?.courseCount || 0)))
+        .catch(() => {}),
+    ];
     if (isLoggedIn()) {
-      BaseApi.get(`${api}/subscription/me`)
-        .then((res) =>
-          setHasSubscription(Boolean(res?.data?.data?.hasSubscription)),
-        )
-        .catch(() => {});
+      requests.push(
+        BaseApi.get(`${api}/subscription/me`)
+          .then((res) =>
+            setHasSubscription(Boolean(res?.data?.data?.hasSubscription)),
+          )
+          .catch(() => {}),
+      );
     }
+    Promise.all(requests).finally(() => setIsPurchaseStateReady(true));
   }, []);
 
   // Lowest effective monthly price across plans, with the regular monthly price as the strike-through.
@@ -619,6 +628,7 @@ export default function Course({ initialCourse = null }) {
         }
       } finally {
         setIsCourseLoading(false);
+        setIsClientCourseSynced(true);
       }
     };
     if (router.isReady && slug) {
@@ -700,6 +710,11 @@ export default function Course({ initialCourse = null }) {
   const canShowPurchaseActions = Boolean(
     profile?.permissions?.includes("view-own-learnings"),
   );
+  const isAccessLoading =
+    isCourseLoading ||
+    !isClientCourseSynced ||
+    !isPurchaseStateReady ||
+    accessLoading;
 
   return (
     <div className="pb-28 lg:pb-[50px]">
@@ -1017,7 +1032,19 @@ export default function Course({ initialCourse = null }) {
                   )}
                 </div>
 
-                {profile?.permissions?.includes("view-own-learnings") && (
+                {profile?.permissions?.includes("view-own-learnings") &&
+                  isAccessLoading && (
+                    <div
+                      className="mb-8 flex h-14 w-full items-center justify-center rounded-xl bg-slate-100"
+                      role="status"
+                      aria-label="Loading access"
+                    >
+                      <Spinner className="h-6 w-6 animate-spin text-primary opacity-60" />
+                    </div>
+                  )}
+
+                {profile?.permissions?.includes("view-own-learnings") &&
+                  !isAccessLoading && (
                   <div className="space-y-3 mb-8">
                     {course?.is_enrolled ? (
                       <Link
@@ -1306,7 +1333,11 @@ export default function Course({ initialCourse = null }) {
         <CourseReviews courseId={course?.id} />
       </div>
 
-      {canShowPurchaseActions ? (
+      {canShowPurchaseActions && isAccessLoading ? (
+        <div className="fixed inset-x-0 bottom-0 z-40 flex justify-center border-t border-slate-200 bg-white px-4 pb-4 pt-3 shadow-[0_-4px_12px_rgba(0,0,0,0.08)] lg:hidden">
+          <Spinner className="h-6 w-6 animate-spin text-primary opacity-60" />
+        </div>
+      ) : canShowPurchaseActions ? (
         <div className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white px-4 pb-4 pt-3 shadow-[0_-4px_12px_rgba(0,0,0,0.08)] lg:hidden">
           {course?.is_enrolled ? (
             <Link

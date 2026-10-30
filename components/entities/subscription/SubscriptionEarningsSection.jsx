@@ -23,7 +23,6 @@ export default function SubscriptionEarningsSection() {
 
   const cards = [
     ["Subscription pool earnings", money(totals.subscriptionPool)],
-    ["Trial conversion bonuses", money(totals.trialConversion)],
     ["Pending (cycle not published)", money(totals.pending)],
     ["Watch time this month", `${currentMonth.watchMinutes} min`],
   ];
@@ -32,8 +31,7 @@ export default function SubscriptionEarningsSection() {
     <section className="rounded-lg border border-[#e2e8f0] bg-white p-6 sm:p-8">
       <h2 className="text-xl font-bold text-on-surface">Subscription earnings</h2>
       <p className="mt-1 text-sm text-on-surface-variant">
-        Earned from subscribers&apos; watch time on your opted-in courses, plus
-        bonuses when a trial learner buys your course. Available amounts are
+        Earned from subscribers&apos;         watch time on your opted-in courses. Available amounts are
         included in your available balance and paid out with your regular payout
         requests.
       </p>

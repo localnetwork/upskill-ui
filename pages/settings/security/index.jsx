@@ -1,6 +1,42 @@
 "use client";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/router";
 import AUTHAPI from "@/lib/api/auth/request";
+import PayoutAccountTour from "@/components/entities/instructor/payout/PayoutAccountTour";
+
+const TOUR_STEPS = {
+  idle: [
+    {
+      target: "security-tour-enable",
+      title: "1. Enable two-factor authentication",
+      body: "Click Enable to start setting up your authenticator app.",
+    },
+  ],
+  setup: [
+    {
+      target: "security-tour-qr",
+      title: "2. Scan the QR code",
+      body: "Open Google Authenticator (or any authenticator app) and scan this QR code.",
+    },
+    {
+      target: "security-tour-code",
+      title: "3. Enter the 6-digit code",
+      body: "Type the code your authenticator app shows for this account.",
+    },
+    {
+      target: "security-tour-confirm",
+      title: "4. Confirm & enable",
+      body: "Click to turn on 2FA. You'll be asked for a code every time you log in.",
+    },
+  ],
+  "backup-codes": [
+    {
+      target: "security-tour-backup",
+      title: "5. Save your backup codes",
+      body: "Store these somewhere safe. They let you in if you lose your phone and are shown only once.",
+    },
+  ],
+};
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -88,7 +124,7 @@ function SetupStep({ onConfirmed, onCancel }) {
 
       {qrCode && !loading && (
         <div className="flex flex-col sm:flex-row gap-6 items-start">
-          <div className="shrink-0 p-3 border border-zinc-200 rounded-xl bg-white shadow-sm">
+          <div className="shrink-0 p-3 border border-zinc-200 rounded-xl bg-white shadow-sm" id="security-tour-qr">
             <img
               src={`data:image/svg+xml;base64,${qrCode}`}
               alt="2FA QR Code"
@@ -136,7 +172,7 @@ function SetupStep({ onConfirmed, onCancel }) {
       )}
 
       {qrCode && (
-        <div className="space-y-3">
+        <div className="space-y-3 w-fit" id="security-tour-code">
           <label className="block text-sm font-medium text-zinc-700">
             Verification code
           </label>
@@ -155,6 +191,7 @@ function SetupStep({ onConfirmed, onCancel }) {
 
       <div className="flex gap-3 pt-2">
         <button
+          id="security-tour-confirm"
           onClick={handleConfirm}
           disabled={confirming || !qrCode || code.length !== 6}
           className="px-5 py-2.5 bg-zinc-900 text-white text-sm font-medium rounded-lg hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
@@ -198,7 +235,7 @@ function BackupCodesStep({ codes, onDone }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+      <div id="security-tour-backup" className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         {codes.map((code, i) => (
           <div
             key={i}
@@ -371,6 +408,26 @@ export default function SecuritySettings() {
   const [loadingStatus, setLoadingStatus] = useState(true);
   const [view, setView] = useState("idle"); // idle | setup | backup-codes | disabling | regenerating
   const [backupCodes, setBackupCodes] = useState([]);
+  const router = useRouter();
+  const [tourActive, setTourActive] = useState(false);
+  const [tourDismissedView, setTourDismissedView] = useState(null);
+
+  useEffect(() => {
+    if (router.isReady && router.query.tour === "2fa") setTourActive(true);
+  }, [router.isReady, router.query.tour]);
+
+  const endTour = () => {
+    setTourActive(false);
+    if (router.query.tour) router.replace("/settings/security", undefined, { shallow: true });
+  };
+  const tourSteps = TOUR_STEPS[view];
+  const showTour =
+    tourActive &&
+    !loadingStatus &&
+    status &&
+    !(status.totp_enabled && view === "idle") &&
+    tourSteps &&
+    tourDismissedView !== view;
 
   useEffect(() => {
     fetchStatus();
@@ -399,6 +456,7 @@ export default function SecuritySettings() {
   const handleDone = () => {
     setView("idle");
     fetchStatus();
+    endTour();
   };
 
   const handleDisabled = () => {
@@ -408,6 +466,17 @@ export default function SecuritySettings() {
 
   return (
     <div className="container py-12 max-w-2xl">
+      {showTour ? (
+        <PayoutAccountTour
+          key={view}
+          steps={tourSteps}
+          onClose={() => {
+            if (view === "backup-codes") endTour();
+            else setTourDismissedView(view);
+          }}
+          onSkip={endTour}
+        />
+      ) : null}
       <h1 className="text-3xl font-bold mb-1">Security Settings</h1>
       <p className="text-zinc-500 mb-10">
         Manage your account security, including two-factor authentication.
@@ -480,6 +549,7 @@ export default function SecuritySettings() {
                 </div>
               ) : (
                 <button
+                  id="security-tour-enable"
                   onClick={() => setView("setup")}
                   className="px-4 py-2 text-sm font-medium text-white bg-zinc-900 rounded-lg hover:bg-zinc-700 transition-colors"
                 >

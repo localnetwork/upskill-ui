@@ -6,6 +6,31 @@ import LiveCurriculumAccordion, {
   Typewriter,
 } from "@/components/entities/course/form/LiveCurriculumAccordion";
 import { useCallback, useEffect, useState } from "react";
+import PayoutAccountTour from "@/components/entities/instructor/payout/PayoutAccountTour";
+import useHasNoCourses from "@/lib/hooks/useHasNoCourses";
+
+const AI_DRAFT_TOUR_STEPS = [
+  {
+    target: "tour-ai-brief",
+    title: "1. Describe your course",
+    body: "Write the key topics, target audience and learning outcomes. The more detail, the better the draft.",
+  },
+  {
+    target: "tour-ai-language",
+    title: "2. Pick a language",
+    body: "Choose the language the course content should be written in.",
+  },
+  {
+    target: "tour-ai-level",
+    title: "3. Choose a level (optional)",
+    body: "Set the difficulty level, or leave it as Not specified.",
+  },
+  {
+    target: "tour-ai-generate",
+    title: "4. Generate the draft",
+    body: "AI creates the title, description, sections and lessons in about 10-20 seconds. You can edit everything afterwards.",
+  },
+];
 import toast from "react-hot-toast";
 import Spinner from "@/components/icons/Spinner";
 import useCourseLanguages from "@/lib/hooks/useCourseLanguages";
@@ -31,6 +56,7 @@ export default function AIDraftCoursePage() {
     }
   }, [languageOptions]);
   const [prompt, setPrompt] = useState("");
+  const [showTour, setShowTour] = useHasNoCourses();
   const [language, setLanguage] = useState("English");
   const [instructionalLevel, setInstructionalLevel] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
@@ -189,6 +215,12 @@ export default function AIDraftCoursePage() {
 
   return (
     <InstructorLayout>
+      {showTour ? (
+        <PayoutAccountTour
+          steps={AI_DRAFT_TOUR_STEPS}
+          onClose={() => setShowTour(false)}
+        />
+      ) : null}
       <div className="max-w-4xl">
         <h1 className="text-[40px] font-semibold mb-3">Draft Course with AI</h1>
         <p className="text-[17px] text-slate-600 mb-6">
@@ -219,7 +251,7 @@ export default function AIDraftCoursePage() {
                 </span>
               </div>
 
-              <div className="relative group">
+              <div id="tour-ai-brief" className="relative group">
                 <textarea
                   id="course_brief"
                   value={prompt}
@@ -253,7 +285,7 @@ export default function AIDraftCoursePage() {
                   Preferred language
                 </label>
 
-                <div className="relative">
+                <div id="tour-ai-language" className="relative">
                   <select
                     id="language"
                     value={language}
@@ -285,7 +317,7 @@ export default function AIDraftCoursePage() {
                   Preferred level
                 </label>
 
-                <div className="relative">
+                <div id="tour-ai-level" className="relative">
                   <select
                     id="level"
                     value={instructionalLevel}
@@ -331,6 +363,7 @@ export default function AIDraftCoursePage() {
                 </button>
 
                 <button
+                  id="tour-ai-generate"
                   type="submit"
                   disabled={!canSubmit}
                   className={`flex-1 md:flex-none px-10 py-4 text-white rounded-full font-extrabold text-sm transition-all flex items-center justify-center gap-2 ${

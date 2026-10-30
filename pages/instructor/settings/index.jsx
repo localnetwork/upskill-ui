@@ -14,7 +14,7 @@ export default function Page() {
       href: "/instructor/settings/payout",
       icon: CircleDollarSign,
       description:
-        "Connect PayPal, review payout history, and request cashout.",
+        "Connect your GCash, Maya, or bank account, review payout history, and request cashout.",
     },
   ];
 

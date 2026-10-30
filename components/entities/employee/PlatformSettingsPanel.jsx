@@ -20,8 +20,6 @@ export default function PlatformSettingsPanel({ canManage }) {
     trialDays: 7,
     trialMaxCoursesPerLearner: 3,
     trialPoolMaxPercent: 20,
-    trialConversionBonus: 50,
-    trialConversionWindowDays: 30,
     subscriptionPoolPercent: 45,
   });
 
@@ -38,8 +36,6 @@ export default function PlatformSettingsPanel({ canManage }) {
         trialDays: Number(data.trialDays ?? 7),
         trialMaxCoursesPerLearner: Number(data.trialMaxCoursesPerLearner ?? 3),
         trialPoolMaxPercent: Number(data.trialPoolMaxPercent ?? 20),
-        trialConversionBonus: Number(data.trialConversionBonus ?? 50),
-        trialConversionWindowDays: Number(data.trialConversionWindowDays ?? 30),
         subscriptionPoolPercent: Number(data.subscriptionPoolPercent ?? 45),
       });
     } catch (error) {
@@ -65,8 +61,6 @@ export default function PlatformSettingsPanel({ canManage }) {
         trialDays: Number(settings.trialDays || 7),
         trialMaxCoursesPerLearner: Number(settings.trialMaxCoursesPerLearner || 3),
         trialPoolMaxPercent: Number(settings.trialPoolMaxPercent || 0),
-        trialConversionBonus: Number(settings.trialConversionBonus || 0),
-        trialConversionWindowDays: Number(settings.trialConversionWindowDays || 30),
         subscriptionPoolPercent: Number(settings.subscriptionPoolPercent || 0),
       });
       toast.success("Platform settings updated.");
@@ -189,8 +183,6 @@ export default function PlatformSettingsPanel({ canManage }) {
           {numberField("trialDays", "Trial length (days)", { min: 1, max: 60 })}
           {numberField("trialMaxCoursesPerLearner", "Trial courses per learner", { min: 1, max: 50 })}
           {numberField("trialPoolMaxPercent", "Trial Pool cap (% of catalog)", { max: 100, step: 0.01 })}
-          {numberField("trialConversionBonus", "Conversion bonus (PHP)", { max: 100000, step: 0.01 })}
-          {numberField("trialConversionWindowDays", "Conversion window (days)", { min: 1, max: 365 })}
           {numberField("subscriptionPoolPercent", "Educator pool (% of net revenue)", { max: 100, step: 0.01 })}
         </div>
       </div>

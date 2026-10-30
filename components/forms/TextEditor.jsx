@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 import { Editor } from "@tinymce/tinymce-react";
 
 export default function TextEditor({
@@ -9,15 +9,19 @@ export default function TextEditor({
   height = 400,
 }) {
   const editorRef = useRef(null);
+  const initialRef = useRef(value ?? initialValue ?? "");
 
-  return (
-    <Editor
-      apiKey={process.env.NEXT_PUBLIC_TINYMCE_API_KEY}
-      onInit={(_, editor) => (editorRef.current = editor)}
-      initialValue={initialValue || ""}
-      value={value}
-      name={name}
-      init={{
+  // Run as uncontrolled to keep the caret stable; only push external changes
+  // (e.g. form reset / async load) when the editor isn't being typed in.
+  useEffect(() => {
+    const editor = editorRef.current;
+    const next = value !== undefined ? value : initialValue;
+    if (!editor || next === undefined || editor.hasFocus()) return;
+    if (editor.getContent() !== (next || "")) editor.setContent(next || "");
+  }, [value, initialValue]);
+
+  const init = useMemo(
+    () => ({
         height,
         menubar: false,
         plugins: [
@@ -43,8 +47,19 @@ export default function TextEditor({
           "undo redo | formatselect | " +
           "bold italic | alignleft aligncenter " +
           "removeformat",
+    }),
+    [height]
+  );
+
+  return (
+    <Editor
+      apiKey={process.env.NEXT_PUBLIC_TINYMCE_API_KEY}
+      onInit={(_, editor) => {
+        editorRef.current = editor;
       }}
-      // ✅ Wrap the content into an object that matches handleChange
+      initialValue={initialRef.current}
+      name={name}
+      init={init}
       onEditorChange={(content) =>
         onChange({
           target: {

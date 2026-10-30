@@ -1,7 +1,9 @@
 import { useEffect } from "react";
 import CourseSidebar from "../entities/course/CourseSidebar";
 import CourseStripBar from "../entities/course/CourseStripbar";
-import CourseApprovalReadiness from "../entities/course/CourseApprovalReadiness";
+import CourseApprovalReadiness, {
+  usePayoutConnected,
+} from "../entities/course/CourseApprovalReadiness";
 import courseStore from "@/lib/store/courseStore";
 
 export default function CourseManagementLayout({
@@ -11,6 +13,7 @@ export default function CourseManagementLayout({
   activeTab,
 }) {
   const courseManagement = courseStore((state) => state.courseManagement);
+  const payoutConnected = usePayoutConnected();
 
   useEffect(() => {
     courseStore.setState({ courseManagement: course });
@@ -38,6 +41,7 @@ export default function CourseManagementLayout({
     resources_count:
       activeCourse?.resources_count || course?.resources_count || {},
     goals: activeCourse?.goals || course?.goals || {},
+    payoutConnected,
   };
 
   const showReadiness = [

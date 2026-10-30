@@ -1,4 +1,28 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import PayoutAccountTour from "@/components/entities/instructor/payout/PayoutAccountTour";
+
+const CREATE_TOUR_STEPS = [
+  {
+    target: "tour-course-title",
+    title: "1. Name your course",
+    body: "Type a working title. It's fine if it isn't perfect, you can change it later.",
+  },
+  {
+    target: "tour-course-next",
+    title: "2. Continue",
+    body: "Once the title has at least 3 characters, click Next to pick a category.",
+  },
+  {
+    target: "tour-course-category",
+    title: "3. Choose a category",
+    body: "Pick the main category that fits your course, then the most relevant child category.",
+  },
+  {
+    target: "tour-course-create",
+    title: "4. Create the course",
+    body: "Click Create Course. You'll land on the curriculum page to start building lessons.",
+  },
+];
 import InstructorLayout from "@/components/partials/InstructorLayout";
 import BaseApi from "@/lib/api/_base.api";
 import toast from "react-hot-toast";
@@ -17,6 +41,26 @@ export default function Page() {
   const [errors, setErrors] = useState(null);
 
   const [isLoading, setIsLoading] = useState(false);
+  const [showTour, setShowTour] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    BaseApi.get(`${process.env.NEXT_PUBLIC_API_URL}/courses/authored?title=&page=1`)
+      .then((res) => {
+        const rows = res?.data?.data;
+        if (!cancelled && Array.isArray(rows) && rows.length === 0) {
+          setShowTour(true);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const handleTourStep = useCallback((index) => {
+    setStep(index >= 2 ? 2 : 1);
+  }, []);
 
   const maxLengthIndicator = (currentLength, maxLength) => {
     return `${currentLength}/${maxLength}`;
@@ -75,6 +119,13 @@ export default function Page() {
 
   return (
     <InstructorLayout>
+      {showTour ? (
+        <PayoutAccountTour
+          steps={CREATE_TOUR_STEPS}
+          onStepChange={handleTourStep}
+          onClose={() => setShowTour(false)}
+        />
+      ) : null}
       <div className="text-center h-full">
         <h1 className="text-[40px] mb-[10px] text-center font-semibold">
           {step === 1 ? "How about a working title?" : "Choose your category"}
@@ -94,6 +145,7 @@ export default function Page() {
             {step === 1 ? (
               <div className="inline-block relative min-w-[50%]">
                 <input
+                  id="tour-course-title"
                   type="text"
                   name="title"
                   className={`${
@@ -117,7 +169,10 @@ export default function Page() {
                 </span>
               </div>
             ) : (
-              <div className="mx-auto w-full max-w-4xl text-left">
+              <div
+                id="tour-course-category"
+                className="mx-auto w-full max-w-4xl text-left"
+              >
                 <CategoryPicker
                   label="Course Category"
                   name="category_ids"
@@ -148,6 +203,7 @@ export default function Page() {
 
               {step === 1 ? (
                 <button
+                  id="tour-course-next"
                   type="button"
                   onClick={handleNextStep}
                   className={`${
@@ -161,6 +217,7 @@ export default function Page() {
                 </button>
               ) : (
                 <button
+                  id="tour-course-create"
                   className={`${
                     isLoading || !isCategoryStepValid
                       ? "!opacity-50 hover:bg-[#0056D2] cursor-not-allowed"

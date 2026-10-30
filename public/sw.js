@@ -69,10 +69,15 @@ function withTimeout(promise, ms) {
   });
 }
 
+// Cached copies are only a fallback while the device is offline; online requests always hit the network
+// (responses are still written to the cache so they are available later).
+const isOnline = () => self.navigator.onLine !== false;
+
 async function networkFirst(request, cacheName, timeoutMs = NETWORK_TIMEOUT_MS) {
   const cache = await caches.open(cacheName);
   try {
-    const response = await withTimeout(fetch(request), timeoutMs);
+    const pending = fetch(request);
+    const response = await (isOnline() ? pending : withTimeout(pending, timeoutMs));
     if (
       response &&
       response.ok &&
@@ -83,6 +88,7 @@ async function networkFirst(request, cacheName, timeoutMs = NETWORK_TIMEOUT_MS) 
     }
     return response;
   } catch (error) {
+    if (isOnline()) throw error;
     const cached = await cache.match(request);
     if (cached) return cached;
     throw error;
@@ -114,12 +120,16 @@ async function matchIgnoringQuery(request, cache) {
 async function networkFirstPage(request) {
   const cache = await caches.open(PAGES_CACHE);
   try {
-    const response = await withTimeout(fetch(request), NETWORK_TIMEOUT_MS);
+    const pending = fetch(request);
+    const response = await (isOnline()
+      ? pending
+      : withTimeout(pending, NETWORK_TIMEOUT_MS));
     if (response && response.ok && !response.redirected) {
       cache.put(request, response.clone());
     }
     return response;
   } catch (error) {
+    if (isOnline()) throw error;
     // Same page cached under another query string (e.g. ?lecture=) still works offline.
     const cached = await matchIgnoringQuery(request, cache);
     if (cached) return cached;

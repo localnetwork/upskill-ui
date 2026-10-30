@@ -2,6 +2,7 @@ import Link from "next/link";
 import { useMemo } from "react";
 import { AlertTriangle } from "lucide-react";
 import modalState from "@/lib/store/modalState";
+import PAYOUTAPI from "@/lib/api/payouts/request";
 
 function stripHtml(value) {
   return String(value || "")
@@ -199,7 +200,19 @@ export function getApprovalChecks(course, baseUuid) {
       done: Boolean(course?.price_tier?.id),
       href: `/instructor/courses/${baseUuid}/pricing`,
     },
+    {
+      key: "payout-account",
+      label: "Connect a payout account",
+      done: course?.payoutConnected === true,
+      href: "/instructor/settings/payout?tour=payout-account",
+    },
   ];
+}
+
+export function usePayoutConnected() {
+  const { data } = PAYOUTAPI.getSummary();
+  if (!data) return undefined;
+  return Boolean(data?.data?.payoutAccount?.accountNumber);
 }
 
 export function getApprovalReadinessSummary(course) {

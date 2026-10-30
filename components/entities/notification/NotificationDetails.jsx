@@ -342,9 +342,10 @@ export default function NotificationDetails({
         </div>
       </div>
 
-      <div className="mt-5 text-[15px] leading-relaxed text-[#334155] whitespace-pre-wrap">
-        {message}
-      </div>
+      <div
+        className="mt-5 text-[15px] leading-relaxed text-[#334155] whitespace-pre-wrap"
+        dangerouslySetInnerHTML={{ __html: message }}
+      />
 
       {meta.kind === "SECURITY_NEW_DEVICE_LOGIN" ? (
         <LoginDetails notification={notification} />
@@ -359,7 +360,8 @@ export default function NotificationDetails({
       {meta.kind === "ORDER" ? (
         <OrderDetails notification={notification} />
       ) : null}
-      {notification.metadata?.link && meta.kind === "INSTRUCTOR_ANNOUNCEMENT" ? (
+      {notification.metadata?.link &&
+      meta.kind === "INSTRUCTOR_ANNOUNCEMENT" ? (
         <div className="mt-6">
           <Link
             href={notification.metadata.link}

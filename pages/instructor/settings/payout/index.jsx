@@ -3,24 +3,13 @@
 import InstructorLayout from "@/components/partials/InstructorLayout";
 import SubscriptionEarningsSection from "@/components/entities/subscription/SubscriptionEarningsSection";
 import PAYOUTAPI from "@/lib/api/payouts/request";
+import PayoutDashboard from "@/components/entities/instructor/payout/PayoutDashboard";
+import PayoutAccountTour from "@/components/entities/instructor/payout/PayoutAccountTour";
+import { useRouter } from "next/router";
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
-import { useRouter } from "next/router";
 import Link from "next/link";
 import { X } from "lucide-react";
-import {
-  Area,
-  AreaChart,
-  Bar,
-  BarChart,
-  Cell,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
 
 const DISPLAY_CURRENCY = "PHP";
 
@@ -85,7 +74,7 @@ function getFriendlyStatus(row) {
   const rawStatus = String(row?.status || "").toUpperCase();
   const reviewNote = String(row?.reviewNote || "");
   const paypalBatchStatusMatch = reviewNote.match(
-    /PayPal batch status:\s*([A-Z_]+)/i,
+    /(?:Xendit payout|PayPal batch) status:\s*([A-Z_]+)/i,
   );
   const paypalBatchStatus = String(paypalBatchStatusMatch?.[1] || "").toUpperCase();
 
@@ -98,7 +87,7 @@ function getFriendlyStatus(row) {
   }
 
   if (rawStatus === "EXECUTED") {
-    if (paypalBatchStatus && paypalBatchStatus !== "SUCCESS") {
+    if (paypalBatchStatus && paypalBatchStatus !== "SUCCEEDED") {
       return { label: "Processing", className: "bg-indigo-100 text-indigo-700" };
     }
     return { label: "Paid", className: "bg-emerald-100 text-emerald-700" };
@@ -114,14 +103,6 @@ function getFriendlyStatus(row) {
 
   return { label: rawStatus || "Pending", className: "bg-slate-100 text-slate-700" };
 }
-
-const STATUS_COLORS = {
-  EXECUTED: "#16a34a",
-  APPROVED: "#2563eb",
-  REQUESTED: "#f59e0b",
-  FAILED: "#ea580c",
-  REJECTED: "#e11d48",
-};
 
 const paidEvents = new Set([
   "PAYMENT.PAYOUTS-ITEM.SUCCEEDED",
@@ -142,6 +123,23 @@ const failedEvents = new Set([
 ]);
 
 const DEFAULT_WITHDRAWAL_FEE_RATE = 0.02;
+
+const PAYOUT_CHANNELS = [
+  { code: "PH_GCASH", label: "GCash", type: "EWALLET" },
+  { code: "PH_PAYMAYA", label: "Maya", type: "EWALLET" },
+  { code: "PH_BDO", label: "BDO Unibank", type: "BANK" },
+  { code: "PH_BPI", label: "BPI", type: "BANK" },
+  { code: "PH_UNIONBANK", label: "UnionBank", type: "BANK" },
+  { code: "PH_METROBANK", label: "Metrobank", type: "BANK" },
+];
+
+const isEwalletChannel = (code) =>
+  PAYOUT_CHANNELS.find((channel) => channel.code === code)?.type === "EWALLET";
+
+const maskAccountNumber = (value) => {
+  const text = String(value || "");
+  return text.length > 4 ? `${"•".repeat(text.length - 4)}${text.slice(-4)}` : text;
+};
 
 function formatEventLabel(eventType) {
   return String(eventType || "")
@@ -187,7 +185,6 @@ function normalizeTimelineEvents(row) {
     row?.timeline,
     row?.events,
     row?.webhookEvents,
-    row?.paypalEvents,
     row?.calculationSnapshot?.paypalEvents,
   ];
   const rawEvents = rawCollections
@@ -257,7 +254,7 @@ function normalizeTimelineEvents(row) {
   const requestedAt = row?.requestedAt || row?.createdAt || null;
   const reviewedAt = row?.reviewedAt || null;
   const executedAt = row?.executedAt || null;
-  const batchStatusMatch = reviewNote.match(/PayPal batch status:\s*([A-Z_]+)/i);
+  const batchStatusMatch = reviewNote.match(/Xendit payout status:\s*([A-Z_]+)/i);
   const batchStatus = String(batchStatusMatch?.[1] || "").toUpperCase();
 
   if (requestedAt) {
@@ -284,10 +281,10 @@ function normalizeTimelineEvents(row) {
   }
 
   if (status === "EXECUTED") {
-    if (batchStatus && batchStatus !== "SUCCESS") {
+    if (batchStatus && batchStatus !== "SUCCEEDED") {
       pushFallback(
         "PAYMENT.PAYOUTSBATCH.PROCESSING",
-        `PayPal batch processing (${batchStatus})`,
+        `Xendit payout processing (${batchStatus})`,
         "Processing",
         executedAt,
         "bg-indigo-500",
@@ -346,13 +343,30 @@ function buildTransactionsForPayout(row, currencyCode) {
     };
   });
 
-  const totalAmount = transactions.reduce((sum, item) => sum + toNumber(item.amount, 0), 0);
-  return { transactions, totalAmount: Number(totalAmount.toFixed(2)) };
+  const salesTotal = transactions.reduce((sum, item) => sum + toNumber(item.amount, 0), 0);
+  const snapshot = row?.calculationSnapshot || {};
+  const subscriptionPool = toNumber(snapshot?.breakdown?.subscriptionPool, 0);
+  const totalAmount = toNumber(snapshot?.grossPayoutAmount, salesTotal + subscriptionPool);
+  return {
+    transactions,
+    totalAmount: Number(totalAmount.toFixed(2)),
+    salesTotal: Number(salesTotal.toFixed(2)),
+    subscriptionPool,
+  };
 }
 
 export default function PayoutSettingsPage() {
-  const router = useRouter();
-  const [isConnectingPaypal, setIsConnectingPaypal] = useState(false);
+  const [isSavingAccount, setIsSavingAccount] = useState(false);
+  const [accountModal, setAccountModal] = useState(null);
+  const [passwordInput, setPasswordInput] = useState("");
+  const [verifyMethod, setVerifyMethod] = useState("password");
+  const [verifiedCredentials, setVerifiedCredentials] = useState({});
+  const [isVerifyingPassword, setIsVerifyingPassword] = useState(false);
+  const [accountForm, setAccountForm] = useState({
+    channelCode: "PH_GCASH",
+    accountHolderName: "",
+    accountNumber: "",
+  });
   const [isRequestingPayout, setIsRequestingPayout] = useState(false);
   const [activePayout, setActivePayout] = useState(null);
   const [payoutActionId, setPayoutActionId] = useState("");
@@ -373,93 +387,30 @@ export default function PayoutSettingsPage() {
     });
 
   const summary = summaryResponse?.data || {};
+  const router = useRouter();
+  const [showTour, setShowTour] = useState(false);
+  const hasPayoutAccount = Boolean(summary?.payoutAccount?.accountNumber);
+
+  useEffect(() => {
+    if (router.query.tour === "payout-account" && summaryResponse && !hasPayoutAccount) {
+      setShowTour(true);
+    }
+  }, [router.query.tour, summaryResponse, hasPayoutAccount]);
+
+  const closeTour = () => {
+    setShowTour(false);
+    if (router.query.tour) {
+      router.replace("/instructor/settings/payout", undefined, { shallow: true });
+    }
+  };
   const payoutRows = payoutsResponse?.data || [];
   const currencyCode = DISPLAY_CURRENCY;
   const payoutCycle = String(summary?.payoutCycle || "ANYTIME").toUpperCase();
   const payoutCycleLabel = payoutCycle.toLowerCase();
-  const payoutEstimate = summary?.payoutEstimate || null;
   const withdrawalFeeRate = toNumber(
     summary?.withdrawalFeeRate,
     DEFAULT_WITHDRAWAL_FEE_RATE,
   );
-
-  useEffect(() => {
-    if (!router.isReady) return;
-    const paypal = String(router.query?.paypal || "").toLowerCase();
-    if (paypal === "connected") {
-      toast.success("PayPal account connected.");
-      mutateSummary();
-      router.replace("/instructor/settings/payout", undefined, {
-        shallow: true,
-      });
-    }
-    if (paypal === "error") {
-      toast.error("PayPal connection failed.");
-      router.replace("/instructor/settings/payout", undefined, {
-        shallow: true,
-      });
-    }
-  }, [mutateSummary, router]);
-
-  const cards = useMemo(
-    () => [
-      {
-        label: "Available for payout",
-        value: formatCurrency(summary?.availableBalance || 0, currencyCode),
-      },
-      {
-        label: payoutCycle === "MONTHLY" ? "Income this month" : "Recent income",
-        value: formatCurrency(summary?.thisMonthEarnings || 0, currencyCode),
-      },
-      {
-        label: "Minimum payout",
-        value: formatCurrency(summary?.minimumPayoutAmount || 500, "PHP"),
-      },
-      {
-        label: "Next payout cycle",
-        value: formatDate(summary?.nextPayoutDate),
-      },
-    ],
-    [
-      summary?.availableBalance,
-      currencyCode,
-      summary?.minimumPayoutAmount,
-      summary?.nextPayoutDate,
-      summary?.thisMonthEarnings,
-    ],
-  );
-
-  const payoutStatusData = useMemo(() => {
-    const statuses = ["REQUESTED", "APPROVED", "EXECUTED", "FAILED", "REJECTED"];
-    const counts = statuses.reduce((accumulator, status) => {
-      accumulator[status] = 0;
-      return accumulator;
-    }, {});
-
-    payoutRows.forEach((row) => {
-      const status = String(row?.status || "").toUpperCase();
-      if (counts[status] !== undefined) {
-        counts[status] += 1;
-      }
-    });
-
-    const hasActualData = Object.values(counts).some((value) => value > 0);
-    if (!hasActualData) {
-      return [
-        { name: "Requested", value: 2, color: STATUS_COLORS.REQUESTED },
-        { name: "Approved", value: 1, color: STATUS_COLORS.APPROVED },
-        { name: "Paid", value: 4, color: STATUS_COLORS.EXECUTED },
-        { name: "Failed", value: 1, color: STATUS_COLORS.FAILED },
-      ];
-    }
-
-    return [
-      { name: "Requested", value: counts.REQUESTED, color: STATUS_COLORS.REQUESTED },
-      { name: "Approved", value: counts.APPROVED, color: STATUS_COLORS.APPROVED },
-      { name: "Paid", value: counts.EXECUTED, color: STATUS_COLORS.EXECUTED },
-      { name: "Failed", value: counts.FAILED + counts.REJECTED, color: STATUS_COLORS.FAILED },
-    ].filter((item) => item.value > 0);
-  }, [payoutRows]);
 
   const earningsEvents = useMemo(() => {
     const events = [];
@@ -608,14 +559,6 @@ export default function PayoutSettingsPage() {
     summary?.thisMonthEarnings,
   ]);
 
-  const previousPayouts = useMemo(
-    () =>
-      payoutRows
-        .filter((row) => ["EXECUTED", "APPROVED"].includes(String(row?.status || "").toUpperCase()))
-        .slice(0, 4),
-    [payoutRows],
-  );
-
   const estimatedNextPayoutAmount = useMemo(() => {
     const available = toNumber(summary?.availableBalance, 0);
     const monthEarnings = toNumber(summary?.thisMonthEarnings, 0);
@@ -653,39 +596,71 @@ export default function PayoutSettingsPage() {
     [activePayout],
   );
 
-  const handleConnectPaypal = () => {
-    const clientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID;
-    if (!clientId) {
-      toast.error("Missing PayPal client ID.");
-      return;
+  const closeAccountModal = () => {
+    setAccountModal(null);
+    setPasswordInput("");
+    setVerifiedCredentials({});
+  };
+
+  const startAccountUpdate = async () => {
+    setIsVerifyingPassword(true);
+    try {
+      const res = await PAYOUTAPI.getVerificationMethod();
+      const method = res?.data?.data?.method || "password";
+      setVerifyMethod(method);
+      setAccountModal(method === "none" ? "form" : "password");
+    } catch (error) {
+      toast.error(error?.data?.message || "Unable to start verification.");
+    } finally {
+      setIsVerifyingPassword(false);
     }
+  };
 
-    setIsConnectingPaypal(true);
-    const appBaseUrl =
-      process.env.NEXT_PUBLIC_BASE_URL ||
-      (typeof window !== "undefined"
-        ? window.location.origin
-        : "http://127.0.0.1:3000");
-    const redirectUri = `${appBaseUrl.replace(/\/$/, "")}/api/paypal/callback`;
-    const state = btoa(
-      JSON.stringify({
-        returnTo: "/instructor/settings/payout",
-      }),
-    )
-      .replace(/\+/g, "-")
-      .replace(/\//g, "_")
-      .replace(/=+$/g, "");
+  const handleVerifyPassword = async (event) => {
+    event.preventDefault();
+    if (isVerifyingPassword || !passwordInput) return;
+    setIsVerifyingPassword(true);
+    const credentials =
+      verifyMethod === "authenticator"
+        ? { code: passwordInput.trim() }
+        : { password: passwordInput };
+    try {
+      await PAYOUTAPI.verifyAccountPassword(credentials);
+      setVerifiedCredentials(credentials);
+      setPasswordInput("");
+      setAccountModal("form");
+    } catch (error) {
+      toast.error(
+        error?.data?.message ||
+          (verifyMethod === "authenticator"
+            ? "Invalid authenticator code."
+            : "Incorrect password."),
+      );
+    } finally {
+      setIsVerifyingPassword(false);
+    }
+  };
 
-    const params = new URLSearchParams({
-      client_id: clientId,
-      response_type: "code",
-      scope:
-        "openid profile email https://uri.paypal.com/services/paypalattributes",
-      redirect_uri: redirectUri,
-      state,
-    });
-
-    window.location.href = `https://www.sandbox.paypal.com/signin/authorize?flowEntry=static&${params.toString()}`;
+  const handleSaveAccount = async (event) => {
+    event.preventDefault();
+    if (isSavingAccount) return;
+    setIsSavingAccount(true);
+    try {
+      await PAYOUTAPI.connectPayoutAccount({
+        channelCode: accountForm.channelCode,
+        accountHolderName: accountForm.accountHolderName.trim(),
+        accountNumber: accountForm.accountNumber.replace(/\s+/g, ""),
+        ...(hasPayoutAccount ? verifiedCredentials : {}),
+      });
+      toast.success("Payout account saved.");
+      setAccountForm((prev) => ({ ...prev, accountNumber: "" }));
+      closeAccountModal();
+      await mutateSummary();
+    } catch (error) {
+      toast.error(error?.data?.message || "Failed to save payout account.");
+    } finally {
+      setIsSavingAccount(false);
+    }
   };
 
   const submitPayoutRequest = async () => {
@@ -719,7 +694,7 @@ export default function PayoutSettingsPage() {
     try {
       if (action === "retry") {
         await PAYOUTAPI.retryPayout(payoutId);
-        toast.success("Payout retried and submitted to PayPal.");
+        toast.success("Payout retried and submitted to Xendit.");
       } else {
         await PAYOUTAPI.returnPayout(payoutId);
         toast.success("Amount returned to your available balance.");
@@ -769,184 +744,241 @@ export default function PayoutSettingsPage() {
 
         <SubscriptionEarningsSection />
 
-        <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {cards.map((card) => (
-            <div
-              key={card.label}
-              className="rounded-lg border border-[#e2e8f0] bg-white p-5"
-            >
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                {card.label}
-              </p>
-              <p className="mt-3 text-2xl font-bold text-[#0056d2]">
-                {card.value}
-              </p>
-            </div>
-          ))}
-        </section>
-
-        <section className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          <div className="rounded-lg border border-[#e2e8f0] bg-white p-6 lg:col-span-2">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-on-surface">
-                Earnings
-              </h2>
-              <div className="flex flex-wrap items-center gap-2">
-                <select
-                  value={earningsRange}
-                  onChange={(event) => setEarningsRange(event.target.value)}
-                  className="rounded-md border border-slate-300 px-2 py-1 text-xs outline-none"
-                >
-                  <option value="6m">Last 6 months</option>
-                  <option value="year">Yearly</option>
-                  <option value="5y">5 years</option>
-                  <option value="custom">Custom range</option>
-                </select>
-                {earningsRange === "custom" ? (
-                  <>
-                    <input
-                      type="date"
-                      value={customStartDate}
-                      onChange={(event) => setCustomStartDate(event.target.value)}
-                      className="rounded-md border border-slate-300 px-2 py-1 text-xs outline-none"
-                    />
-                    <input
-                      type="date"
-                      value={customEndDate}
-                      onChange={(event) => setCustomEndDate(event.target.value)}
-                      className="rounded-md border border-slate-300 px-2 py-1 text-xs outline-none"
-                    />
-                  </>
-                ) : null}
-              </div>
-            </div>
-            <div className="mt-4 h-[260px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={earningsTrendData}>
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <Tooltip formatter={(value) => formatCurrency(value, currencyCode)} />
-                  <Area
-                    type="monotone"
-                    dataKey="earnings"
-                    stroke="#2563eb"
-                    fill="#bfdbfe"
-                    strokeWidth={2}
+        <PayoutDashboard
+          summary={summary}
+          payoutRows={payoutRows}
+          earningsTrendData={earningsTrendData}
+          estimatedNextPayoutAmount={estimatedNextPayoutAmount}
+          getFriendlyStatus={getFriendlyStatus}
+          onViewPayout={setActivePayout}
+          rangeControls={
+            <div className="flex flex-wrap items-center gap-2">
+              <select
+                value={earningsRange}
+                onChange={(event) => setEarningsRange(event.target.value)}
+                className="rounded-md border border-slate-300 px-2 py-1 text-xs outline-none"
+              >
+                <option value="6m">Last 6 months</option>
+                <option value="year">Yearly</option>
+                <option value="5y">5 years</option>
+                <option value="custom">Custom range</option>
+              </select>
+              {earningsRange === "custom" ? (
+                <>
+                  <input
+                    type="date"
+                    value={customStartDate}
+                    onChange={(event) => setCustomStartDate(event.target.value)}
+                    className="rounded-md border border-slate-300 px-2 py-1 text-xs outline-none"
                   />
-                </AreaChart>
-              </ResponsiveContainer>
+                  <input
+                    type="date"
+                    value={customEndDate}
+                    onChange={(event) => setCustomEndDate(event.target.value)}
+                    className="rounded-md border border-slate-300 px-2 py-1 text-xs outline-none"
+                  />
+                </>
+              ) : null}
             </div>
-          </div>
+          }
+        />
 
-          <div className="rounded-lg border border-[#e2e8f0] bg-white p-6">
-            <h2 className="text-xl font-semibold text-on-surface">Payout statuses</h2>
-            <div className="mt-4 h-[200px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={payoutStatusData}
-                    dataKey="value"
-                    nameKey="name"
-                    innerRadius={48}
-                    outerRadius={78}
-                    paddingAngle={3}
-                  >
-                    {payoutStatusData.map((entry) => (
-                      <Cell key={entry.name} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="mt-2 space-y-2">
-              {payoutStatusData.map((item) => (
-                <div key={item.name} className="flex items-center justify-between text-sm">
-                  <div className="flex items-center gap-2">
-                    <span
-                      className="h-2.5 w-2.5 rounded-full"
-                      style={{ backgroundColor: item.color }}
-                    />
-                    <span>{item.name}</span>
-                  </div>
-                  <span className="font-semibold">{item.value}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          <div className="rounded-lg border border-[#e2e8f0] bg-white p-6">
-            <h2 className="text-lg font-semibold text-on-surface">
-              Estimated next payout
-            </h2>
-            <p className="mt-2 text-3xl font-bold text-[#0056d2]">
-              {formatCurrency(estimatedNextPayoutAmount, currencyCode)}
-            </p>
-            {payoutCycle !== "ANYTIME" ? (
-              <p className="mt-2 text-sm text-slate-500">
-                Est. release: {formatDate(payoutEstimate?.estimatedPayoutAt || summary?.nextPayoutDate)}
-              </p>
-            ) : null}
-            <p className="mt-3 text-xs text-slate-500">
-              {payoutEstimate?.message || "Estimate based on current cycle and recent conversion rate."}
-            </p>
-          </div>
-
-          <div className="rounded-lg border border-[#e2e8f0] bg-white p-6 lg:col-span-2">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-on-surface">Previous payouts</h2>
-              <p className="text-xs text-slate-500">Recent activity</p>
-            </div>
-            <div className="mt-4 h-[220px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={(previousPayouts.length ? previousPayouts : payoutRows.slice(0, 4)).map((row, index) => ({
-                    label: `#${index + 1}`,
-                    amount: toNumber(row?.amount, 0),
-                  }))}
-                >
-                  <XAxis dataKey="label" />
-                  <YAxis />
-                  <Tooltip formatter={(value) => formatCurrency(value, currencyCode)} />
-                  <Bar dataKey="amount" radius={[8, 8, 0, 0]} fill="#0056d2" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        </section>
-
+        {showTour ? <PayoutAccountTour onClose={closeTour} /> : null}
         <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <div className="rounded-lg border border-[#e2e8f0] bg-white p-6">
             <h2 className="text-xl font-semibold text-on-surface">
               Payout account
             </h2>
             <p className="mt-1 text-sm text-on-surface-variant">
-              Connect using your PayPal Sandbox login. We save the PayPal email
-              returned by PayPal after successful sign-in.
+              Payouts are sent through Xendit to your GCash, Maya, or bank
+              account. Make sure the account name matches the account holder.
             </p>
 
-            <div className="mt-6 space-y-4">
+            {hasPayoutAccount ? (
+              <div className="mt-6 space-y-4">
+                <div className="rounded-md bg-slate-50 p-4 text-sm text-slate-700">
+                  <p className="font-semibold text-on-surface">
+                    Connected account
+                  </p>
+                  <p className="mt-1">
+                    {`${PAYOUT_CHANNELS.find((c) => c.code === summary.payoutAccount.channelCode)?.label || summary.payoutAccount.channelCode} • ${summary.payoutAccount.accountHolderName} • ${maskAccountNumber(summary.payoutAccount.accountNumber)}`}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={startAccountUpdate}
+                  disabled={isVerifyingPassword}
+                  className="rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
+                >
+                  Update payout account
+                </button>
+              </div>
+            ) : null}
+
+            {accountModal === "password" ? (
+              <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/40 p-4">
+                <form
+                  onSubmit={handleVerifyPassword}
+                  className="w-full max-w-md rounded-lg bg-white p-6 shadow-2xl"
+                >
+                  <h3 className="text-lg font-semibold text-on-surface">
+                    {verifyMethod === "authenticator"
+                      ? "Enter authenticator code"
+                      : "Confirm your password"}
+                  </h3>
+                  <p className="mt-1 text-sm text-on-surface-variant">
+                    {verifyMethod === "authenticator"
+                      ? "Enter the 6-digit code from your authenticator app to update your payout account."
+                      : "For your security, enter your password to update your payout account."}
+                  </p>
+                  <input
+                    type={verifyMethod === "authenticator" ? "text" : "password"}
+                    inputMode={verifyMethod === "authenticator" ? "numeric" : undefined}
+                    maxLength={verifyMethod === "authenticator" ? 6 : 200}
+                    autoFocus
+                    required
+                    autoComplete={
+                      verifyMethod === "authenticator" ? "one-time-code" : "current-password"
+                    }
+                    value={passwordInput}
+                    onChange={(e) => setPasswordInput(e.target.value)}
+                    placeholder={verifyMethod === "authenticator" ? "123456" : "Password"}
+                    className="mt-4 w-full rounded-md border border-[#cbd5e1] px-3 py-2 text-sm"
+                  />
+                  <div className="mt-5 flex justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={closeAccountModal}
+                      className="rounded-full border border-[#cbd5e1] px-5 py-2.5 text-sm font-semibold"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isVerifyingPassword || !passwordInput}
+                      className="rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
+                    >
+                      {isVerifyingPassword ? "Verifying..." : "Continue"}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            ) : null}
+
+            {!hasPayoutAccount || accountModal === "form" ? (
+              <div
+                className={
+                  hasPayoutAccount
+                    ? "fixed inset-0 z-[80] flex items-center justify-center overflow-y-auto bg-black/40 p-4"
+                    : ""
+                }
+              >
+                <div
+                  className={
+                    hasPayoutAccount
+                      ? "max-h-full w-full max-w-md overflow-y-auto rounded-lg bg-white p-6 shadow-2xl"
+                      : ""
+                  }
+                >
+            <form onSubmit={handleSaveAccount} className="mt-6 space-y-4">
+              {hasPayoutAccount ? (
+                <h3 className="text-lg font-semibold text-on-surface">
+                  Update payout account
+                </h3>
+              ) : (
               <div className="rounded-md bg-slate-50 p-4 text-sm text-slate-700">
                 <p className="font-semibold text-on-surface">
-                  Connected PayPal email
+                  Connected account
                 </p>
                 <p className="mt-1">
-                  {summary?.payoutAccount?.paypalEmail || "Not connected yet"}
+                  Not connected yet
                 </p>
               </div>
+              )}
+              <label
+                id="payout-tour-channel"
+                className="block text-sm font-medium text-on-surface"
+              >
+                Channel
+                <select
+                  value={accountForm.channelCode}
+                  onChange={(e) =>
+                    setAccountForm((prev) => ({
+                      ...prev,
+                      channelCode: e.target.value,
+                    }))
+                  }
+                  className="mt-1 w-full rounded-md border border-[#cbd5e1] px-3 py-2 text-sm"
+                >
+                  {PAYOUT_CHANNELS.map((channel) => (
+                    <option key={channel.code} value={channel.code}>
+                      {channel.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label
+                id="payout-tour-name"
+                className="block text-sm font-medium text-on-surface"
+              >
+                Account holder name
+                <input
+                  type="text"
+                  required
+                  minLength={2}
+                  maxLength={100}
+                  value={accountForm.accountHolderName}
+                  onChange={(e) =>
+                    setAccountForm((prev) => ({
+                      ...prev,
+                      accountHolderName: e.target.value,
+                    }))
+                  }
+                  className="mt-1 w-full rounded-md border border-[#cbd5e1] px-3 py-2 text-sm"
+                />
+              </label>
+              <label
+                id="payout-tour-number"
+                className="block text-sm font-medium text-on-surface"
+              >
+                {isEwalletChannel(accountForm.channelCode)
+                  ? "Mobile number (09XXXXXXXXX)"
+                  : "Account number"}
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  required
+                  value={accountForm.accountNumber}
+                  onChange={(e) =>
+                    setAccountForm((prev) => ({
+                      ...prev,
+                      accountNumber: e.target.value,
+                    }))
+                  }
+                  className="mt-1 w-full rounded-md border border-[#cbd5e1] px-3 py-2 text-sm"
+                />
+              </label>
               <button
-                type="button"
-                onClick={handleConnectPaypal}
-                disabled={isConnectingPaypal}
+                id="payout-tour-save"
+                type="submit"
+                disabled={isSavingAccount}
                 className="rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
               >
-                {isConnectingPaypal
-                  ? "Redirecting..."
-                  : "Connect PayPal (Sandbox)"}
+                {isSavingAccount ? "Saving..." : "Save payout account"}
               </button>
-            </div>
+              {hasPayoutAccount ? (
+                <button
+                  type="button"
+                  onClick={closeAccountModal}
+                  className="ml-2 rounded-full border border-[#cbd5e1] px-5 py-2.5 text-sm font-semibold"
+                >
+                  Cancel
+                </button>
+              ) : null}
+            </form>
+                </div>
+              </div>
+            ) : null}
           </div>
 
           <div className="rounded-lg border border-[#e2e8f0] bg-white p-6">
@@ -1088,10 +1120,12 @@ export default function PayoutSettingsPage() {
             <div className="grid grid-cols-1 gap-4 border-b border-slate-200 px-6 py-4 md:grid-cols-5">
               <div>
                 <p className="text-xs uppercase tracking-wide text-slate-500">
-                  PayPal email
+                  Payout account
                 </p>
                 <p className="mt-1 break-all text-sm font-semibold text-on-surface">
-                  {summary?.payoutAccount?.paypalEmail || "Not connected"}
+                  {summary?.payoutAccount?.accountNumber
+                    ? `${PAYOUT_CHANNELS.find((c) => c.code === summary.payoutAccount.channelCode)?.label || summary.payoutAccount.channelCode} ${maskAccountNumber(summary.payoutAccount.accountNumber)}`
+                    : "Not connected"}
                 </p>
               </div>
               <div>
@@ -1126,7 +1160,7 @@ export default function PayoutSettingsPage() {
               <div className="border-b border-slate-200 bg-orange-50 px-6 py-4">
                 <p className="text-sm text-orange-800">
                   This payout failed and the amount was not received. You can retry
-                  sending it to your PayPal account, or return the amount to your
+                  sending it to your payout account, or return the amount to your
                   available balance.
                 </p>
                 <div className="mt-3 flex flex-wrap gap-2">
@@ -1239,6 +1273,19 @@ export default function PayoutSettingsPage() {
                     )}
                   </tbody>
                   <tfoot className="bg-slate-50">
+                    {activePayoutDetails?.subscriptionPool > 0 ? (
+                      <tr>
+                        <td className="px-4 py-3 text-sm text-slate-600" colSpan={4}>
+                          Subscription earnings
+                        </td>
+                        <td className="px-4 py-3 text-sm font-semibold text-[#0056d2]">
+                          {formatCurrency(
+                            activePayoutDetails.subscriptionPool,
+                            activePayout.currency || currencyCode,
+                          )}
+                        </td>
+                      </tr>
+                    ) : null}
                     <tr>
                       <td className="px-4 py-3 text-sm font-semibold text-on-surface" colSpan={4}>
                         Eligible earnings total
@@ -1311,6 +1358,17 @@ export default function PayoutSettingsPage() {
             </div>
 
             <div className="mt-4 space-y-3 rounded-lg bg-slate-50 p-4 text-sm">
+              {[
+                ["Course sales", summary?.salesBalance, true],
+                ["Subscription earnings", summary?.subscriptionEarningsBalance, false],
+              ]
+                .filter(([, amount, always]) => always || toNumber(amount, 0) > 0)
+                .map(([label, amount]) => (
+                  <div key={label} className="flex items-center justify-between pl-3 text-slate-500">
+                    <span>{label}</span>
+                    <span>{formatCurrency(toNumber(amount, 0), currencyCode)}</span>
+                  </div>
+                ))}
               <div className="flex items-center justify-between">
                 <span className="text-slate-600">Eligible earnings (gross)</span>
                 <span className="font-semibold text-on-surface">
@@ -1334,7 +1392,7 @@ export default function PayoutSettingsPage() {
             </div>
 
             <p className="mt-4 text-xs text-slate-500">
-              This request will be auto-approved and submitted for PayPal payout
+              This request will be auto-approved and submitted for Xendit payout
               processing.
             </p>
 
