@@ -5,6 +5,7 @@ import {
   Users,
   Star,
   CircleCheck,
+  Medal,
 } from "lucide-react";
 import { useState, useRef } from "react";
 import UserAvatar from "../../user/UserAvatar";
@@ -18,6 +19,10 @@ export default function CourseOverview({ lecture, course }) {
   const { subtitle, instructional_level, description, author } = course;
   const [isExpanded, setIsExpanded] = useState(false);
   const [isCertificateLoading, setIsCertificateLoading] = useState(false);
+  const [generatedCertificateSlug, setGeneratedCertificateSlug] = useState(null);
+  const certificateSlug = generatedCertificateSlug || course?.certificate_slug || null;
+  const certificateButtonClass =
+    "inline-flex items-center justify-center px-4 py-1.5 border border-blue-600 text-blue-600 hover:bg-blue-50 font-medium text-xs rounded transition shrink-0";
   const containerRef = useRef(null); // ✅ fixed typing for JS/TS
   const router = useRouter();
 
@@ -66,6 +71,7 @@ export default function CourseOverview({ lecture, course }) {
         toast.error("Unable to generate certificate right now.");
         return;
       }
+      setGeneratedCertificateSlug(certificate.slug);
       router.push(`/certifications/${certificate.slug}`);
     } catch (error) {
       toast.error(error?.data?.message || "Failed to generate certificate.");
@@ -252,16 +258,34 @@ export default function CourseOverview({ lecture, course }) {
 
             <div className="sm:col-span-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <span className="text-slate-600">
-                Get Upskill certificate by completing entire course
+                {certificateSlug
+                  ? "You've earned your Upskill certificate"
+                  : "Get Upskill certificate by completing entire course"}
               </span>
 
-              <button
-                onClick={handleGenerateCertificate}
-                disabled={isCertificateLoading || !isCourseCompleted}
-                className="inline-flex items-center justify-center px-4 py-1.5 border border-blue-600 text-blue-600 hover:bg-blue-50 font-medium text-xs rounded transition shrink-0"
-              >
-                {isCertificateLoading ? "Generating..." : "Upskill Certificate"}
-              </button>
+              {certificateSlug ? (
+                <Link
+                  href={`/certifications/${certificateSlug}`}
+                  className={certificateButtonClass}
+                >
+                  <Medal className="w-4 h-4 mr-1.5" />
+                  Upskill Certificate
+                </Link>
+              ) : (
+                <button
+                  onClick={handleGenerateCertificate}
+                  disabled={isCertificateLoading || !isCourseCompleted}
+                  title={
+                    isCourseCompleted
+                      ? undefined
+                      : "Complete the entire course to unlock your certificate"
+                  }
+                  className={`${certificateButtonClass} disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent`}
+                >
+                  <Medal className="w-4 h-4 mr-1.5" />
+                  {isCertificateLoading ? "Generating..." : "Upskill Certificate"}
+                </button>
+              )}
             </div>
           </div>
 

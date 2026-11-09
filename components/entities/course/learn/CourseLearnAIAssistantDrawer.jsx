@@ -1,11 +1,13 @@
 import BaseApi from "@/lib/api/_base.api";
 import { Send, Sparkles, X } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
-function normalizeSuggestedTopics(course) {
+const MAX_SUGGESTED_TOPICS = 3;
+
+function normalizeSuggestedTopics(course, currentLecture) {
   const sections = Array.isArray(course?.sections) ? course.sections : [];
   const output = [];
   const seen = new Set();
@@ -19,6 +21,11 @@ function normalizeSuggestedTopics(course) {
     output.push(normalized);
   };
 
+  if (currentLecture?.title) {
+    pushUnique(`Summarize: ${currentLecture.title}`);
+    pushUnique(`Help me understand: ${currentLecture.title}`);
+  }
+
   for (const section of sections) {
     pushUnique(`Explain ${section?.title}`);
     for (const curriculum of (section?.curriculums || []).slice(0, 4)) {
@@ -26,28 +33,47 @@ function normalizeSuggestedTopics(course) {
     }
   }
 
-  return output.slice(0, 14);
+  return output.slice(0, MAX_SUGGESTED_TOPICS);
 }
 
 function buildMarkdownComponents(isUser) {
   const link = isUser ? "underline text-white" : "underline text-[#0056D2]";
   return {
     p: (props) => <p className="my-2 first:mt-0 last:mb-0" {...props} />,
-    h1: (props) => <h3 className="mt-3 mb-1 text-[15px] font-bold" {...props} />,
-    h2: (props) => <h3 className="mt-3 mb-1 text-[15px] font-bold" {...props} />,
-    h3: (props) => <h4 className="mt-3 mb-1 text-[14px] font-semibold" {...props} />,
+    h1: (props) => (
+      <h3 className="mt-3 mb-1 text-[15px] font-bold" {...props} />
+    ),
+    h2: (props) => (
+      <h3 className="mt-3 mb-1 text-[15px] font-bold" {...props} />
+    ),
+    h3: (props) => (
+      <h4 className="mt-3 mb-1 text-[14px] font-semibold" {...props} />
+    ),
     h4: (props) => <h4 className="mt-2 mb-1 font-semibold" {...props} />,
     ul: (props) => <ul className="my-2 list-disc pl-5 space-y-1" {...props} />,
-    ol: (props) => <ol className="my-2 list-decimal pl-5 space-y-1" {...props} />,
+    ol: (props) => (
+      <ol className="my-2 list-decimal pl-5 space-y-1" {...props} />
+    ),
     a: (props) => (
-      <a className={link} target="_blank" rel="noopener noreferrer" {...props} />
+      <a
+        className={link}
+        target="_blank"
+        rel="noopener noreferrer"
+        {...props}
+      />
     ),
     blockquote: (props) => (
-      <blockquote className="my-2 border-l-4 border-slate-300 pl-3 italic opacity-90" {...props} />
+      <blockquote
+        className="my-2 border-l-4 border-slate-300 pl-3 italic opacity-90"
+        {...props}
+      />
     ),
     hr: () => <hr className="my-3 border-slate-200" />,
     pre: (props) => (
-      <pre className="my-2 overflow-x-auto rounded-lg bg-[#16161D] p-3 text-[12px] text-slate-100" {...props} />
+      <pre
+        className="my-2 overflow-x-auto rounded-lg bg-[#16161D] p-3 text-[12px] text-slate-100"
+        {...props}
+      />
     ),
     code: ({ className, children, ...props }) =>
       className ? (
@@ -70,9 +96,14 @@ function buildMarkdownComponents(isUser) {
       </div>
     ),
     th: (props) => (
-      <th className="border border-slate-300 bg-slate-100 px-2 py-1 text-left font-semibold text-slate-800" {...props} />
+      <th
+        className="border border-slate-300 bg-slate-100 px-2 py-1 text-left font-semibold text-slate-800"
+        {...props}
+      />
     ),
-    td: (props) => <td className="border border-slate-300 px-2 py-1" {...props} />,
+    td: (props) => (
+      <td className="border border-slate-300 px-2 py-1" {...props} />
+    ),
   };
 }
 
@@ -107,9 +138,23 @@ export default function CourseLearnAIAssistantDrawer({
   const [input, setInput] = useState("");
   const [isSending, setIsSending] = useState(false);
   const localSuggestedTopics = useMemo(
-    () => normalizeSuggestedTopics(course),
-    [course],
+    () => normalizeSuggestedTopics(course, currentLecture),
+    [course, currentLecture],
   );
+  const bottomRef = useRef(null);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, [messages, isSending, open]);
+
+  const canSend = !isSending && input.trim().length >= 2;
+
+  const handleKeyDown = (event) => {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      if (canSend) sendMessage(input);
+    }
+  };
 
   const sendMessage = async (rawText) => {
     const text = String(rawText || "").trim();
@@ -128,7 +173,10 @@ export default function CourseLearnAIAssistantDrawer({
           lecture_id: currentLecture?.id || null,
           messages: nextMessages
             .slice(-10)
-            .map((row) => ({ role: row.role, content: row.content })),
+            .map((row) => ({
+              role: row.role,
+              content: String(row.content || "").slice(0, 4000),
+            })),
         },
       );
       const reply =
@@ -176,67 +224,95 @@ export default function CourseLearnAIAssistantDrawer({
           </button>
         </div>
 
-        <div className="px-4 py-3 border-b border-slate-200 shrink-0">
-          <p className="text-[12px] text-slate-500 mb-2">Suggested topics</p>
-          <div className="flex flex-wrap gap-2 max-h-[120px] overflow-y-auto pr-1">
-            {localSuggestedTopics.map((topic) => (
-              <button
-                key={topic}
-                type="button"
-                onClick={() => sendMessage(topic)}
-                className="text-[11px] rounded-full px-3 py-1 border border-[#cbd5e1] text-[#334155] hover:bg-[#eff6ff] hover:border-[#93c5fd]"
-              >
-                {topic}
-              </button>
-            ))}
-          </div>
-        </div>
-
         <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 bg-[#f8fafc]">
-          {messages.map((message, index) => (
-            <div
-              key={`${message.role}-${index}`}
-              className={`max-w-[90%] rounded-xl px-3 py-2 text-[13px] ${
-                message.role === "user"
-                  ? "ml-auto bg-[#0056D2] text-white"
-                  : "bg-white border border-slate-200 text-slate-700"
-              }`}
-            >
-              <MessageContent
-                content={message.content}
-                isUser={message.role === "user"}
-              />
-            </div>
-          ))}
+          {messages.map((message, index) => {
+            const isUser = message.role === "user";
+            return (
+              <div
+                key={`${message.role}-${index}`}
+                className={`flex items-end gap-2 ${isUser ? "justify-end" : "justify-start"}`}
+              >
+                {!isUser ? (
+                  <div className="h-7 w-7 shrink-0 rounded-full bg-[#0056D2]/10 text-[#0056D2] flex items-center justify-center">
+                    <Sparkles size={14} />
+                  </div>
+                ) : null}
+                <div
+                  className={`max-w-[85%] rounded-2xl px-3.5 py-2 text-[13px] shadow-sm p-[15px] ${
+                    isUser
+                      ? "bg-[#0056D2] text-white rounded-br-sm"
+                      : "bg-white border border-slate-200 text-slate-700 rounded-bl-sm"
+                  }`}
+                >
+                  <MessageContent content={message.content} isUser={isUser} />
+                </div>
+              </div>
+            );
+          })}
           {isSending ? (
-            <div className="max-w-[90%] rounded-xl px-3 py-2 text-[13px] bg-white border border-slate-200 text-slate-500">
-              Thinking...
+            <div className="flex items-end gap-2">
+              <div className="h-7 w-7 shrink-0 rounded-full bg-[#0056D2]/10 text-[#0056D2] flex items-center justify-center">
+                <Sparkles size={14} />
+              </div>
+              <div className="rounded-2xl rounded-bl-sm bg-white border border-slate-200 px-4 py-3 flex gap-1">
+                {[0, 150, 300].map((delay) => (
+                  <span
+                    key={delay}
+                    className="h-1.5 w-1.5 rounded-full bg-slate-400 animate-bounce"
+                    style={{ animationDelay: `${delay}ms` }}
+                  />
+                ))}
+              </div>
             </div>
           ) : null}
+          <div ref={bottomRef} />
         </div>
 
-        <form
-          onSubmit={handleSubmit}
-          className="p-3 border-t border-slate-200 flex items-end gap-2"
-        >
-          <textarea
-            value={input}
-            onChange={(event) => setInput(event.target.value)}
-            placeholder="Ask about this course..."
-            className="flex-1 min-h-[44px] max-h-[120px] border border-slate-300 rounded-lg px-3 py-2 text-[13px] resize-y"
-          />
-          <button
-            type="submit"
-            disabled={isSending || String(input || "").trim().length < 2}
-            className={`h-[44px] px-3 rounded-lg text-white ${
-              isSending || String(input || "").trim().length < 2
-                ? "bg-[#0056D2]/60 cursor-not-allowed"
-                : "bg-[#0056D2] hover:opacity-90"
-            }`}
-          >
-            <Send size={16} />
-          </button>
-        </form>
+        <div className="border-t border-slate-200 bg-white p-3 space-y-2 shrink-0">
+          {localSuggestedTopics.length > 0 ? (
+            <div>
+              <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400 mb-1.5">
+                Suggested topics
+              </p>
+              <div className="flex flex-col gap-1.5">
+                {localSuggestedTopics.map((topic) => (
+                  <button
+                    key={topic}
+                    type="button"
+                    disabled={isSending}
+                    onClick={() => sendMessage(topic)}
+                    className="w-full text-left text-[12px] truncate rounded-lg px-3 py-1.5 border border-slate-200 text-slate-700 hover:bg-[#eff6ff] hover:border-[#93c5fd] disabled:opacity-50"
+                    title={topic}
+                  >
+                    {topic}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          <form onSubmit={handleSubmit} className="flex items-end gap-2">
+            <textarea
+              value={input}
+              onChange={(event) => setInput(event.target.value)}
+              onKeyDown={handleKeyDown}
+              rows={1}
+              placeholder="Ask about this course... (Enter to send)"
+              className="flex-1 min-h-[44px] max-h-[120px] border border-slate-300 rounded-lg px-3 py-2.5 text-[13px] resize-none focus:outline-none focus:border-[#0056D2]"
+            />
+            <button
+              type="submit"
+              disabled={!canSend}
+              className={`h-[44px] px-3 rounded-lg text-white ${
+                canSend
+                  ? "bg-[#0056D2] hover:opacity-90"
+                  : "bg-[#0056D2]/60 cursor-not-allowed"
+              }`}
+            >
+              <Send size={16} />
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   );

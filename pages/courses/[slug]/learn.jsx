@@ -4,7 +4,9 @@ import { setContext } from "@/lib/api/interceptor";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/router";
 import CourseAssetPreview from "@/components/entities/course/learn/CourseAssetPreview";
-import { ChevronLeft, List as ListIcon, Users } from "lucide-react";
+import { ChevronLeft, Flag, List as ListIcon, Users } from "lucide-react";
+import modalState from "@/lib/store/modalState";
+import persistentStore from "@/lib/store/persistentStore";
 import Link from "next/link";
 import CourseOverview from "@/components/entities/course/learn/CourseOverview";
 import learnTabs from "@/lib/menu/learnNavTabs.json";
@@ -147,6 +149,20 @@ export default function Page({ data }) {
   const [panelStatus, setPanelStatus] = useState("open");
 
   const [course, setCourse] = useState(data.course);
+  const profile = persistentStore((state) => state.profile);
+  const isCourseAuthor =
+    Boolean(profile?.id) && String(profile.id) === String(course?.author?.data?.id || "");
+
+  const handleReportCourse = () => {
+    modalState.setState({
+      modalInfo: {
+        type: "REPORT_COURSE",
+        title: "Report abuse",
+        size: "md",
+        data: { courseId: course?.id },
+      },
+    });
+  };
 
   const [currentTab, setCurrentTab] = useState("overview");
   const [isAssistantOpen, setIsAssistantOpen] = useState(false);
@@ -242,6 +258,16 @@ export default function Page({ data }) {
               <Users size={16} />
               Community
             </Link>
+            {!isCourseAuthor && (
+              <button
+                type="button"
+                onClick={handleReportCourse}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-white/30 text-sm hover:bg-white/10"
+              >
+                <Flag size={16} />
+                Report
+              </button>
+            )}
             <button
               type="button"
               onClick={() =>
