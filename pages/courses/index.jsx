@@ -224,7 +224,7 @@ export default function CoursesPage() {
             ...(router.query.price ? { price: router.query.price } : {}),
             ...(router.query.language ? { language: router.query.language } : {}),
             ...(router.query.handsOn ? { handsOn: router.query.handsOn } : {}),
-            ...(sortBy === "Newest" ? { sortBy: "newest" } : { sortBy: "best_selling" }),
+            ...(sortBy === "Newest" ? { sortBy: "newest" } : { sortBy: "relevance" }),
             limit: 100,
             nocache: true,
           },
