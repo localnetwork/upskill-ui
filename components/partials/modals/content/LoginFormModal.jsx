@@ -11,13 +11,13 @@ import toast from "react-hot-toast";
 import { EyeIcon, EyeOffIcon } from "lucide-react"; // 👁️ Eye icons
 import Link from "next/link";
 import Input from "@/components/forms/Input";
-import Password from "@/components/forms/Password";
+import EmailCodeStep from "@/components/auth/EmailCodeStep";
 import modalState from "@/lib/store/modalState";
 export default function LoginFormModal() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState(null);
-  const [showPassword, setShowPassword] = useState(false); // 👁️ Toggle state
+  const [codeTarget, setCodeTarget] = useState(null);
   const [payload, setPayload] = useState({});
   const modalInfo = modalState((state) => state.modalInfo);
   const [isFocused, setIsFocused] = useState(false);
@@ -43,6 +43,39 @@ export default function LoginFormModal() {
     });
   };
 
+  const onResendCode = async () => {
+    try {
+      await AUTHAPI.login({ username: codeTarget.email });
+      toast.success("A new code has been sent");
+      return true;
+    } catch (error) {
+      toast.error(error?.data?.message || "Could not resend the code");
+      return false;
+    }
+  };
+
+  const onVerifyCode = async (code) => {
+    toast.dismiss();
+    setIsLoading(true);
+    try {
+      const response = await AUTHAPI.verifyLogin({
+        email: codeTarget.email,
+        code,
+      });
+      persistentStore.setState({
+        profile: response.data.user,
+        token: response.data.token,
+        preAuthToken: null,
+      });
+      modalClose();
+      toast.success("Login successful!");
+      window.location.href = "/";
+    } catch (error) {
+      toast.error(error?.data?.message || "Invalid or expired code");
+      setIsLoading(false);
+    }
+  };
+
   const onLogin = async (e) => {
     toast.dismiss();
     e.preventDefault();
@@ -50,6 +83,15 @@ export default function LoginFormModal() {
 
     try {
       const response = await AUTHAPI.login(payload);
+
+      if (response?.data?.requires_email_code) {
+        setCodeTarget({
+          email: response.data.email,
+          masked: response.data.masked_email || response.data.email,
+        });
+        toast.success("We emailed you a 6-digit code");
+        return;
+      }
 
       if (response?.data?.requires_2fa) {
         persistentStore.setState({
@@ -144,6 +186,18 @@ export default function LoginFormModal() {
 
   return (
     <>
+      {codeTarget ? (
+        <EmailCodeStep
+          email={codeTarget.masked}
+          purposeText="to log in."
+          isLoading={isLoading}
+          submitLabel="Log in"
+          onSubmit={onVerifyCode}
+          onResend={onResendCode}
+          onBack={() => setCodeTarget(null)}
+        />
+      ) : (
+      <>
       <h2 className="text-3xl font-bold mb-6">
         {headingText}
       </h2>
@@ -155,23 +209,11 @@ export default function LoginFormModal() {
         <Input
           id="username"
           name="username"
-          label="Username or Email"
+          label="Email"
           value={payload.username || ""}
           onChange={onChange}
           onFocus={onFocus}
           error={extractErrors(errors, "username")}
-        />
-
-        {/* PASSWORD with Eye Icon */}
-
-        <Password
-          id="password"
-          name="password"
-          label="Password"
-          value={payload.password || ""}
-          onChange={onChange}
-          onFocus={onFocus}
-          error={extractErrors(errors, "password")}
         />
 
         {/* SUBMIT BUTTON */}
@@ -207,7 +249,7 @@ export default function LoginFormModal() {
 
       <div className="divider border-b border-[2px] border-[#f5f5f5] my-[40px]" />
 
-      <div className="bg-[#F6F7F9] font-light text-[18px] px-[30px] py-[20px] mt-[20px] text-center border-b border-[#ddd]">
+      <div className="bg-[#F6F7F9] font-light text-[18px] px-[30px] py-[20px] mt-[20px] text-center">
         Don't have an account?{" "}
         <Link
           href="/register"
@@ -217,15 +259,8 @@ export default function LoginFormModal() {
           Sign up
         </Link>
       </div>
-      <div className="bg-[#F6F7F9] px-[30px] py-[20px] text-center">
-        <Link
-          href="/forgot-password"
-          className="text-[#0056D2] underline font-bold"
-          onClick={modalClose}
-        >
-          Forgot your password?
-        </Link>
-      </div>
+      </>
+      )}
     </>
   );
 }

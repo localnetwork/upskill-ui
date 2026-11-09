@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import persistentStore from "@/lib/store/persistentStore";
 import { logout } from "@/lib/services/auth";
+import { getInitials } from "@/lib/services/nameUtils";
 import HeaderSearchAutocomplete from "./HeaderSearchAutocomplete";
 import MobileExploreMenu from "./MobileExploreMenu";
 
@@ -53,21 +54,15 @@ export default function MobileNav({ open, onClose }) {
   }, [open, onClose]);
 
   // Derived display values from the profile schema
-  // (user_picture.path, firstname, lastname, username, email)
+  // (user_picture.path, fullName, username, email)
   const avatarPath = profile?.user_picture?.path;
   const avatarSrc = avatarPath
     ? avatarPath.startsWith("http://") || avatarPath.startsWith("https://")
       ? avatarPath
       : `${process.env.NEXT_PUBLIC_API_DOMAIN}${avatarPath}`
     : null;
-  const initials =
-    [profile?.firstname?.[0] ?? "", profile?.lastname?.[0] ?? ""]
-      .join("")
-      .toUpperCase() || "?";
-  const displayName =
-    profile?.firstname || profile?.lastname
-      ? `${profile?.firstname || ""} ${profile?.lastname || ""}`.trim()
-      : profile?.username || "Member";
+  const initials = getInitials(profile?.fullName) || "?";
+  const displayName = profile?.fullName || profile?.username || "Member";
 
   return (
     <>

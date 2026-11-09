@@ -7,6 +7,7 @@ import CourseLearnings from "@/components/entities/course/show/CourseLearnings";
 import CourseRequirements from "@/components/entities/course/show/CourseRequirements";
 import CourseSections from "@/components/entities/course/show/CourseSections";
 import BaseApi from "@/lib/api/_base.api";
+import { getInitials } from "@/lib/services/nameUtils";
 import {
   BadgeCheck,
   Check,
@@ -180,9 +181,7 @@ export async function getServerSideProps({ params }) {
 function buildCourseJsonLd(course) {
   if (!course?.slug) return null;
   const author = course.author?.data || {};
-  const authorName =
-    `${author.firstname || ""} ${author.lastname || ""}`.trim() ||
-    author.username;
+  const authorName = author.fullName || author.username;
   const rating = Number(course.stats?.average_rating || 0);
   const reviews = Number(course.stats?.total_reviews || 0);
   const price = course.price_tier?.price;
@@ -698,9 +697,8 @@ export default function Course({ initialCourse = null }) {
   };
 
   const educator = course?.author?.data;
-  const educatorName = `${educator?.firstname || ""} ${educator?.lastname || ""}`.trim();
-  const educatorInitials =
-    `${educator?.firstname?.[0] || ""}${educator?.lastname?.[0] || ""}`.toUpperCase();
+  const educatorName = educator?.fullName || "";
+  const educatorInitials = getInitials(educatorName);
   const educatorPicturePath = educator?.user_picture?.path;
   const educatorPictureSrc = educatorPicturePath
     ? /^https?:\/\//.test(educatorPicturePath)

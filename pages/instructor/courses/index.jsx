@@ -125,8 +125,7 @@ export default function Page() {
           ...(profile || {}),
           ...(currentUser || {}),
           roles,
-          firstname: currentUser?.firstName || currentUser?.firstname || "",
-          lastname: currentUser?.lastName || currentUser?.lastname || "",
+          fullName: currentUser?.fullName || "",
         },
       });
 

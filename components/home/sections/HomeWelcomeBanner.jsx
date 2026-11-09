@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import BaseApi from "@/lib/api/_base.api";
 import persistentStore from "@/lib/store/persistentStore";
+import { getFirstName, getInitials } from "@/lib/services/nameUtils";
 import PreferencesWizard from "../PreferencesWizard";
 
 const hasPreferences = (prefs) =>
@@ -13,9 +14,7 @@ const hasPreferences = (prefs) =>
   );
 
 function initials(profile) {
-  const first = profile?.firstName || profile?.firstname || "";
-  const last = profile?.lastName || profile?.lastname || "";
-  return `${first[0] || ""}${last[0] || ""}`.toUpperCase() || "U";
+  return getInitials(profile?.fullName) || "U";
 }
 
 export default function HomeWelcomeBanner({ profile }) {
@@ -25,10 +24,8 @@ export default function HomeWelcomeBanner({ profile }) {
   const token = persistentStore((state) => state.token);
 
   const isInstructor = (profile?.roles || []).includes("EDUCATOR");
-  const firstName = profile?.firstName || profile?.firstname || profile?.username;
-  const fullName =
-    `${profile?.firstName || profile?.firstname || ""} ${profile?.lastName || profile?.lastname || ""}`.trim() ||
-    profile?.username;
+  const firstName = getFirstName(profile?.fullName) || profile?.username;
+  const fullName = profile?.fullName || profile?.username;
   const occupationLabel =
     preferences?.occupation?.name || preferences?.occupation_custom || "";
 

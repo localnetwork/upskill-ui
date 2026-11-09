@@ -63,7 +63,7 @@ export default function MobileExploreMenu({ open, onClose, onNavigate }) {
       id="mobile-explore"
       aria-hidden={!open}
       inert={!open}
-      className={`absolute inset-0 z-10 bg-white flex flex-col transition-transform duration-300 ease-in-out motion-reduce:transition-none ${
+      className={`absolute inset-0 z-[20] bg-white flex flex-col transition-transform duration-300 ease-in-out motion-reduce:transition-none ${
         open ? "translate-x-0" : "translate-x-full"
       }`}
     >

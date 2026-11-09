@@ -56,10 +56,8 @@ export default function UserNav() {
             <div className="flex items-center gap-2">
               <UserAvatar />
               <div className="flex flex-col">
-                {profile?.firstname || profile?.lastname ? (
-                  <span className="font-semibold">
-                    {profile?.firstname} {profile?.lastname}
-                  </span>
+                {profile?.fullName ? (
+                  <span className="font-semibold">{profile.fullName}</span>
                 ) : (
                   <span className="font-semibold">?</span>
                 )}

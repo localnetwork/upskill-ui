@@ -64,8 +64,7 @@ export default function CartItemCard({ item, isLast, appliedCoupon }) {
         <div className="col-span-4">
           <h2 className="text-[18px] font-semibold">{item.course.title}</h2>
           <p className="font-light text-[14px] mt-[5px]">
-            by {item.course.author.data.firstname}{" "}
-            {item.course.author.data.lastname}
+            by {item.course.author.data.fullName}
           </p>
           {appliedCoupon ? (
             <p className="mt-2 text-[12px] text-emerald-700">

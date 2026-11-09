@@ -171,8 +171,7 @@ export default function Page() {
                     </h3>
 
                     <p className="font-light text-[14px]">
-                      {item.course.educator?.firstName}{" "}
-                      {item.course.educator?.lastName}
+                      {item.course.educator?.fullName}
                     </p>
 
                     <div className="mt-3 text-[14px] font-light">

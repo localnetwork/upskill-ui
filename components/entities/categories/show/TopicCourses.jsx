@@ -103,7 +103,7 @@ function formatPrice(course) {
 
 function CourseRow({ course }) {
   const author = course?.author?.data || {};
-  const authorName = `${author.firstname || ""} ${author.lastname || ""}`.trim();
+  const authorName = author.fullName || "";
   const rating = Number(course?.stats?.average_rating || 0);
   const reviews = Number(course?.stats?.total_reviews || 0);
   const lectures = Number(course?.resources_count?.curriculum_count || 0);

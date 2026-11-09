@@ -30,8 +30,7 @@ export default function AddToCart() {
             {modalInfo?.data?.title}
           </h2>
           <div className="text-[14px] text-gray-600 mt-[5px]">
-            {modalInfo?.data?.author?.data.firstname}{" "}
-            {modalInfo?.data?.author?.data.lastname}
+            {modalInfo?.data?.author?.data.fullName}
           </div>
         </div>
         <div>

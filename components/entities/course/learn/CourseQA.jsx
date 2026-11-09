@@ -53,7 +53,7 @@ const SORT_FILTER_OPTIONS = [
 
 function formatAuthorName(author) {
   return (
-    [author?.firstName, author?.lastName].filter(Boolean).join(" ").trim() ||
+    author?.fullName ||
     author?.username ||
     "User"
   );

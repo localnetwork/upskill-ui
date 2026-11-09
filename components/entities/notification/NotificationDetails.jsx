@@ -43,8 +43,7 @@ function formatDateTime(value) {
 }
 
 function personName(person) {
-  const full = `${person?.firstName || ""} ${person?.lastName || ""}`.trim();
-  return full || person?.username || "Someone";
+  return person?.fullName || person?.username || "Someone";
 }
 
 function DetailRow({ icon: Icon, label, value }) {

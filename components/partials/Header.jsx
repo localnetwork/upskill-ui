@@ -251,11 +251,7 @@ export default function Header() {
       const initializeVideo = Boolean(payload?.initializeVideo ?? hasVideo);
       const isE2eeMandated = Boolean(payload?.isE2eeMandated ?? true);
       const fallbackName = payload?.fromUser?.username || "User";
-      const callerName =
-        [payload?.fromUser?.firstName, payload?.fromUser?.lastName]
-          .filter(Boolean)
-          .join(" ")
-          .trim() || fallbackName;
+      const callerName = payload?.fromUser?.fullName || fallbackName;
       const rawCallerPhotoPath = String(
         payload?.fromUser?.photoPath ||
           payload?.fromUser?.user_picture?.path ||
@@ -584,7 +580,7 @@ export default function Header() {
                   <div className="hidden md:block">
                     <Link
                       href="/register?mode=instructor"
-                      className="text-sm font-bold text-slate-700 px-4 py-2 hover:bg-gray-100 rounded-lg"
+                      className="text-sm inline-flex font-bold text-slate-700 px-4 py-2 hover:bg-gray-100 rounded-lg"
                     >
                       Become an Instructor
                     </Link>
@@ -605,7 +601,7 @@ export default function Header() {
                       <li>
                         <Link
                           href="/register?mode=student"
-                          className="bg-[#0056D2] text-white text-sm font-bold px-6 py-2.5 rounded-full hover:bg-slate-800 transition-all"
+                          className="bg-[#0056D2] text-white text-sm font-bold px-6 py-2.5 rounded-full hover:bg-slate-800 transition-all inline-block"
                         >
                           Join for Free
                         </Link>

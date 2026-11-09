@@ -83,8 +83,7 @@ export async function getServerSideProps(context) {
         isAdmin,
         roles,
         permissions,
-        displayName:
-          [me?.firstName, me?.lastName].filter(Boolean).join(" ") || me?.username || "",
+        displayName: me?.fullName || me?.username || "",
       },
     };
   } catch (_error) {

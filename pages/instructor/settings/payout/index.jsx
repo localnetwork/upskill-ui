@@ -322,7 +322,7 @@ function buildTransactionsForPayout(row, currencyCode) {
     const orderItem = payoutItem?.orderItem || {};
     const learner = orderItem?.order?.user || {};
     const learnerName =
-      `${learner?.firstName || ""} ${learner?.lastName || ""}`.trim() ||
+      learner?.fullName?.trim() ||
       learner?.username ||
       "Unknown learner";
     const learnerEmail = learner?.email || "-";
@@ -359,7 +359,7 @@ export default function PayoutSettingsPage() {
   const [isSavingAccount, setIsSavingAccount] = useState(false);
   const [accountModal, setAccountModal] = useState(null);
   const [passwordInput, setPasswordInput] = useState("");
-  const [verifyMethod, setVerifyMethod] = useState("password");
+  const [verifyMethod, setVerifyMethod] = useState("none");
   const [verifiedCredentials, setVerifiedCredentials] = useState({});
   const [isVerifyingPassword, setIsVerifyingPassword] = useState(false);
   const [accountForm, setAccountForm] = useState({
@@ -606,7 +606,7 @@ export default function PayoutSettingsPage() {
     setIsVerifyingPassword(true);
     try {
       const res = await PAYOUTAPI.getVerificationMethod();
-      const method = res?.data?.data?.method || "password";
+      const method = res?.data?.data?.method || "none";
       setVerifyMethod(method);
       setAccountModal(method === "none" ? "form" : "password");
     } catch (error) {
@@ -620,22 +620,14 @@ export default function PayoutSettingsPage() {
     event.preventDefault();
     if (isVerifyingPassword || !passwordInput) return;
     setIsVerifyingPassword(true);
-    const credentials =
-      verifyMethod === "authenticator"
-        ? { code: passwordInput.trim() }
-        : { password: passwordInput };
+    const credentials = { code: passwordInput.trim() };
     try {
       await PAYOUTAPI.verifyAccountPassword(credentials);
       setVerifiedCredentials(credentials);
       setPasswordInput("");
       setAccountModal("form");
     } catch (error) {
-      toast.error(
-        error?.data?.message ||
-          (verifyMethod === "authenticator"
-            ? "Invalid authenticator code."
-            : "Incorrect password."),
-      );
+      toast.error(error?.data?.message || "Invalid authenticator code.");
     } finally {
       setIsVerifyingPassword(false);
     }
@@ -824,25 +816,21 @@ export default function PayoutSettingsPage() {
                   <h3 className="text-lg font-semibold text-on-surface">
                     {verifyMethod === "authenticator"
                       ? "Enter authenticator code"
-                      : "Confirm your password"}
+                      : "Confirm your identity"}
                   </h3>
                   <p className="mt-1 text-sm text-on-surface-variant">
-                    {verifyMethod === "authenticator"
-                      ? "Enter the 6-digit code from your authenticator app to update your payout account."
-                      : "For your security, enter your password to update your payout account."}
+                    Enter the 6-digit code from your authenticator app to update your payout account.
                   </p>
                   <input
-                    type={verifyMethod === "authenticator" ? "text" : "password"}
-                    inputMode={verifyMethod === "authenticator" ? "numeric" : undefined}
-                    maxLength={verifyMethod === "authenticator" ? 6 : 200}
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={6}
                     autoFocus
                     required
-                    autoComplete={
-                      verifyMethod === "authenticator" ? "one-time-code" : "current-password"
-                    }
+                    autoComplete="one-time-code"
                     value={passwordInput}
                     onChange={(e) => setPasswordInput(e.target.value)}
-                    placeholder={verifyMethod === "authenticator" ? "123456" : "Password"}
+                    placeholder="123456"
                     className="mt-4 w-full rounded-md border border-[#cbd5e1] px-3 py-2 text-sm"
                   />
                   <div className="mt-5 flex justify-end gap-2">

@@ -43,7 +43,7 @@ export default function CourseMoreByAuthor({ slug, author }) {
 
   if (!courses.length) return null;
 
-  const fullName = `${author?.firstname || ""} ${author?.lastname || ""}`.trim();
+  const fullName = author?.fullName || "";
 
   return (
     <section id="more-by-author" className="mt-10">

@@ -19,6 +19,7 @@ import {
   UserX,
   Wallet,
 } from "lucide-react";
+import { getInitials as getNameInitials } from "@/lib/services/nameUtils";
 
 const TONES = {
   blue: "bg-blue-100 text-primary",
@@ -133,14 +134,12 @@ export function getSenderLabel(notification) {
   if (metadata.notificationKind !== "INSTRUCTOR_ANNOUNCEMENT") return "";
   const sender = metadata.sender || {};
   const name =
-    `${sender.firstName || ""} ${sender.lastName || ""}`.trim() || sender.username || "Instructor";
+    sender.fullName || sender.username || "Instructor";
   return metadata.courseTitle ? `${name} · ${metadata.courseTitle}` : name;
 }
 
 function getInitials(person) {
-  const first = String(person?.firstName || "").trim();
-  const last = String(person?.lastName || "").trim();
-  const initials = `${first.charAt(0)}${last.charAt(0)}`.trim();
+  const initials = getNameInitials(person?.fullName);
   return (initials || String(person?.username || "?").charAt(0)).toUpperCase();
 }
 

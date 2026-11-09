@@ -4,7 +4,7 @@ import { ArrowRight } from "lucide-react";
 import BaseApi from "@/lib/api/_base.api";
 
 function fullName(person = {}) {
-  const name = `${person?.first_name || ""} ${person?.last_name || ""}`.trim();
+  const name = String(person?.full_name || "").trim();
   return name || person?.username || "Educator";
 }
 

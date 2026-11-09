@@ -28,7 +28,7 @@ function LearnerCourseCard({ course }) {
   const rating = Number(course?.stats?.average_rating || 0);
   const reviews = Number(course?.stats?.total_reviews || 0);
   const author = course?.author?.data;
-  const instructor = `${author?.firstname || ""} ${author?.lastname || ""}`.trim();
+  const instructor = author?.fullName || "";
   const price = Number(course?.price_tier?.price || 0);
   const badge = reviews > 0 && rating >= 4.5 ? "Highest Rated" : null;
 

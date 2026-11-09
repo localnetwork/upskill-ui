@@ -25,7 +25,7 @@ function formatDateTime(value) {
 }
 
 function fullName(user) {
-  return `${user?.firstName || ""} ${user?.lastName || ""}`.trim() || user?.username || "User";
+  return user?.fullName || user?.username || "User";
 }
 
 function statusOf(row) {

@@ -71,10 +71,12 @@ function toTitleCase(value = "") {
 }
 
 function getInitials(user) {
-  const firstName = String(user?.firstName || user?.firstname || "").trim();
-  const lastName = String(user?.lastName || user?.lastname || "").trim();
-  if (firstName || lastName) {
-    return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase() || "U";
+  const words = String(user?.fullName || "").trim().split(/\s+/).filter(Boolean);
+  if (words.length) {
+    return (
+      `${words[0][0]}${words.length > 1 ? words[words.length - 1][0] : ""}`.toUpperCase() ||
+      "U"
+    );
   }
 
   return String(user?.username || "U")
@@ -118,8 +120,7 @@ export default function AdminUsersManagement() {
   const [myId, setMyId] = useState(null);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({
-    firstName: "",
-    lastName: "",
+    fullName: "",
     headline: "",
     biography: "",
   });
@@ -183,8 +184,7 @@ export default function AdminUsersManagement() {
   const openEdit = (user) => {
     setEditing(user);
     setForm({
-      firstName: user.firstName || "",
-      lastName: user.lastName || "",
+      fullName: user.fullName || "",
       headline: user.headline || "",
       biography: user.biography || "",
     });
@@ -683,10 +683,9 @@ export default function AdminUsersManagement() {
                   />
                 </label>
               ))}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3">
                 {[
-                  ["firstName", "First name"],
-                  ["lastName", "Last name"],
+                  ["fullName", "Full name"],
                 ].map(([key, label]) => (
                   <label key={key} className="block text-sm">
                     <span className="mb-1 block font-semibold text-slate-700">

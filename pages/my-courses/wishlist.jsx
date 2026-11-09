@@ -100,8 +100,7 @@ export default function Page() {
                   {item.course.title}
                 </h3>
                 <p className="font-light text-[14px]">
-                  {item.course.author?.data?.firstname}{" "}
-                  {item.course.author?.data?.lastname}
+                  {item.course.author?.data?.fullName}
                 </p>
               </div>
             ))

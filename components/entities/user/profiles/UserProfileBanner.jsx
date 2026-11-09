@@ -162,7 +162,7 @@ export default function UserProfileBanner({ profile }) {
               {extractedRoleNames?.join(", ")}
             </div>
             <div className="name text-[26px] sm:text-[30px] lg:text-[35px] mt-[5px] font-semibold">
-              {profile?.firstname} {profile?.lastname}
+              {profile?.fullName}
             </div>
             {profile?.headline && (
               <div className="headline text-[16px] lg:text-[18px] font-semibold mt-[5px] text-gray-600">

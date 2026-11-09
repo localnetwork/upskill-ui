@@ -10,10 +10,13 @@ import toast from "react-hot-toast";
 import { EyeIcon, EyeOffIcon } from "lucide-react"; // 👁️ Icons
 import Check from "@/components/icons/Check";
 import Input from "@/components/forms/Input";
-import Password from "@/components/forms/Password";
+import EmailCodeStep from "@/components/auth/EmailCodeStep";
 import Link from "next/link";
 import GoogleAuthButton from "@/components/auth/GoogleAuthButton";
-import { validateAuthField, validateAuthForm } from "@/lib/services/authInlineValidation";
+import {
+  validateAuthField,
+  validateAuthForm,
+} from "@/lib/services/authInlineValidation";
 import { applyPendingPreferences } from "@/lib/services/pendingPreferences";
 
 export default function Register({ googleClientId }) {
@@ -21,9 +24,7 @@ export default function Register({ googleClientId }) {
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState(null);
 
-  // 👁️ Password visibility toggles
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [step, setStep] = useState("form");
   const [selectedRole, setSelectedRole] = useState("3"); // default Student
   const [payload, setPayload] = useState({});
   const [fieldErrors, setFieldErrors] = useState({});
@@ -45,7 +46,6 @@ export default function Register({ googleClientId }) {
     setPayload(values);
     setErrors(null);
     validateField(name, values);
-    if (name === "password") validateField("confirm_password", values);
   };
 
   const onBlur = (e) => {
@@ -71,49 +71,60 @@ export default function Register({ googleClientId }) {
     const inlineErrors = validateAuthForm("register", payload);
     if (inlineErrors) {
       setFieldErrors(inlineErrors);
-      setTouched({
-        username: true,
-        email: true,
-        firstname: true,
-        lastname: true,
-        password: true,
-        confirm_password: true,
-      });
+      setTouched({ fullName: true, email: true });
       return;
     }
-
-    const body = {
-      username: payload.username.trim(),
-      email: payload.email.trim(),
-      password: payload.password,
-      confirm_password: payload.confirm_password,
-      firstname: payload.firstname.trim(),
-      lastname: payload.lastname.trim(),
-      role: router?.query?.mode === "instructor" ? "EDUCATOR" : "LEARNER",
-    };
 
     setFieldErrors({});
     setErrors(null);
     setIsLoading(true);
+    const ok = await sendCode();
+    setIsLoading(false);
+    if (ok) setStep("code");
+  };
 
+  const sendCode = async () => {
     try {
-      const response = await AUTHAPI.register(body);
-      persistentStore.setState({ profile: response?.data?.user });
-      await applyPendingPreferences();
-      router.push("/");
+      await AUTHAPI.register({
+        fullName: payload.fullName.trim(),
+        email: payload.email.trim(),
+        role: router?.query?.mode === "instructor" ? "EDUCATOR" : "LEARNER",
+      });
+      return true;
     } catch (error) {
-      console.log("Error", error);
       setErrors(error?.data?.errors);
       const message = String(error?.data?.message || "");
-      // Show duplicate username/email next to the field instead of only a toast.
-      if (/username already/i.test(message)) {
-        setFieldErrors({ username: message });
-      } else if (/email already/i.test(message)) {
+      if (/email already/i.test(message)) {
         setFieldErrors({ email: message });
       } else if (message) {
         toast.error(message);
       }
-    } finally {
+      return false;
+    }
+  };
+
+  const onResend = async () => {
+    const ok = await sendCode();
+    if (ok) toast.success("A new code has been sent");
+    return ok;
+  };
+
+  const onVerify = async (code) => {
+    toast.dismiss();
+    setIsLoading(true);
+    try {
+      const response = await AUTHAPI.verifyRegister({
+        email: payload.email.trim(),
+        code,
+      });
+      persistentStore.setState({
+        profile: response?.data?.user,
+        token: response?.data?.token,
+      });
+      await applyPendingPreferences();
+      window.location.href = "/profile/basic-information?welcome=1";
+    } catch (error) {
+      toast.error(error?.data?.message || "Invalid or expired code");
       setIsLoading(false);
     }
   };
@@ -152,7 +163,7 @@ export default function Register({ googleClientId }) {
 
           toast.success("Registration successful!");
           await applyPendingPreferences();
-          window.location.href = "/";
+          window.location.href = "/profile/basic-information?welcome=1";
           return;
         }
 
@@ -170,9 +181,9 @@ export default function Register({ googleClientId }) {
   return (
     <div className="min-h-[calc(100vh-92px)] py-[30px]">
       <div className="container py-[50px]">
-        <div className="grid grid-cols-2 min-h-[500px] rounded-lg max-w-[1140px] mx-auto">
+        <div className="grid md:grid-cols-2 min-h-[500px] rounded-lg max-w-[1140px] mx-auto">
           {/* LEFT IMAGE */}
-          <div className="pr-[50px] flex flex-col pt-[100px]">
+          <div className="hidden md:flex pr-[50px] flex-col pt-[100px]">
             <Image
               src="/desktop-illustration.webp"
               alt="Login"
@@ -183,9 +194,9 @@ export default function Register({ googleClientId }) {
 
           {/* RIGHT FORM */}
           <div className="">
-            {router.query.mode == "student" && (
+            {step === "form" && router.query.mode == "student" && (
               <div className="pb-[50px]">
-                <h1 className="pb-[10px] font-medium text-[40px] text-[#2a2b3f]">
+                <h1 className="pb-[10px] font-bold text-[40px] text-[#2a2b3f]">
                   Create an account
                 </h1>
                 <p className="text-[16px] font-light text-gray-600">
@@ -195,9 +206,9 @@ export default function Register({ googleClientId }) {
               </div>
             )}
 
-            {router.query.mode == "instructor" && (
+            {step === "form" && router.query.mode == "instructor" && (
               <div className="pb-[50px]">
-                <h1 className="pb-[10px] font-medium text-[40px] text-[#2a2b3f] ">
+                <h1 className="pb-[10px] font-bold text-[40px] text-[#2a2b3f] ">
                   Become an Upskill Instructor
                 </h1>
                 <p className="text-[16px] font-light text-gray-600">
@@ -207,129 +218,106 @@ export default function Register({ googleClientId }) {
               </div>
             )}
 
-            <form className="flex flex-col gap-y-[20px]" onSubmit={onRegister}>
-              <div className="grid gap-[15px]">
-                {/* USERNAME */}
-                <Input
-                  id="username"
-                  name="username"
-                  label="Username"
-                  value={payload.username || ""}
-                  onChange={onChange}
-                  onFocus={onFocus}
-                  onBlur={onBlur}
-                  error={errorFor("username")}
-                />
-
-                <Input
-                  id="email"
-                  name="email"
-                  label="Email"
-                  value={payload.email || ""}
-                  onChange={onChange}
-                  onFocus={onFocus}
-                  onBlur={onBlur}
-                  error={errorFor("email")}
-                />
-
-                <Input
-                  id="firstname"
-                  name="firstname"
-                  label="First Name"
-                  value={payload.firstname || ""}
-                  onChange={onChange}
-                  onFocus={onFocus}
-                  onBlur={onBlur}
-                  error={errorFor("firstname")}
-                />
-
-                <Input
-                  id="lastname"
-                  name="lastname"
-                  label="Last Name"
-                  value={payload.lastname || ""}
-                  onChange={onChange}
-                  onFocus={onFocus}
-                  onBlur={onBlur}
-                  error={errorFor("lastname")}
-                />
-
-                <Password
-                  id="password"
-                  name="password"
-                  label="Password"
-                  value={payload.password || ""}
-                  onChange={onChange}
-                  onFocus={onFocus}
-                  onBlur={onBlur}
-                  error={errorFor("password")}
-                />
-                <Password
-                  id="confirm_password"
-                  name="confirm_password"
-                  label="Confirm Password"
-                  value={payload.confirm_password || ""}
-                  onChange={onChange}
-                  onFocus={onFocus}
-                  onBlur={onBlur}
-                  error={errorFor("confirm_password")}
-                />
-              </div>
-
-              {/* SUBMIT */}
-              <div>
-                <button
-                  type="submit"
-                  className={`shadow-md bg-[#0056D2] w-full text-white font-semibold px-[30px] py-[10px] rounded-[8px] inline-flex justify-center items-center gap-[10px] text-[18px] text-center min-w-[150px] ${
-                    isLoading ? "opacity-70" : "hover:opacity-90 cursor-pointer"
-                  }`}
-                  disabled={isLoading}
-                >
-                  {isLoading && (
-                    <Spinner className="w-5 h-5 text-white animate-spin opacity-30" />
-                  )}
-                  Continue
-                </button>
-              </div>
-            </form>
-
-            <div className="divider border-b border-[2px] border-[#f5f5f5] my-[40px]" />
-
-            <GoogleAuthButton
-              clientId={googleClientId}
-              onCredential={onGoogleCredential}
-              disabled={isLoading}
-              label={
-                router.query.mode === "instructor"
-                  ? "Sign up with Google as Instructor"
-                  : "Sign up with Google as Student"
-              }
-              buttonText="signup_with"
-            />
-
-            <div className="divider border-b border-[2px] border-[#f5f5f5] my-[40px]" />
-
-            <p className="text-[14px] text-center">
-              By signing up, you agree to our{" "}
-              <Link href="/terms" className="text-[#0056D2] underline">
-                Terms of Use
-              </Link>{" "}
-              and{" "}
-              <Link href="/privacy" className="text-[#0056D2] underline">
-                Privacy Policy
-              </Link>
-              .
-            </p>
-
-            <div className="bg-[#F6F7F9] font-light text-[18px] px-[30px] py-[20px] rounded-[10px] mt-[50px] text-center">
-              Already have an account?{" "}
-              <Link
-                href="/login"
-                className="text-[#0056D2] underline font-bold"
+            {step === "code" ? (
+              <EmailCodeStep
+                email={payload.email.trim()}
+                purposeText="to finish your sign up."
+                isLoading={isLoading}
+                submitLabel="Sign up"
+                onSubmit={onVerify}
+                onResend={onResend}
+                onBack={() => setStep("form")}
+              />
+            ) : (
+              <form
+                className="flex flex-col gap-y-[20px]"
+                onSubmit={onRegister}
               >
-                Log in
-              </Link>
-            </div>
+                <div className="grid gap-[15px]">
+                  <Input
+                    id="fullName"
+                    name="fullName"
+                    label="Full Name"
+                    value={payload.fullName || ""}
+                    onChange={onChange}
+                    onFocus={onFocus}
+                    onBlur={onBlur}
+                    error={errorFor("fullName")}
+                  />
+
+                  <Input
+                    id="email"
+                    name="email"
+                    label="Email"
+                    value={payload.email || ""}
+                    onChange={onChange}
+                    onFocus={onFocus}
+                    onBlur={onBlur}
+                    error={errorFor("email")}
+                  />
+                </div>
+
+                {/* SUBMIT */}
+                <div>
+                  <button
+                    type="submit"
+                    className={`shadow-md bg-[#0056D2] w-full text-white font-semibold px-[30px] py-[10px] rounded-[8px] inline-flex justify-center items-center gap-[10px] text-[18px] text-center min-w-[150px] ${
+                      isLoading
+                        ? "opacity-70"
+                        : "hover:opacity-90 cursor-pointer"
+                    }`}
+                    disabled={isLoading}
+                  >
+                    {isLoading && (
+                      <Spinner className="w-5 h-5 text-white animate-spin opacity-30" />
+                    )}
+                    Continue
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {step === "form" && (
+              <>
+                <div className="divider border-b border-[2px] border-[#f5f5f5] my-[40px]" />
+
+                <GoogleAuthButton
+                  clientId={googleClientId}
+                  onCredential={onGoogleCredential}
+                  disabled={isLoading}
+                  label={
+                    router.query.mode === "instructor"
+                      ? "Sign up with Google as Instructor"
+                      : "Sign up with Google as Student"
+                  }
+                  buttonText="signup_with"
+                />
+
+                <div className="divider border-b border-[2px] border-[#f5f5f5] my-[40px]" />
+
+                <p className="text-[14px] text-center">
+                  By signing up, you agree to our{" "}
+                  <Link href="/terms" className="text-[#0056D2] underline">
+                    Terms of Use
+                  </Link>{" "}
+                  and{" "}
+                  <Link href="/privacy" className="text-[#0056D2] underline">
+                    Privacy Policy
+                  </Link>
+                  .
+                </p>
+
+                <div className="bg-[#F6F7F9] font-light text-[18px] px-[30px] py-[20px] rounded-[10px] mt-[50px] text-center">
+                  Already have an account?{" "}
+                  <Link
+                    href="/login"
+                    className="text-[#0056D2] underline font-bold"
+                  >
+                    Log in
+                  </Link>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>

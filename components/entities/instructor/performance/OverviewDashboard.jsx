@@ -124,8 +124,7 @@ export default function OverviewDashboard({
 }) {
   const profile = persistentStore((state) => state.profile);
   const displayName =
-    profile?.firstName ||
-    profile?.first_name ||
+    profile?.fullName?.trim().split(/\s+/)[0] ||
     profile?.name?.split(" ")[0] ||
     profile?.username ||
     "";

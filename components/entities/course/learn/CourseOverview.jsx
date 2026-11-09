@@ -216,7 +216,7 @@ export default function CourseOverview({ lecture, course }) {
                 </div>
                 <div className="w-full max-w-[75%] ml-[10px]">
                   <div className="font-semibold">
-                    {`${author?.data?.firstname || ""} ${author?.data?.lastname || ""}`.trim() ||
+                    {author?.data?.fullName ||
                       author?.data?.username ||
                       "Instructor"}
                   </div>

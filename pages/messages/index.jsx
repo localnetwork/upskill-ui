@@ -873,11 +873,7 @@ export default function MessagesPage() {
       const initializeVideo = Boolean(payload?.initializeVideo ?? hasVideo);
       const isE2eeMandated = Boolean(payload?.isE2eeMandated ?? true);
       const fallbackName = payload?.fromUser?.username || "User";
-      const callerName =
-        [payload?.fromUser?.firstName, payload?.fromUser?.lastName]
-          .filter(Boolean)
-          .join(" ")
-          .trim() || fallbackName;
+      const callerName = payload?.fromUser?.fullName || fallbackName;
       const rawCallerPhotoPath = String(
         payload?.fromUser?.photoPath ||
           payload?.fromUser?.user_picture?.path ||
@@ -925,11 +921,7 @@ export default function MessagesPage() {
       const callId = String(payload?.callId || "").trim();
       const reason = String(payload?.reason || "").trim();
       const fallbackName = payload?.endedByUser?.username || "User";
-      const endedByName =
-        [payload?.endedByUser?.firstName, payload?.endedByUser?.lastName]
-          .filter(Boolean)
-          .join(" ")
-          .trim() || fallbackName;
+      const endedByName = payload?.endedByUser?.fullName || fallbackName;
       const endedBody =
         reason === "inactivity"
           ? "Call ended due to inactivity"
@@ -1091,8 +1083,7 @@ export default function MessagesPage() {
       sender: {
         id: profile?.id,
         username: profile?.username || "",
-        firstName: profile?.firstName || "",
-        lastName: profile?.lastName || "",
+        fullName: profile?.fullName || "",
       },
       seenByCount: 0,
       deletedForEveryone: false,

@@ -71,8 +71,7 @@ const CartDrawer = forwardRef((props, ref) => {
                     <div className="w-[calc(100%-80px)]">
                       <h2 className="font-semibold">{item.course.title}</h2>
                       <div className="font-light text-[14px]">
-                        {item.course.author?.data.firstname}{" "}
-                        {item.course.author?.data.lastname}
+                        {item.course.author?.data.fullName}
                       </div>
                     </div>
                   </div>

@@ -224,8 +224,6 @@ const isLoggedInBlock = (req, token) => {
   const restrictedPaths = [
     "/login",
     "/register",
-    "/forgot",
-    "/forgot-password",
     "/verify-2fa",
   ];
 

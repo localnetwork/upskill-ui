@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ChevronDown, School, Star, UsersRound, UserStar } from "lucide-react";
 import { useMemo, useState } from "react";
 import Image from "next/image";
+import { getInitials } from "@/lib/services/nameUtils";
 
 const COLLAPSED_TEXT_LIMIT = 280;
 
@@ -18,9 +19,8 @@ function formatCount(value) {
 export default function CourseAuthor({ author }) {
   const [expanded, setExpanded] = useState(false);
 
-  const fullName = `${author?.firstname || ""} ${author?.lastname || ""}`.trim();
-  const initials =
-    `${author?.firstname?.[0] || ""}${author?.lastname?.[0] || ""}`.toUpperCase();
+  const fullName = author?.fullName || "";
+  const initials = getInitials(fullName);
   const pictureSrc = resolvePicture(author?.user_picture?.path);
   const stats = author?.stats || {};
   const biography = author?.biography || "";

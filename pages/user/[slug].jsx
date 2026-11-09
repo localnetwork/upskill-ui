@@ -82,7 +82,7 @@ export default function PublicProfile({ profile }) {
 
   const educatorStats = profile?.stats?.educator || {};
   const profileName =
-    `${profile?.firstname || ""} ${profile?.lastname || ""}`.trim() ||
+    profile?.fullName ||
     profile?.username ||
     "";
   const profileImage = mediaUrl(profile?.user_picture);

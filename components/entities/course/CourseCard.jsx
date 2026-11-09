@@ -70,8 +70,7 @@ export default function CourseCard({ course }) {
       course?.reviewsCount ??
       0,
   );
-  const instructorName =
-    `${course?.author?.data?.firstname || ""} ${course?.author?.data?.lastname || ""}`.trim();
+  const instructorName = course?.author?.data?.fullName || "";
   const instructorHeadline = String(course?.author?.data?.headline || "").trim();
   const instructorLine = instructorHeadline
     ? `${instructorName}, ${instructorHeadline}`

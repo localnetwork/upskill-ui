@@ -9,7 +9,7 @@ import { extractErrors } from "@/lib/services/errorsExtractor";
 import toast from "react-hot-toast";
 import Link from "next/link";
 import Input from "@/components/forms/Input";
-import Password from "@/components/forms/Password";
+import EmailCodeStep from "@/components/auth/EmailCodeStep";
 import GoogleAuthButton from "@/components/auth/GoogleAuthButton";
 import {
   validateAuthField,
@@ -20,6 +20,7 @@ export default function Login({ googleClientId }) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState(null);
+  const [codeTarget, setCodeTarget] = useState(null);
   const [payload, setPayload] = useState({});
   const [fieldErrors, setFieldErrors] = useState({});
   const [touched, setTouched] = useState({});
@@ -62,7 +63,7 @@ export default function Login({ googleClientId }) {
 
     if (inlineErrors) {
       setFieldErrors(inlineErrors);
-      setTouched({ username: true, password: true });
+      setTouched({ username: true });
       return;
     }
 
@@ -72,6 +73,15 @@ export default function Login({ googleClientId }) {
 
     try {
       const response = await AUTHAPI.login(payload);
+
+      if (response?.data?.requires_email_code) {
+        setCodeTarget({
+          email: response.data.email,
+          masked: response.data.masked_email || response.data.email,
+        });
+        toast.success("We emailed you a 6-digit code");
+        return;
+      }
 
       if (response?.data?.requires_2fa) {
         toast.success("Enter your 2FA code");
@@ -103,6 +113,38 @@ export default function Login({ googleClientId }) {
 
       toast.error(error?.data?.message || "Login failed. Please try again.");
     } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const onResendCode = async () => {
+    try {
+      await AUTHAPI.login({ username: codeTarget.email });
+      toast.success("A new code has been sent");
+      return true;
+    } catch (error) {
+      toast.error(error?.data?.message || "Could not resend the code");
+      return false;
+    }
+  };
+
+  const onVerifyCode = async (code) => {
+    toast.dismiss();
+    setIsLoading(true);
+    try {
+      const response = await AUTHAPI.verifyLogin({
+        email: codeTarget.email,
+        code,
+      });
+      persistentStore.setState({
+        profile: response.data.user,
+        token: response.data.token,
+        preAuthToken: null,
+      });
+      toast.success("Login successful!");
+      window.location.href = "/";
+    } catch (error) {
+      toast.error(error?.data?.message || "Invalid or expired code");
       setIsLoading(false);
     }
   };
@@ -174,13 +216,25 @@ export default function Login({ googleClientId }) {
 
           {/* RIGHT FORM */}
           <div className="mx-auto w-full max-w-lg py-2 sm:py-4 md:max-w-none md:py-6 lg:py-10">
+            {codeTarget ? (
+              <EmailCodeStep
+                email={codeTarget.masked}
+                purposeText="to log in."
+                isLoading={isLoading}
+                submitLabel="Log in"
+                onSubmit={onVerifyCode}
+                onResend={onResendCode}
+                onBack={() => setCodeTarget(null)}
+              />
+            ) : (
+            <>
             <div className="mb-6 sm:mb-8">
               <h1 className="text-2xl font-bold leading-tight text-gray-900 sm:text-3xl lg:text-4xl">
                 Log in to continue your learning journey
               </h1>
 
               <p className="mt-3 text-sm leading-6 text-gray-500 sm:text-base">
-                Welcome back! Enter your credentials to continue learning.
+                Enter your email and we&apos;ll send you a 6-digit login code.
               </p>
             </div>
 
@@ -191,23 +245,12 @@ export default function Login({ googleClientId }) {
               <Input
                 id="username"
                 name="username"
-                label="Username or Email"
+                label="Email"
                 value={payload.username || ""}
                 onChange={onChange}
                 onFocus={onFocus}
                 onBlur={onBlur}
                 error={errorFor("username")}
-              />
-
-              <Password
-                id="password"
-                name="password"
-                label="Password"
-                value={payload.password || ""}
-                onChange={onChange}
-                onFocus={onFocus}
-                onBlur={onBlur}
-                error={errorFor("password")}
               />
 
               <button
@@ -259,16 +302,9 @@ export default function Login({ googleClientId }) {
                   </Link>
                 </p>
               </div>
-
-              <div className="border-t border-gray-200 bg-white px-4 py-4 text-center sm:px-6">
-                <Link
-                  href="/forgot-password"
-                  className="inline-block text-sm font-semibold text-[#0056D2] underline underline-offset-2 hover:text-blue-800 sm:text-base"
-                >
-                  Forgot your password?
-                </Link>
-              </div>
             </div>
+            </>
+            )}
           </div>
         </div>
       </div>

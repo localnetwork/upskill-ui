@@ -832,9 +832,7 @@ export default function CommunityFeed({ slug, me, role }) {
   const linkedMedia =
     router.query.media !== undefined ? Number(router.query.media) : null;
   const profile = persistentStore((state) => state.profile);
-  const fullName = [profile?.firstname, profile?.lastname]
-    .filter(Boolean)
-    .join(" ");
+  const fullName = profile?.fullName || "";
   const [reportTarget, setReportTarget] = useState(null);
   const fileRef = useRef(null);
 

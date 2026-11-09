@@ -41,7 +41,7 @@ export default function FeaturedCourse({ topicSlug, categorySlug, label }) {
   if (!course) return null;
 
   const author = course?.author?.data || {};
-  const authorName = `${author.firstname || ""} ${author.lastname || ""}`.trim();
+  const authorName = author.fullName || "";
   const rating = Number(course?.stats?.average_rating || 0);
   const reviews = Number(course?.stats?.total_reviews || 0);
   const image = course?.cover_image?.path;

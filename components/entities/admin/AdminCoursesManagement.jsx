@@ -47,11 +47,8 @@ function resolveAssetUrl(path) {
 }
 
 function mapInstructorName(educator) {
-  const firstName = String(educator?.firstName || "").trim();
-  const lastName = String(educator?.lastName || "").trim();
-  const fullName = `${firstName} ${lastName}`.trim();
   return (
-    fullName || educator?.username || educator?.email || "Unknown instructor"
+    educator?.fullName || educator?.username || educator?.email || "Unknown instructor"
   );
 }
 

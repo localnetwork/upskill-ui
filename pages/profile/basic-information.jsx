@@ -5,8 +5,14 @@ import { Editor } from "@tinymce/tinymce-react";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { extractErrors } from "@/lib/services/errorsExtractor";
+import { useRouter } from "next/router";
+import ChangeEmailModal from "@/components/partials/ChangeEmailModal";
+
 export default function BasicInformation() {
   const profile = persistentStore((state) => state.profile);
+  const router = useRouter();
+  const isWelcome = router.query.welcome === "1";
+  const [showChangeEmail, setShowChangeEmail] = useState(false);
 
   const [payload, setPayload] = useState({});
   const [errors, setErrors] = useState(null);
@@ -14,8 +20,7 @@ export default function BasicInformation() {
   useEffect(() => {
     if (profile) {
       setPayload({
-        firstname: profile.firstname || "",
-        lastname: profile.lastname || "",
+        fullName: profile.fullName || "",
         headline: profile.headline || "",
         biography: profile.biography || "",
         link_website: profile.link_website || "",
@@ -63,48 +68,65 @@ export default function BasicInformation() {
 
   return (
     <ProfileManagementLayout>
+      {isWelcome && (
+        <div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 p-4">
+          <h2 className="text-lg font-semibold text-[#2a2b3f]">
+            Welcome to Upskill! 🎉
+          </h2>
+          <p className="text-sm text-gray-700">
+            Your account is ready. Take a minute to complete your profile — add
+            your full name, a headline and a short biography, then hit Save.
+          </p>
+        </div>
+      )}
+      {showChangeEmail && (
+        <ChangeEmailModal
+          currentEmail={profile?.email}
+          onClose={() => setShowChangeEmail(false)}
+        />
+      )}
       <form className="" onSubmit={onSubmit}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           {/* LEFT COLUMN */}
           <div className="flex flex-col gap-y-3">
             <div className="form-item">
-              <label className="mb-2 block font-normal" htmlFor="firstname">
-                First Name
+              <label className="mb-2 block font-normal" htmlFor="fullName">
+                Full Name
               </label>
               <input
                 type="text"
-                value={payload.firstname}
-                id="firstname"
-                name="firstname"
+                value={payload.fullName}
+                id="fullName"
+                name="fullName"
                 onChange={handleChange}
-                className={`${extractErrors(errors, "firstname") ? "border-red-500" : "border-[oklch(67.22%_0.0355_279.77deg)]"} border rounded-[5px] p-[10px] w-full`}
-                placeholder="Enter your first name"
+                className={`${extractErrors(errors, "fullName") ? "border-red-500" : "border-[oklch(67.22%_0.0355_279.77deg)]"} border rounded-[5px] p-[10px] w-full`}
+                placeholder="Enter your full name"
               />
-              {extractErrors(errors, "firstname") && (
+              {extractErrors(errors, "fullName") && (
                 <p className="text-red-500 text-sm mt-1">
-                  {extractErrors(errors, "firstname")}
+                  {extractErrors(errors, "fullName")}
                 </p>
               )}
             </div>
 
             <div className="form-item">
-              <label className="mb-2 block font-normal" htmlFor="lastname">
-                Last Name
+              <label className="mb-2 block font-normal" htmlFor="email">
+                Email
               </label>
               <input
-                type="text"
-                value={payload.lastname}
-                id="lastname"
-                name="lastname"
-                onChange={handleChange}
-                className={`${extractErrors(errors, "lastname") ? "border-red-500" : "border-[oklch(67.22%_0.0355_279.77deg)]"} border rounded-[5px] p-[10px] w-full`}
-                placeholder="Enter your last name"
+                type="email"
+                value={profile?.email || ""}
+                id="email"
+                readOnly
+                className="border border-[oklch(67.22%_0.0355_279.77deg)] bg-gray-50 rounded-[5px] p-[10px] w-full"
               />
-              {extractErrors(errors, "lastname") && (
-                <p className="text-red-500 text-sm mt-1">
-                  {extractErrors(errors, "lastname")}
-                </p>
-              )}
+              <button
+                type="button"
+                onClick={() => setShowChangeEmail(true)}
+                className="mt-1 text-sm text-[#0056D2] underline"
+              >
+                Change email
+              </button>
             </div>
 
             <div className="form-item">

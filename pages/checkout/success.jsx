@@ -131,9 +131,7 @@ export default function Page({ data = null, statusState = "PENDING" }) {
     item?.course?.title || item?.title || item?.courseId || "Course";
   const getOrderItemAuthor = (item) => {
     const educator = item?.course?.educator || {};
-    const fullName =
-      `${educator?.firstName || ""} ${educator?.lastName || ""}`.trim();
-    return fullName || educator?.username || "Instructor";
+    return educator?.fullName || educator?.username || "Instructor";
   };
 
   const fetchStatus = async () => {

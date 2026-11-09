@@ -3,6 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, ChevronLeft, ChevronRight, Star } from "lucide-react";
 import BaseApi from "@/lib/api/_base.api";
+import { getInitials } from "@/lib/services/nameUtils";
 
 function FeaturedCard({ course }) {
   const rating = Number(
@@ -11,11 +12,9 @@ function FeaturedCard({ course }) {
   const reviews = Number(
     course?.stats?.total_reviews ?? course?.total_reviews ?? 0,
   );
-  const instructor =
-    `${course?.author?.data?.firstname || ""} ${course?.author?.data?.lastname || ""}`.trim();
+  const instructor = course?.author?.data?.fullName || "";
   const author = course?.author?.data;
-  const initials =
-    `${author?.firstname?.[0] || ""}${author?.lastname?.[0] || ""}`.toUpperCase();
+  const initials = getInitials(author?.fullName);
   const rawPicture = author?.user_picture?.path;
   const picturePath =
     rawPicture && !/^https?:\/\//.test(rawPicture)

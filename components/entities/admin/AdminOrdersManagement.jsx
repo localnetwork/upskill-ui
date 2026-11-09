@@ -42,8 +42,7 @@ function formatDate(value) {
 }
 
 function customerName(user) {
-  const full = `${user?.firstName || ""} ${user?.lastName || ""}`.trim();
-  return full || user?.username || "Unknown";
+  return user?.fullName || user?.username || "Unknown";
 }
 
 export default function AdminOrdersManagement() {

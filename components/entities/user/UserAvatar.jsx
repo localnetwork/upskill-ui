@@ -1,16 +1,12 @@
 import persistentStore from "@/lib/store/persistentStore";
 import Image from "next/image";
+import { getInitials } from "@/lib/services/nameUtils";
 
 export default function UserAvatar({ className, profile, size = "md" }) {
   const currentProfile = persistentStore((state) => state.profile);
 
   const initials =
-    [profile?.firstname?.[0] ?? "", profile?.lastname?.[0] ?? ""]
-      .join("")
-      .toUpperCase() ||
-    [currentProfile?.firstname?.[0] ?? "", currentProfile?.lastname?.[0] ?? ""]
-      .join("")
-      .toUpperCase();
+    getInitials(profile?.fullName) || getInitials(currentProfile?.fullName);
 
   // size mapping
   const sizeClasses = {

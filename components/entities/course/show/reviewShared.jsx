@@ -68,9 +68,10 @@ export function ReviewStars({ value, size = 14 }) {
 }
 
 function getInitials(author) {
-  const first = author?.firstName?.[0] || "";
-  const last = author?.lastName?.[0] || "";
-  const initials = `${first}${last}`.toUpperCase();
+  const words = String(author?.fullName || "").trim().split(/\s+/).filter(Boolean);
+  const initials = words.length
+    ? `${words[0][0]}${words.length > 1 ? words[words.length - 1][0] : ""}`.toUpperCase()
+    : "";
   return (
     initials ||
     String(author?.fullName || "L")

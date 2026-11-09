@@ -250,8 +250,7 @@ export default function HeaderSearchAutocomplete({ className }) {
                   <p className="mt-1 text-xs text-slate-500 line-clamp-1">
                     {[
                       course.category?.title,
-                      course.educator &&
-                        `${course.educator.first_name} ${course.educator.last_name}`.trim(),
+                      course.educator.full_name,
                     ]
                       .filter(Boolean)
                       .join(" · ")}
@@ -326,10 +325,7 @@ export default function HeaderSearchAutocomplete({ className }) {
             <Section title="Matched users">
               {matchedUsers.length > 0
                 ? matchedUsers.map((user) => {
-                    const name =
-                      user.first_name || user.last_name
-                        ? `${user.first_name} ${user.last_name}`.trim()
-                        : user.username;
+                    const name = user.full_name || user.username;
                     return (
                       <Link
                         key={user.id}

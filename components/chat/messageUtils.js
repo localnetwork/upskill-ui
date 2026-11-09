@@ -1,6 +1,6 @@
 export function formatName(user) {
   return (
-    [user?.firstName, user?.lastName].filter(Boolean).join(" ").trim() ||
+    user?.fullName ||
     user?.username ||
     user?.email ||
     "User"

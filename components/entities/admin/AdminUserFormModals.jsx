@@ -70,11 +70,9 @@ const toggleIn = (list, name) =>
 
 export function CreateUserModal({ staffRoles, onClose, onCreated }) {
   const [form, setForm] = useState({
-    firstName: "",
-    lastName: "",
+    fullName: "",
     username: "",
     email: "",
-    password: "",
     baseRole: "LEARNER",
   });
   const [selectedStaff, setSelectedStaff] = useState([]);
@@ -104,16 +102,10 @@ export function CreateUserModal({ staffRoles, onClose, onCreated }) {
 
   return (
     <ModalShell title="Add user" onClose={onClose} onSubmit={submit} saving={saving} submitLabel="Create user">
-      <div className="grid grid-cols-2 gap-3">
-        <label className="block text-sm">
-          <span className="mb-1 block font-semibold text-slate-700">First name</span>
-          <input className={inputClass} value={form.firstName} onChange={setField("firstName")} maxLength={80} />
-        </label>
-        <label className="block text-sm">
-          <span className="mb-1 block font-semibold text-slate-700">Last name</span>
-          <input className={inputClass} value={form.lastName} onChange={setField("lastName")} maxLength={80} />
-        </label>
-      </div>
+      <label className="block text-sm">
+        <span className="mb-1 block font-semibold text-slate-700">Full name</span>
+        <input className={inputClass} value={form.fullName} onChange={setField("fullName")} maxLength={160} />
+      </label>
       <label className="block text-sm">
         <span className="mb-1 block font-semibold text-slate-700">Username</span>
         <input className={inputClass} required minLength={3} maxLength={40} value={form.username} onChange={setField("username")} />
@@ -121,20 +113,8 @@ export function CreateUserModal({ staffRoles, onClose, onCreated }) {
       <label className="block text-sm">
         <span className="mb-1 block font-semibold text-slate-700">Email</span>
         <input className={inputClass} type="email" required value={form.email} onChange={setField("email")} />
-      </label>
-      <label className="block text-sm">
-        <span className="mb-1 block font-semibold text-slate-700">Temporary password</span>
-        <input
-          className={inputClass}
-          type="password"
-          required
-          minLength={8}
-          autoComplete="new-password"
-          value={form.password}
-          onChange={setField("password")}
-        />
         <span className="mt-1 block text-xs text-slate-500">
-          Minimum 8 characters. Share it securely; the user should change it after signing in.
+          The user signs in with a one-time code sent to this email.
         </span>
       </label>
       <label className="block text-sm">

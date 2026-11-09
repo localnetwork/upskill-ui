@@ -81,9 +81,7 @@ function getCourseTitle(item) {
 function getCourseInstructor(item) {
   const educator = item?.course?.educator || {};
   const authorData = item?.course?.author?.data || {};
-  const fullName =
-    `${educator?.firstName || authorData?.firstname || ""} ${educator?.lastName || authorData?.lastname || ""}`.trim();
-  return fullName || educator?.username || "Instructor";
+  return educator?.fullName || authorData?.fullName || educator?.username || "Instructor";
 }
 
 function getOrderId(order) {

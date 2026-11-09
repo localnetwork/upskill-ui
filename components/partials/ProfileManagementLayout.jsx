@@ -33,8 +33,7 @@ export default function ProfileManagementLayout({ children }) {
         persistentStore.setState({
           profile: {
             ...me,
-            firstname: me.firstName || me.firstname || "",
-            lastname: me.lastName || me.lastname || "",
+            fullName: me.fullName || "",
           },
         });
       } catch (_error) {
