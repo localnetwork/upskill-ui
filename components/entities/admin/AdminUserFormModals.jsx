@@ -79,6 +79,7 @@ export function CreateUserModal({ staffRoles, onClose, onCreated }) {
   const [saving, setSaving] = useState(false);
 
   const setField = (key) => (event) => setForm((f) => ({ ...f, [key]: event.target.value }));
+  const isStaffOnly = form.baseRole === "NONE";
 
   const submit = async (event) => {
     event.preventDefault();
@@ -87,7 +88,7 @@ export function CreateUserModal({ staffRoles, onClose, onCreated }) {
       await BaseApi.post(`${process.env.NEXT_PUBLIC_API_URL}/admin/users`, {
         ...form,
         baseRole: form.baseRole === "NONE" ? undefined : form.baseRole,
-        staffRoles: selectedStaff,
+        staffRoles: isStaffOnly ? selectedStaff : [],
       });
       toast.success("User created");
       onCreated();
@@ -125,14 +126,16 @@ export function CreateUserModal({ staffRoles, onClose, onCreated }) {
           <option value="NONE">Staff only (no learner/educator role)</option>
         </select>
       </label>
-      <div>
-        <span className="mb-2 block text-sm font-semibold text-slate-700">Staff roles (optional)</span>
-        <StaffRolePicker
-          staffRoles={staffRoles}
-          value={selectedStaff}
-          onToggle={(name) => setSelectedStaff((list) => toggleIn(list, name))}
-        />
-      </div>
+      {isStaffOnly && (
+        <div>
+          <span className="mb-2 block text-sm font-semibold text-slate-700">Staff roles (optional)</span>
+          <StaffRolePicker
+            staffRoles={staffRoles}
+            value={selectedStaff}
+            onToggle={(name) => setSelectedStaff((list) => toggleIn(list, name))}
+          />
+        </div>
+      )}
     </ModalShell>
   );
 }

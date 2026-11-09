@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ChevronLeft, ChevronRight, Search, Star } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
+import AdminCourseReports from "./AdminCourseReports";
 
 const COURSE_STATUS_TABS = [
   { key: "ALL", label: "All Courses", status: null },
@@ -11,6 +12,8 @@ const COURSE_STATUS_TABS = [
   { key: "PENDING", label: "Pending Review", status: "PENDING_APPROVAL" },
   { key: "DRAFT", label: "Drafts", status: "DRAFT" },
   { key: "ARCHIVED", label: "Archived", status: "REJECTED" },
+  { key: "SUSPENDED", label: "Suspended", status: "SUSPENDED" },
+  { key: "REPORTED", label: "Reported", status: null },
 ];
 
 const STATUS_STYLES = {
@@ -19,11 +22,13 @@ const STATUS_STYLES = {
   Draft: "bg-slate-100 text-slate-600 before:bg-slate-400",
   Approved: "bg-blue-50 text-blue-700 before:bg-blue-500",
   Archived: "bg-rose-50 text-rose-700 before:bg-rose-500",
+  Suspended: "bg-orange-50 text-orange-700 before:bg-orange-500",
 };
 
 function mapWorkflowStatusLabel(workflowStatus) {
   const normalized = String(workflowStatus || "").toUpperCase();
   if (normalized === "PUBLISHED") return "Published";
+  if (normalized === "SUSPENDED") return "Suspended";
   if (normalized === "PENDING_APPROVAL") return "Pending Review";
   if (normalized === "APPROVED") return "Approved";
   if (normalized === "REJECTED") return "Archived";
@@ -80,11 +85,13 @@ function normalizeCourses(rows = []) {
       reviewsLabel: `(${totalReviews})`,
       isPendingReview:
         String(row?.workflowStatus || "").toUpperCase() === "PENDING_APPROVAL",
+      isPublished: String(row?.workflowStatus || "").toUpperCase() === "PUBLISHED",
+      isSuspended: String(row?.workflowStatus || "").toUpperCase() === "SUSPENDED",
     };
   });
 }
 
-export default function AdminCoursesManagement() {
+export default function AdminCoursesManagement({ canSuspend = true }) {
   const [activeStatusTab, setActiveStatusTab] = useState("ALL");
   const [searchInput, setSearchInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -107,6 +114,7 @@ export default function AdminCoursesManagement() {
   );
 
   const fetchCourses = useCallback(async () => {
+    if (activeStatusTab === "REPORTED") return;
     try {
       setIsLoading(true);
       const response = await BaseApi.get(
@@ -148,7 +156,7 @@ export default function AdminCoursesManagement() {
     } finally {
       setIsLoading(false);
     }
-  }, [activeStatusFilter, page, pagination.limit, searchQuery]);
+  }, [activeStatusFilter, activeStatusTab, page, pagination.limit, searchQuery]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -170,7 +178,12 @@ export default function AdminCoursesManagement() {
           { note },
         );
         toast.success(
-          action === "approve" ? "Course approved." : "Course rejected.",
+          {
+            approve: "Course approved.",
+            reject: "Course rejected.",
+            suspend: "Course suspended.",
+            reinstate: "Course reinstated.",
+          }[action] || "Course updated.",
         );
         await fetchCourses();
       } catch (error) {
@@ -184,10 +197,16 @@ export default function AdminCoursesManagement() {
   const openReviewActionModal = useCallback(
     (course, action) => {
       setActiveActionCourseId(null);
+      const titles = {
+        approve: "Approve Course",
+        reject: "Reject Course",
+        suspend: "Suspend Course",
+        reinstate: "Reinstate Course",
+      };
       modalState.setState({
         modalInfo: {
           type: "ADMIN_COURSE_REVIEW_ACTION",
-          title: action === "approve" ? "Approve Course" : "Reject Course",
+          title: titles[action] || "Review Course",
           size: "md",
           data: {
             action,
@@ -282,6 +301,9 @@ export default function AdminCoursesManagement() {
         </div>
       </section>
 
+      {activeStatusTab === "REPORTED" ? (
+        <AdminCourseReports search={searchQuery} canSuspend={canSuspend} />
+      ) : (
       <div className="bg-white rounded-[2rem] border border-[#e2e8f0] overflow-hidden transition-all">
         <div className="overflow-x-auto custom-scrollbar">
           <table className="w-full text-left border-collapse">
@@ -417,6 +439,25 @@ export default function AdminCoursesManagement() {
                               </button>
                             </>
                           )}
+
+                          {canSuspend && course.isPublished && (
+                            <button
+                              className="w-full text-left px-4 py-2 text-xs font-bold bg-orange-50 text-orange-700 hover:bg-orange-100 border-t border-[#e2e8f0]"
+                              onClick={() => openReviewActionModal(course, "suspend")}
+                              disabled={isLoading}
+                            >
+                              Suspend course
+                            </button>
+                          )}
+                          {canSuspend && course.isSuspended && (
+                            <button
+                              className="w-full text-left px-4 py-2 text-xs font-bold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-t border-[#e2e8f0]"
+                              onClick={() => openReviewActionModal(course, "reinstate")}
+                              disabled={isLoading}
+                            >
+                              Reinstate course
+                            </button>
+                          )}
                         </div>
                       )}
                     </div>
@@ -490,6 +531,7 @@ export default function AdminCoursesManagement() {
           </div>
         </div>
       </div>
+      )}
     </>
   );
 }

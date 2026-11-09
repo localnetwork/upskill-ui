@@ -12,6 +12,7 @@ import CourseNotes from "@/components/entities/course/learn/CourseNotes";
 import CourseQA from "@/components/entities/course/learn/CourseQA";
 import CourseReviews from "@/components/entities/course/show/CourseReviews";
 import CourseLearnAIAssistantDrawer from "@/components/entities/course/learn/CourseLearnAIAssistantDrawer";
+import CourseSuspendedNotice from "@/components/entities/course/CourseSuspendedNotice";
 import { parseCookies, setCookie } from "nookies";
 import {
   getAuthTokenCookieNames,
@@ -254,6 +255,11 @@ export default function Page({ data }) {
           </div>
         </div>
       </div>
+      {course?.suspension ? (
+        <div className="px-[15px] pt-[15px] bg-[#EDECEC]">
+          <CourseSuspendedNotice suspension={course.suspension} isEnrolled />
+        </div>
+      ) : null}
       <div className="flex flex-wrap">
         <div
           className={`w-full ${panelStatus === "expanded" ? "max-w-[calc(100%-900px)]" : ""} ${panelStatus === "open" ? "max-w-[calc(100%-400px)]" : ""} ${panelStatus === "closed" ? "max-w-full" : ""}`}

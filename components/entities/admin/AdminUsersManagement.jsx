@@ -534,7 +534,10 @@ export default function AdminUsersManagement() {
             >
               <Edit size={16} /> Edit user
             </button>
-            {isAdmin ? (
+            {isAdmin &&
+            !(menuUser.roles || []).some((r) =>
+              ["LEARNER", "EDUCATOR"].includes(String(r).toUpperCase()),
+            ) ? (
               <button
                 type="button"
                 role="menuitem"

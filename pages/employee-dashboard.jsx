@@ -217,7 +217,8 @@ export default function EmployeeDashboard({
     const check = (required) => isAdmin || hasAnyPermission(permissions, required);
     return {
       users: check(["users.view", "users.suspend", "users.manage"]),
-      courses: check(["courses.list", "courses.approve", "courses.reject"]),
+      courses: check(["courses.list", "courses.approve", "courses.reject", "courses.suspend"]),
+      suspendCourses: check(["courses.suspend"]),
       revenue: check(["reports.revenue"]),
       activity: check(["reports.view"]),
       payouts: check(["payouts.manage"]),
@@ -317,7 +318,7 @@ export default function EmployeeDashboard({
     return (
       <>
       {activeTab === "overview" && <EmployeeOverview can={can} />}
-      {activeTab === "courses" && can.courses && <AdminCoursesManagement />}
+      {activeTab === "courses" && can.courses && <AdminCoursesManagement canSuspend={can.suspendCourses} />}
       {activeTab === "users" && can.users && <AdminUsersManagement />}
       {activeTab === "categories" &&
         sections.some((section) => section.key === "categories") && (

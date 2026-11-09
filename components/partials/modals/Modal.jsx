@@ -7,6 +7,7 @@ import CoursePromoVideo from "./content/CoursePromoVideo";
 import ShareSocial from "./content/ShareSocial";
 import CourseReviewModal from "./content/CourseReviewModal";
 import AdminCourseReviewActionModal from "./content/AdminCourseReviewActionModal";
+import ReportCourseModal from "./content/ReportCourseModal";
 import CoursePromotionModal from "./content/CoursePromotionModal";
 import CourseAIUpdateModal from "./content/CourseAIUpdateModal";
 import InstructorDraftCourseDeleteModal from "./content/InstructorDraftCourseDeleteModal";
@@ -59,6 +60,9 @@ export default function Modal() {
       break;
     case "ADMIN_COURSE_REVIEW_ACTION":
       Content = <AdminCourseReviewActionModal />;
+      break;
+    case "REPORT_COURSE":
+      Content = <ReportCourseModal />;
       break;
     case "COURSE_PROMOTION":
       Content = <CoursePromotionModal />;

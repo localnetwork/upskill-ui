@@ -7,6 +7,12 @@ import CourseLearnings from "@/components/entities/course/show/CourseLearnings";
 import CourseRequirements from "@/components/entities/course/show/CourseRequirements";
 import CourseSections from "@/components/entities/course/show/CourseSections";
 import BaseApi from "@/lib/api/_base.api";
+import { parseCookies } from "nookies";
+import {
+  getAuthTokenFromCookieMap,
+  getRefreshTokenFromCookieMap,
+} from "@/lib/services/authToken";
+import CourseSuspendedNotice from "@/components/entities/course/CourseSuspendedNotice";
 import { getInitials } from "@/lib/services/nameUtils";
 import {
   BadgeCheck,
@@ -163,7 +169,8 @@ function CoursePageSkeleton() {
   );
 }
 
-export async function getServerSideProps({ params }) {
+export async function getServerSideProps(context) {
+  const { params } = context;
   const raw = params?.slug;
   const slug = Array.isArray(raw) ? raw[0] : raw;
   try {
@@ -173,7 +180,14 @@ export async function getServerSideProps({ params }) {
     if (!response?.data?.id) return { notFound: true };
     return { props: { initialCourse: response.data } };
   } catch (error) {
-    if (error?.status === 404) return { notFound: true };
+    if (error?.status === 404) {
+      // Suspended courses stay visible to enrollees, authors and staff; the client re-fetches with their session.
+      const hasSession = Boolean(
+        getAuthTokenFromCookieMap(parseCookies(context)) ||
+          getRefreshTokenFromCookieMap(parseCookies(context)),
+      );
+      return hasSession ? { props: { initialCourse: null } } : { notFound: true };
+    }
     return { props: { initialCourse: null } };
   }
 }
@@ -441,6 +455,25 @@ export default function Course({ initialCourse = null }) {
 
     const added = await addCurrentCourseToCart({ showModal: true });
     if (!added) return;
+  };
+
+  const handleReportCourse = async () => {
+    if (!course?.id) return;
+    const isLogged = await isLoggedIn();
+    if (!isLogged) {
+      modalState.setState({
+        modalInfo: { type: "LOGIN", message: "Please log in to report this course." },
+      });
+      return;
+    }
+    modalState.setState({
+      modalInfo: {
+        type: "REPORT_COURSE",
+        title: "Report abuse",
+        size: "md",
+        data: { courseId: course.id },
+      },
+    });
   };
 
   const handleWishlist = async (e) => {
@@ -740,6 +773,14 @@ export default function Course({ initialCourse = null }) {
           ]),
         ]}
       />
+      {course?.suspension ? (
+        <div className="container mx-auto px-4 lg:px-8 pt-4">
+          <CourseSuspendedNotice
+            suspension={course.suspension}
+            isEnrolled={Boolean(course?.is_enrolled)}
+          />
+        </div>
+      ) : null}
       <header className="bg-white text-slate-900 lg:bg-[#0f172a] lg:text-white pt-4 pb-6 lg:py-20 px-4 lg:px-8">
         <div className="container mx-auto grid lg:grid-cols-[1fr_400px] gap-12">
           <div className="space-y-6">
@@ -1315,9 +1356,15 @@ export default function Course({ initialCourse = null }) {
                   >
                     {isShareSubmitting ? "Sharing..." : "Share"}
                   </button>
-                  <button className="text-sm text-red-600 font-bold border-b-2 border-red-600">
-                    Report Abuse
-                  </button>
+                  {String(profile?.id || "") !== String(course?.author?.data?.id || "__") && (
+                    <button
+                      type="button"
+                      onClick={handleReportCourse}
+                      className="text-sm text-red-600 font-bold border-b-2 border-red-600"
+                    >
+                      Report Abuse
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
