@@ -1,4 +1,11 @@
-import { BarChart, Clock, Globe, Star } from "lucide-react";
+import {
+  ChartNoAxesColumnIncreasing,
+  Clock,
+  Globe,
+  Users,
+  Star,
+  CircleCheck,
+} from "lucide-react";
 import { useState, useRef } from "react";
 import UserAvatar from "../../user/UserAvatar";
 import Link from "next/link";
@@ -75,9 +82,31 @@ export default function CourseOverview({ lecture, course }) {
         : []
   ).filter((tag) => tag?.title);
 
+  const totalDurationSeconds = allCurriculums.reduce(
+    (sum, curriculum) => sum + Number(curriculum?.estimated_duration || 0),
+    0,
+  );
+  const durationLabel = (() => {
+    if (!totalDurationSeconds) return "Not available";
+    const totalMinutes = Math.max(1, Math.round(totalDurationSeconds / 60));
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    if (!hours) return `${minutes} min total`;
+    return minutes ? `${hours} hr ${minutes} min total` : `${hours} hr total`;
+  })();
+  const levelLabel = instructional_level?.title || "All Levels";
+  const languageLabel = course?.language || "English";
+  const totalEnrollees = Number(course?.stats?.total_enrollees || 0);
+  const averageRating = Number(course?.stats?.average_rating || 0);
+  const totalReviews = Number(course?.stats?.total_reviews || 0);
+  const progressPercent = allCurriculums.length
+    ? Math.round((completedCurriculumsCount / allCurriculums.length) * 100)
+    : 0;
+  const instructor = author?.data || {};
+
   return (
     <>
-      <div class="space-y-4">
+      <div className="space-y-4">
         <h2 className="text-xl font-bold">About this lesson</h2>
         <div
           className="text-slate-600 leading-relaxed"
@@ -98,39 +127,111 @@ export default function CourseOverview({ lecture, course }) {
             ))}
           </div>
         )}
-        <div class="pt-8 mt-8 border-t border-primary/10">
-          <h2 class="text-xl font-bold mb-6">About this course</h2>
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
-            <div class="flex items-center gap-3 bg-slate-50 p-4 rounded-xl">
-              {/* <span class="material-symbols-outlined text-primary">
-                bar_chart
-              </span> */}
-              <BarChart size={24} className="text-primary" />
+        <div className="pt-8 mt-8 border-t border-primary/10">
+          <h2 className="text-xl font-bold mb-6">About this course</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            {/* Level */}
+            <div className="bg-slate-50 border border-slate-200/80 rounded-lg p-3.5 flex items-center space-x-3">
+              <div className="w-10 h-10 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
+                <ChartNoAxesColumnIncreasing className="w-5 h-5" />
+              </div>
               <div>
-                <p class="text-[10px] text-slate-500 uppercase font-bold tracking-wider !mb-0">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
                   Level
                 </p>
-                <p class="text-sm font-semibold">
-                  {course?.instructional_level?.title}
-                </p>
+                <p className="text-sm font-bold text-slate-800">{levelLabel}</p>
               </div>
             </div>
-            <div class="flex items-center gap-3 bg-slate-50 p-4 rounded-xl">
-              <Clock className="text-primary" size={24} />
+
+            {/* Duration */}
+            <div className="bg-slate-50 border border-slate-200/80 rounded-lg p-3.5 flex items-center space-x-3">
+              <div className="w-10 h-10 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0">
+                <Clock className="w-5 h-5" />
+              </div>
               <div>
-                <p class="text-[10px] text-slate-500 uppercase font-bold tracking-wider !mb-0">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
                   Duration
                 </p>
-                <p class="text-sm font-semibold">12 Hours total</p>
+                <p className="text-sm font-bold text-slate-800">
+                  {durationLabel}
+                </p>
               </div>
             </div>
-            <div class="flex items-center gap-3 bg-slate-50 p-4 rounded-xl">
-              <Globe className="text-primary" size={24} />
+
+            {/* Languages */}
+            <div className="bg-slate-50 border border-slate-200/80 rounded-lg p-3.5 flex items-center space-x-3">
+              <div className="w-10 h-10 rounded-lg bg-teal-100 text-teal-600 flex items-center justify-center shrink-0">
+                <Globe className="w-5 h-5" />
+              </div>
               <div>
-                <p class="text-[10px] text-slate-500 uppercase font-bold tracking-wider !mb-0">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
                   Languages
                 </p>
-                <p class="text-sm font-semibold">English</p>
+                <p className="text-sm font-bold text-slate-800">
+                  {languageLabel}
+                </p>
+              </div>
+            </div>
+
+            {/* Students */}
+            <div className="bg-slate-50 border border-slate-200/80 rounded-lg p-3.5 flex items-center space-x-3">
+              <div className="w-10 h-10 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
+                <Users className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                  Students
+                </p>
+                <p className="text-sm font-bold text-slate-800">
+                  {totalEnrollees.toLocaleString()} enrolled
+                </p>
+              </div>
+            </div>
+
+            {/* Rating */}
+            <div className="bg-slate-50 border border-slate-200/80 rounded-lg p-3.5 flex items-center space-x-3">
+              <div className="w-10 h-10 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+                <Star className="w-5 h-5 fill-current" />
+              </div>
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                  Rating
+                </p>
+                <p className="text-sm font-bold text-slate-800">
+                  {totalReviews ? (
+                    <>
+                      {averageRating.toFixed(1)} ★{" "}
+                      <span className="text-xs font-normal text-slate-500">
+                        ({totalReviews.toLocaleString()})
+                      </span>
+                    </>
+                  ) : (
+                    <span className="text-xs font-normal text-slate-500">
+                      No ratings yet
+                    </span>
+                  )}
+                </p>
+              </div>
+            </div>
+
+            {/* Progress */}
+            <div className="bg-slate-50 border border-slate-200/80 rounded-lg p-3.5 flex items-center space-x-3">
+              <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                <CircleCheck className="w-5 h-5" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                    Progress
+                  </p>
+                  <span className="text-xs font-bold text-emerald-600">
+                    {progressPercent}%
+                  </span>
+                </div>
+                <p className="text-sm font-bold text-slate-800 truncate">
+                  {completedCurriculumsCount} / {allCurriculums.length}{" "}
+                  Completed
+                </p>
               </div>
             </div>
           </div>
@@ -140,107 +241,85 @@ export default function CourseOverview({ lecture, course }) {
       {/*  */}
 
       <div ref={containerRef} className="py-[50px] overflow-hidden">
-        <h2 className="text-[25px]">{subtitle}</h2>
+        <h2 className="text-xl font-bold mb-3">{subtitle}</h2>
 
-        {/* Ratings */}
-        <div className="flex gap-[30px] py-[20px] border-b border-[#d1d2e0]">
-          <div>
-            <span className="text-[#C4710D] text-[18px] flex items-center gap-x-[2px] font-semibold">
-              4.7 <Star size={18} />
-            </span>
-            <p className="text-gray-500">23,567 ratings</p>
-          </div>
-          <div>
-            <span className="font-semibold text-[18px]">149,283</span>
-            <p className="text-gray-500">Students</p>
-          </div>
-          <div>
-            <span className="font-semibold text-[18px]">84 hours</span>
-            <p className="text-gray-500">Total</p>
-          </div>
-        </div>
+        <div className="border-t border-slate-200 pt-6 space-y-6">
+          {/* Row: By the numbers */}
 
-        {/* By the numbers */}
-        <div className="flex px-[25px] font-light text-[18px] gap-[30px] py-[20px] border-b border-[#d1d2e0]">
-          <div className="w-[25%]">By the numbers</div>
-          <div className="w-[75%] grid grid-cols-2">
-            <div>
-              <div>Skill level: {instructional_level?.title}</div>
-              <div>Students: 149,283</div>
-              <div>Languages: English</div>
-              <div>Captions: Yes</div>
-            </div>
-            <div>
-              <div>Lectures: {course?.resources_count?.curriculum_count}</div>
-              <div>Video: 84 total hours</div>
+          {/* Row: Certificate */}
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 text-sm items-center">
+            <div className="font-semibold text-slate-900">Certificate</div>
+
+            <div className="sm:col-span-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <span className="text-slate-600">
+                Get Upskill certificate by completing entire course
+              </span>
+
+              <button
+                onClick={handleGenerateCertificate}
+                disabled={isCertificateLoading || !isCourseCompleted}
+                className="inline-flex items-center justify-center px-4 py-1.5 border border-blue-600 text-blue-600 hover:bg-blue-50 font-medium text-xs rounded transition shrink-0"
+              >
+                {isCertificateLoading ? "Generating..." : "Upskill Certificate"}
+              </button>
             </div>
           </div>
-        </div>
 
-        {/* Certificate */}
-        <div className="flex px-[25px] font-light text-[18px] gap-[30px] py-[20px] border-b border-[#d1d2e0]">
-          <div className="w-[25%]">Certificate</div>
-          <div className="w-[75%]">
-            <p>Get Upskill certificate by completing entire course</p>
-            <button
-              onClick={handleGenerateCertificate}
-              disabled={isCertificateLoading || !isCourseCompleted}
-              className="mt-[10px] px-[20px] py-[10px] border-[2px] font-bold border-[#0056D2] text-[#0056D2] hover:text-white rounded-[5px] hover:bg-[#1d6de0] transition disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isCertificateLoading ? "Generating..." : "Upskill Certificate"}
-            </button>
+          <hr className="border-slate-100" />
+
+          {/* Row: Description */}
+
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 text-sm">
+            <div className="font-semibold text-slate-900">Description</div>
+            <div
+              className={`sm:col-span-3 text-slate-600 space-y-3 leading-relaxed `}
+              dangerouslySetInnerHTML={{ __html: course?.description }}
+            ></div>
           </div>
-        </div>
 
-        {/* Description */}
-        <div className="flex px-[25px] font-light text-[18px] gap-[30px] py-[20px] border-b border-[#d1d2e0]">
-          <div className="w-[25%]">Description</div>
-          <div
-            className={`w-[75%] transition-all duration-300 ${
-              isExpanded ? "" : "line-clamp-10"
-            }`}
-            dangerouslySetInnerHTML={{ __html: description }}
-          ></div>
-        </div>
+          <hr className="border-slate-100" />
 
-        {/* Instructor (only visible when expanded) */}
-        {isExpanded && (
-          <div className="flex px-[25px] font-light text-[18px] gap-[30px] py-[20px] border-b border-[#d1d2e0]">
-            <div className="w-[25%]">Instructor</div>
-            <div className="w-[75%]">
-              <div className="flex w-full">
-                <div className="max-w-[25%] rounded-full overflow-hidden">
-                  <Link href={`/user/${author?.data?.username}`}>
-                    <UserAvatar user={author} size="xxl" />
-                  </Link>
-                </div>
-                <div className="w-full max-w-[75%] ml-[10px]">
-                  <div className="font-semibold">
-                    {author?.data?.fullName ||
-                      author?.data?.username ||
-                      "Instructor"}
+          {/* Row: Instructor */}
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 text-sm">
+            <div className="font-semibold text-slate-900">Instructor</div>
+
+            <div className="sm:col-span-3">
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-5 space-y-4">
+                <div className="flex items-center space-x-3">
+                  <UserAvatar profile={instructor} size="md" />
+
+                  <div>
+                    <h4 className="font-bold text-slate-900 text-base">
+                      {instructor.fullName ||
+                        instructor.username ||
+                        "Instructor"}
+                    </h4>
+                    {instructor.headline && (
+                      <p className="text-xs text-slate-500">
+                        {instructor.headline}
+                      </p>
+                    )}
                   </div>
-                  <div className="text-gray-500">{author?.data?.headline}</div>
+                </div>
+
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-1">
+                    About the instructor
+                  </p>
+                  {instructor.biography ? (
+                    <div
+                      className="text-slate-600 text-sm leading-relaxed whitespace-pre-line"
+                      dangerouslySetInnerHTML={{ __html: instructor.biography }}
+                    />
+                  ) : (
+                    <p className="text-sm text-slate-400">
+                      This instructor hasn't added a biography yet.
+                    </p>
+                  )}
                 </div>
               </div>
-              <div
-                className="mt-[10px]"
-                dangerouslySetInnerHTML={{
-                  __html: author?.data?.biography || "",
-                }}
-              />
             </div>
           </div>
-        )}
-
-        {/* Show more / less button */}
-        <div className="flex mt-6">
-          <button
-            onClick={toggleExpanded}
-            className="bg-[#0056D2] max-w-[150px] flex items-center justify-center gap-[5px] text-center font-semibold text-white px-[20px] py-[10px] rounded-[5px] w-full hover:bg-[#1d6de0] transition"
-          >
-            {isExpanded ? "Show less" : "Show more"}
-          </button>
         </div>
       </div>
     </>

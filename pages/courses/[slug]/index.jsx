@@ -1301,7 +1301,7 @@ export default function Course({ initialCourse = null }) {
                   <h4 className="font-bold mb-4">This course includes:</h4>
                   <CourseInclusions course={course} />
                 </div>
-                {!course?.is_enrolled && (
+                {canShowPurchaseActions && !course?.is_enrolled && (
                   <div className="mt-6 pt-6 border-t border-slate-200">
                     <h4 className="font-bold mb-3">Redeem coupon</h4>
                     <div className="flex gap-2">
