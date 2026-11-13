@@ -11,6 +11,8 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@dicebear/collection": "^9.4.2",
+    "@dicebear/core": "^9.4.3",
     "@diomenike/react-cookie-consent": "file:../d-cookie-consent",
     "@monaco-editor/react": "^4.7.0",
     "@react-three/drei": "^10.7.7",

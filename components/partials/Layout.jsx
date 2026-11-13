@@ -11,8 +11,8 @@ import SecureAccountReminder from "./SecureAccountReminder";
 export default function Layout({ children }) {
   const modalInfo = modalState((state) => state.modalInfo);
   const router = useRouter();
-  const isCallRoute = String(router.pathname || "").startsWith(
-    "/messages/call",
+  const isCallRoute = /^\/(messages\/call|instructor\/courses\/\[slug\]\/role-play)/.test(
+    String(router.pathname || ""),
   );
 
   return (

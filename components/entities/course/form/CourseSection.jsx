@@ -20,6 +20,7 @@ import {
   Code,
   ClipboardCheck,
   AlertTriangle,
+  Drama,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -114,6 +115,9 @@ export default function CourseSection({
         (steps) => Array.isArray(steps) && steps.length > 0,
       );
       return !hasAnyStepChallenges;
+    }
+    if (resourceType === "role_play") {
+      return !asset?.generated;
     }
 
     return true;
@@ -313,6 +317,7 @@ export default function CourseSection({
     { label: "Quiz", value: "quiz", icon: HelpCircle },
     { label: "Coding Exercise", value: "coding_exercise", icon: Code },
     { label: "Assignment", value: "assignment", icon: ClipboardCheck },
+    { label: "Role Play", value: "role_play", icon: Drama },
   ];
 
   const handleDragStart = (e, index) => {

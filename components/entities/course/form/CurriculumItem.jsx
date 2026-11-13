@@ -1,8 +1,10 @@
 "use client";
 import { confirmModal } from "@/lib/services/confirm";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/router";
 import {
   Code,
+  Drama,
   MonitorPlay,
   Newspaper,
   NotebookText,
@@ -26,6 +28,7 @@ export default function CurriculumItem({
   onUpdate,
   onDelete,
 }) {
+  const router = useRouter();
   const [mode, setMode] = useState(null); // "edit" | "content" | null
   const [title, setTitle] = useState(item.title || "");
   const [description, setDescription] = useState(
@@ -73,6 +76,7 @@ export default function CurriculumItem({
       .toLowerCase();
     if (fromResource === "quiz") return "quiz";
     if (fromResource === "coding_exercise") return "coding_exercise";
+    if (fromResource === "role_play") return "role_play";
     if (fromResource === "video" || fromResource === "article")
       return "lecture";
     return "";
@@ -81,6 +85,7 @@ export default function CurriculumItem({
   const isLecture = normalizedCurriculumType === "lecture";
   const isQuiz = normalizedCurriculumType === "quiz";
   const isCoding = normalizedCurriculumType === "coding_exercise";
+  const isRolePlay = normalizedCurriculumType === "role_play";
   const quizQuestions = Array.isArray(currentItem?.asset?.questions)
     ? currentItem.asset.questions
     : [];
@@ -108,7 +113,9 @@ export default function CurriculumItem({
           ? quizQuestions.length === 0
           : resourceType === "coding_exercise"
             ? !hasCodingSteps
-            : true;
+            : resourceType === "role_play"
+              ? !currentItem?.asset?.generated
+              : true;
   const prerequisiteOptions = Array.isArray(allItems)
     ? allItems.filter(
         (candidate) => candidate?.id && candidate.id !== currentItem?.id,
@@ -168,8 +175,12 @@ export default function CurriculumItem({
 
   // --- CREATE
   const handleSave = async () => {
-    if (!title.trim() || !description.trim()) {
-      setError("Title and description are required.");
+    if (!title.trim() || (!isRolePlay && !description.trim())) {
+      setError(
+        isRolePlay
+          ? "Title is required."
+          : "Title and description are required.",
+      );
       return;
     }
     setError("");
@@ -216,6 +227,14 @@ export default function CurriculumItem({
       setOpenContentOnSync(shouldOpenContent);
       onSave?.(saved);
 
+      if (isRolePlay) {
+        setMode(null);
+        router.push(
+          `/instructor/courses/${router.query.slug}/role-play/${saved.id}`,
+        );
+        return;
+      }
+
       // open content editor right after saving
       if (shouldOpenContent) {
         setMode("content");
@@ -229,8 +248,12 @@ export default function CurriculumItem({
 
   // --- UPDATE
   const handleUpdate = async () => {
-    if (!title.trim() || !description.trim()) {
-      setError("Title and description are required.");
+    if (!title.trim() || (!isRolePlay && !description.trim())) {
+      setError(
+        isRolePlay
+          ? "Title is required."
+          : "Title and description are required.",
+      );
       return;
     }
     setError("");
@@ -303,6 +326,57 @@ export default function CurriculumItem({
     }
   };
 
+  if (isRolePlay && currentItem.isNew) {
+    return (
+      <div className="mb-2 w-full border border-[#8710d8] bg-white p-6">
+        <h3 className="font-bold text-slate-900">Practice Role Play title</h3>
+        <p className="mt-2 text-sm text-slate-500">
+          Create a clear and specific title that captures the essence of the
+          Role Play exercise, highlighting the core skills and real-world
+          situations learners will encounter.
+        </p>
+        <p className="mt-3 text-sm text-slate-500">
+          This feature is powered by AI. Be sure to review before publishing.
+        </p>
+        <div className="relative mt-4">
+          <input
+            autoFocus
+            type="text"
+            value={title}
+            maxLength={100}
+            placeholder="Role Play title here"
+            onChange={(e) => setTitle(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && title.trim()) handleSave();
+            }}
+            className="w-full rounded border-2 border-primary px-3 py-3 pr-14 outline-none"
+          />
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500">
+            {100 - title.length}
+          </span>
+        </div>
+        {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+        <div className="mt-4 flex items-center justify-end gap-4">
+          <button
+            type="button"
+            onClick={() => onDelete?.(currentItem.id)}
+            className="font-bold text-slate-900"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={!title.trim()}
+            className="rounded bg-primary px-5 py-3 font-bold text-white disabled:opacity-50"
+          >
+            Add Practice Role Play
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       className={`${hasMissingContent ? "border-2 border-dashed border-red-500 bg-red-50/40" : "[border:1px_solid_oklch(67.22%_0.0355_279.77deg)] bg-gray-50"} px-3 py-[15px] sm:px-[20px] mb-2 w-full`}
@@ -340,6 +414,8 @@ export default function CurriculumItem({
                   <NotebookText size={18} className="inline mr-2" />
                 ) : resourceType === "coding_exercise" ? (
                   <Code size={18} className="inline mr-2" />
+                ) : resourceType === "role_play" ? (
+                  <Drama size={18} className="inline mr-2" />
                 ) : (
                   <OctagonAlert
                     size={18}
@@ -394,6 +470,20 @@ export default function CurriculumItem({
         </div>
 
         <div className="shrink-0 self-start sm:self-auto">
+          {isRolePlay && !currentItem.isNew && (
+            <button
+              onClick={() =>
+                router.push(
+                  `/instructor/courses/${router.query.slug}/role-play/${currentItem.id}`,
+                )
+              }
+            >
+              <span className="text-[12px] px-4 py-2 cursor-pointer flex items-center justify-center font-bold border-[2px] border-[#0056D2] hover:bg-[#0056D2] hover:text-white text-[#0056D2] rounded">
+                <Drama size={16} className="mr-1" />{" "}
+                {currentItem?.asset?.generated ? "Review details" : "Set up"}
+              </span>
+            </button>
+          )}
           {(isLecture || isQuiz || isCoding) && (
             <button
               onClick={() => setMode(mode === "content" ? null : "content")}
@@ -553,7 +643,7 @@ export default function CurriculumItem({
                 className="px-4 py-2 cursor-pointer flex items-center justify-center font-bold border-[2px] border-[#0056D2] hover:bg-[#0056D2] hover:text-white text-[#0056D2] rounded"
                 disabled={
                   !title.trim() ||
-                  !description.trim() ||
+                  (!isRolePlay && !description.trim()) ||
                   hasUnlockValidationError
                 }
               >
@@ -565,7 +655,7 @@ export default function CurriculumItem({
                 className="px-4 py-2 cursor-pointer flex items-center justify-center font-bold border-[2px] border-[#0056D2] hover:bg-[#0056D2] hover:text-white text-[#0056D2] rounded"
                 disabled={
                   !title.trim() ||
-                  !description.trim() ||
+                  (!isRolePlay && !description.trim()) ||
                   hasUnlockValidationError
                 }
               >

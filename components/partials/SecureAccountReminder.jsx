@@ -187,20 +187,6 @@ export default function SecureAccountReminder() {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-3 rounded-xl border border-slate-200 p-4">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700">
-              <Smartphone size={18} />
-            </span>
-            <div>
-              <p className="text-sm font-semibold text-slate-900">
-                Protects your courses, earnings and settings
-              </p>
-              <p className="text-xs text-slate-500">
-                Keep your learning, payouts and account details behind a second
-                check
-              </p>
-            </div>
-          </div>
 
           <button
             type="button"

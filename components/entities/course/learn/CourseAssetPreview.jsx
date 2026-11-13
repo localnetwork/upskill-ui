@@ -5,6 +5,7 @@ import VideoPreview from "./components/VideoPreview";
 import ArticlePreview from "./components/ArticlePreview";
 import QuizPreview from "./components/QuizPreview";
 import CodingExercisePreview from "./components/CodingExercisePreview";
+import RolePlayLearn from "./components/RolePlayLearn";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import "react-tooltip/dist/react-tooltip.css";
 import { Tooltip } from "react-tooltip";
@@ -99,6 +100,9 @@ export default function CourseAssetPreview({
         component = (
           <QuizPreview course={course} lecture={lecture} setCourse={setCourse} />
         );
+        break;
+      case "role_play":
+        component = <RolePlayLearn lecture={lecture} setCourse={setCourse} />;
         break;
       case "coding_exercise":
         component = (

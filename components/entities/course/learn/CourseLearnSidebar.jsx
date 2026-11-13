@@ -5,6 +5,7 @@ import {
   MonitorPlay,
   Newspaper,
   Lock,
+  MessagesSquare,
   PanelLeftOpen,
   PanelRightOpen,
   Sparkles,
@@ -188,6 +189,9 @@ export default function CourseLearnSidebar({
                         break;
                       case "quiz":
                         icon = "❓";
+                        break;
+                      case "role_play":
+                        icon = <MessagesSquare size={15} />;
                         break;
                       case "coding_exercise":
                         icon = <Code size={15} />;
