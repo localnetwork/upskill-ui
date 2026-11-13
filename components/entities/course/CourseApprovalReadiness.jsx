@@ -44,6 +44,7 @@ function getCurriculumResourceType(curriculum = {}) {
 
   if (normalizedType === "quiz") return "quiz";
   if (normalizedType === "coding_exercise") return "coding_exercise";
+  if (normalizedType === "role_play") return "role_play";
   if (normalizedType === "assignment") return "article";
   if (normalizedType === "lecture") return "null";
   return "null";
@@ -75,6 +76,10 @@ function hasMissingCurriculumContent(curriculum = {}) {
       (steps) => Array.isArray(steps) && steps.length > 0,
     );
     return !hasAnyStepChallenges;
+  }
+
+  if (resourceType === "role_play") {
+    return !asset?.generated;
   }
 
   return true;

@@ -50,7 +50,7 @@ function StepBadge({ index, label, state }) {
         className={`flex h-9 w-9 items-center justify-center rounded-full text-[14px] font-bold ${
           state === "inactive"
             ? "bg-white text-slate-900"
-            : "bg-[#3b1a8a] text-white"
+            : "bg-primary text-white"
         }`}
       >
         {state === "done" ? <Check size={16} /> : index}
