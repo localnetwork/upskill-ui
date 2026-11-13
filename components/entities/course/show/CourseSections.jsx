@@ -2,6 +2,8 @@
 import { useState, useEffect } from "react";
 import {
   ChevronDown,
+  Code,
+  MessagesSquare,
   Newspaper,
   PlayCircle,
   X,
@@ -15,6 +17,8 @@ import {
 const CURRICULUM_ICONS = {
   article: Newspaper,
   video: PlayCircle,
+  coding_exercise: Code,
+  role_play: MessagesSquare,
 };
 
 export default function CourseSections({ course }) {
@@ -222,7 +226,10 @@ export default function CourseSections({ course }) {
                                       : curriculum.curriculum_resource_type ===
                                           "coding_exercise"
                                         ? "Coding Exercise"
-                                        : "Other"}
+                                        : curriculum.curriculum_resource_type ===
+                                            "role_play"
+                                          ? "Role Play"
+                                          : "Other"}
                               </span>
                               <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
                               <span className="text-xs text-slate-500">
