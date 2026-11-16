@@ -333,10 +333,10 @@ export default function HeaderSearchAutocomplete({ className }) {
                         className={rowClass}
                         onClick={() => setIsOpen(false)}
                       >
-                        {user.user_picture?.path ? (
+                        {user.profile_picture?.path ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img
-                            src={user.user_picture.path}
+                            src={user.profile_picture.path}
                             alt={name}
                             className="h-10 w-10 shrink-0 rounded-full object-cover"
                           />

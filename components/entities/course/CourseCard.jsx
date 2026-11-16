@@ -263,7 +263,7 @@ export default function CourseCard({ course }) {
             <p className="text-xs text-slate-500 font-medium mb-4" />
 
             <div className="flex items-center gap-2 mb-4">
-              {course?.author?.data?.user_picture && (
+              {course?.author?.data?.profile_picture && (
                 <Link
                   href={`/user/${course?.author?.data?.username}`}
                   className="w-6 h-6 rounded-full block"
@@ -271,7 +271,7 @@ export default function CourseCard({ course }) {
                   <Image
                     alt="Instructor"
                     className="object-cover min-w-6 min-h-6 rounded-full"
-                    src={course.author.data.user_picture.path}
+                    src={course.author.data.profile_picture.path}
                     width={24}
                     height={24}
                   />

@@ -15,7 +15,7 @@ function FeaturedCard({ course }) {
   const instructor = course?.author?.data?.fullName || "";
   const author = course?.author?.data;
   const initials = getInitials(author?.fullName);
-  const rawPicture = author?.user_picture?.path;
+  const rawPicture = author?.profile_picture?.path;
   const picturePath =
     rawPicture && !/^https?:\/\//.test(rawPicture)
       ? `${process.env.NEXT_PUBLIC_API_DOMAIN || ""}${rawPicture}`

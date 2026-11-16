@@ -60,9 +60,9 @@ export default function HomeWelcomeBanner({ profile }) {
     <section className="container pt-8">
       <div className="flex flex-col gap-6 rounded-2xl border border-slate-200 bg-white px-6 py-6 sm:flex-row sm:items-center sm:justify-between sm:px-8">
         <div className="flex items-center gap-5">
-          {profile?.user_picture?.path ? (
+          {profile?.profile_picture?.path ? (
             <Image
-              src={profile.user_picture.path}
+              src={profile.profile_picture.path}
               alt={fullName}
               width={72}
               height={72}

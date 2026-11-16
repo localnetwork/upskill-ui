@@ -21,7 +21,7 @@ export default function CourseAuthor({ author }) {
 
   const fullName = author?.fullName || "";
   const initials = getInitials(fullName);
-  const pictureSrc = resolvePicture(author?.user_picture?.path);
+  const pictureSrc = resolvePicture(author?.profile_picture?.path);
   const stats = author?.stats || {};
   const biography = author?.biography || "";
 

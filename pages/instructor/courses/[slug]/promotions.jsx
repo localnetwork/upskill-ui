@@ -2,7 +2,7 @@ import CourseManagementLayout from "@/components/partials/CourseManagementLayout
 import BaseApi from "@/lib/api/_base.api";
 import { setContext } from "@/lib/api/interceptor";
 import modalState from "@/lib/store/modalState";
-import { Info, Share2, Tags } from "lucide-react";
+import { Info, Search, Share2, Tags } from "lucide-react";
 import { useMemo, useState, useEffect } from "react";
 import toast from "react-hot-toast";
 
@@ -325,9 +325,10 @@ export default function CoursePromotionsPage({ course }) {
                 <h3 className="text-lg font-bold">Expired coupons</h3>
 
                 <div className="relative w-full md:w-80">
-                  <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
-                    search
-                  </span>
+                  <Search
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                    size={16}
+                  />
 
                   <input
                     type="text"

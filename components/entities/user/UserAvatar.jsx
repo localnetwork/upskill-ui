@@ -23,7 +23,7 @@ export default function UserAvatar({ className, profile, size = "md" }) {
       : `w-[${size}px] h-[${size}px] text-[${Math.floor(size / 3)}px]`;
 
   const profilePic =
-    profile?.user_picture || currentProfile?.user_picture || null;
+    profile?.profile_picture || currentProfile?.profile_picture || null;
 
   const imageSrc =
     profilePic?.path && (profilePic.path.startsWith("http://") || profilePic.path.startsWith("https://"))

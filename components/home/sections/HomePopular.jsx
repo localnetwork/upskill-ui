@@ -109,10 +109,10 @@ function EducatorRow({ item, rank }) {
   const name = fullName(item);
   return (
     <Row href={item?.username ? `/user/${item.username}` : "#"} rank={rank}>
-      {item?.user_picture?.path ? (
+      {item?.profile_picture?.path ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={item.user_picture.path}
+          src={item.profile_picture.path}
           alt=""
           className="h-12 w-12 shrink-0 rounded-full object-cover"
         />

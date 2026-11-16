@@ -1,5 +1,7 @@
 import { BadgeCheck } from "lucide-react";
 import Link from "next/link";
+import { mediaUrl } from "@/lib/seo";
+import Image from "next/image";
 
 function getInitials(name = "") {
   return String(name)
@@ -51,12 +53,13 @@ export default function PopularEducators({ category }) {
                 href={educator?.username ? `/user/${educator.username}` : "#"}
                 className="flex flex-col items-center text-center group cursor-pointer"
               >
-                {console.log("educator", educator)}
                 <div className="relative mb-6">
                   <div className="w-28 h-28 md:w-36 md:h-36 rounded-full overflow-hidden border-4 border-surface-container p-1 group-hover:border-primary transition-colors duration-500 bg-on-surface text-surface flex items-center justify-center text-2xl md:text-3xl font-black">
-                    {educator?.profile_picture?.path ? (
-                      <img
-                        src={educator.profile_picture.path}
+                    {mediaUrl(educator?.profile_picture) ? (
+                      <Image
+                        width={100}
+                        height={100}
+                        src={mediaUrl(educator?.profile_picture.path)}
                         alt={educator?.display_name || "Educator"}
                         className="w-full h-full rounded-full object-cover"
                       />

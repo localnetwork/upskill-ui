@@ -10,7 +10,7 @@ export default function BasicInformation() {
 
   useEffect(() => {
     setPayload({
-      user_picture: profile?.user_picture?.id || "",
+      profile_picture: profile?.profile_picture?.id || "",
     });
   }, [profile]);
 
@@ -46,6 +46,10 @@ export default function BasicInformation() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!payload.profile_picture) {
+      toast.error("Please upload a photo first.");
+      return;
+    }
     try {
       const response = await BaseApi.put(
         `${process.env.NEXT_PUBLIC_API_URL}/profile/user-picture`,
@@ -55,7 +59,7 @@ export default function BasicInformation() {
       persistentStore.setState((state) => ({
         profile: {
           ...state.profile,
-          user_picture: response.data.data,
+          profile_picture: response.data.data,
         },
       }));
       toast.success("Profile photo updated successfully.");
@@ -70,11 +74,11 @@ export default function BasicInformation() {
       <form onSubmit={handleSubmit} className="space-y-6">
         <ImageUpload
           onChange={handleChange}
-          value={profile?.user_picture || ""}
+          value={profile?.profile_picture || ""}
           title={payload?.title || ""}
-          preview={payload?.user_picture?.path || null}
-          name="user_picture"
-          label="User Picture"
+          preview={payload?.profile_picture?.path || null}
+          name="profile_picture"
+          label="Profile Picture"
           description="Upload your course image here. It must meet our course image quality
             standards to be accepted. Important guidelines: 750x422 pixels;
             .jpg, .jpeg,. gif, or .png. no text on the image."

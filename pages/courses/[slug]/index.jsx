@@ -732,7 +732,7 @@ export default function Course({ initialCourse = null }) {
   const educator = course?.author?.data;
   const educatorName = educator?.fullName || "";
   const educatorInitials = getInitials(educatorName);
-  const educatorPicturePath = educator?.user_picture?.path;
+  const educatorPicturePath = educator?.profile_picture?.path;
   const educatorPictureSrc = educatorPicturePath
     ? /^https?:\/\//.test(educatorPicturePath)
       ? educatorPicturePath

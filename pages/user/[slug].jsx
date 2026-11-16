@@ -1,5 +1,12 @@
 import UserProfileBanner from "@/components/entities/user/profiles/UserProfileBanner";
 import UserProfileInstructorCourses from "@/components/entities/user/profiles/UserProfileInstructorCourses";
+import InstructorProfileBody from "@/components/entities/user/profiles/InstructorProfileBody";
+import {
+  StorefrontBanner,
+  StorefrontSkills,
+  StorefrontCtas,
+  StorefrontReviews,
+} from "@/components/entities/user/profiles/UserProfileStorefront";
 import CourseItemCard from "@/components/entities/course/CourseItemCard";
 import CertificateCard from "@/components/entities/certificate/CertificateCard";
 import BaseApi from "@/lib/api/_base.api";
@@ -14,6 +21,11 @@ import {
 import { useRouter } from "next/router";
 import { useEffect, useMemo, useState } from "react";
 import Seo from "@/components/partials/Seo";
+import {
+  EditableRichText,
+  ProfileEditProvider,
+  useProfileEdit,
+} from "@/components/entities/user/profiles/inlineEdit";
 import { absoluteUrl, mediaUrl, stripHtml, truncate } from "@/lib/seo";
 
 export const getServerSideProps = async (context) => {
@@ -40,6 +52,15 @@ export const getServerSideProps = async (context) => {
 };
 
 export default function PublicProfile({ profile }) {
+  return (
+    <ProfileEditProvider initialProfile={profile}>
+      <PublicProfileView />
+    </ProfileEditProvider>
+  );
+}
+
+function PublicProfileView() {
+  const { profile, canEdit, saveBasic } = useProfileEdit();
   const router = useRouter();
   const { slug } = router.query;
   const safeSlug = typeof slug === "string" ? slug.replace(/ /g, "-") : "";
@@ -80,12 +101,14 @@ export default function PublicProfile({ profile }) {
     [profile],
   );
 
+  const useInstructorLayout = Boolean(isInstructor && !isLearner);
+
   const educatorStats = profile?.stats?.educator || {};
   const profileName =
     profile?.fullName ||
     profile?.username ||
     "";
-  const profileImage = mediaUrl(profile?.user_picture);
+  const profileImage = mediaUrl(profile?.profile_picture);
   const learnerStats = profile?.stats?.learner || {};
   const completedCourses = Array.isArray(profile?.completed_courses)
     ? profile.completed_courses
@@ -128,10 +151,24 @@ export default function PublicProfile({ profile }) {
           },
         }}
       />
+      {useInstructorLayout ? (
+        <InstructorProfileBody
+          profile={profile}
+          biography={biographyContent}
+          visibleBio={visibleBio}
+          expanded={expanded}
+          onToggle={handleToggle}
+          hasMore={paragraphsCount > 3}
+        />
+      ) : (
+      <>
+      {isInstructor && <StorefrontBanner storefront={profile?.storefront} />}
       <UserProfileBanner profile={profile} />
 
       <div className="container">
         <div className="pt-[30px] pb-[50px]">
+          {isInstructor && <StorefrontSkills storefront={profile?.storefront} />}
+          {isInstructor && <StorefrontCtas storefront={profile?.storefront} />}
           {isInstructor && (
             <div className="mb-10 grid max-w-[800px] grid-cols-2 gap-4 md:grid-cols-4">
               {[
@@ -225,7 +262,15 @@ export default function PublicProfile({ profile }) {
             About Me
           </h2>
 
-          {biographyContent ? (
+          {canEdit ? (
+            <EditableRichText
+              canEdit
+              value={biographyContent}
+              onSave={(biography) => saveBasic({ biography })}
+              className="max-w-[700px] text-[16px] lg:text-[18px] break-words"
+              placeholder="Click to add your biography"
+            />
+          ) : biographyContent ? (
             <>
               <div
                 className="max-w-[700px] text-[16px] lg:text-[18px] break-words"
@@ -290,8 +335,16 @@ export default function PublicProfile({ profile }) {
           )}
 
           {isInstructor && <UserProfileInstructorCourses profile={profile} />}
+          {isInstructor && (
+            <StorefrontReviews
+              storefront={profile?.storefront}
+              reviews={profile?.educator_reviews}
+            />
+          )}
         </div>
       </div>
+      </>
+      )}
     </div>
   );
 }

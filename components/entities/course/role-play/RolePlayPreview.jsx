@@ -71,7 +71,7 @@ function Dialog({ title, onClose, children }) {
 }
 
 function profileAvatar(profile) {
-  const path = profile?.user_picture?.path;
+  const path = profile?.profile_picture?.path;
   if (!path) return null;
   return /^https?:\/\//.test(path)
     ? path

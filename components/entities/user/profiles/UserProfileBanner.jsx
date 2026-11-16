@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Tiktok from "@/components/icons/Tiktok";
+import { EditableText, ImagePickButton, useProfileEdit } from "./inlineEdit";
 
 function getErrorMessage(error, fallback) {
   return error?.data?.message || error?.response?.data?.message || fallback;
@@ -23,6 +24,7 @@ function getErrorMessage(error, fallback) {
 
 export default function UserProfileBanner({ profile }) {
   const currentProfile = persistentStore((state) => state.profile);
+  const { canEdit, saveBasic, saveProfilePicture } = useProfileEdit();
   const router = useRouter();
   const { slug } = router.query;
   const safeSlug = typeof slug === "string" ? slug.replace(/ /g, "-") : "";
@@ -162,19 +164,44 @@ export default function UserProfileBanner({ profile }) {
               {extractedRoleNames?.join(", ")}
             </div>
             <div className="name text-[26px] sm:text-[30px] lg:text-[35px] mt-[5px] font-semibold">
-              {profile?.fullName}
+              <EditableText
+                as="span"
+                canEdit={canEdit}
+                value={profile?.fullName}
+                maxLength={120}
+                placeholder="Add your name"
+                onSave={(fullName) => saveBasic({ fullName })}
+              />
             </div>
-            {profile?.headline && (
+            {(profile?.headline || canEdit) && (
               <div className="headline text-[16px] lg:text-[18px] font-semibold mt-[5px] text-gray-600">
-                {profile?.headline}
+                <EditableText
+                  as="span"
+                  canEdit={canEdit}
+                  value={profile?.headline}
+                  maxLength={60}
+                  placeholder="Add a headline"
+                  onSave={(headline) => saveBasic({ headline })}
+                />
               </div>
             )}
           </div>
           <div className="relative mt-6 lg:mt-0 lg:absolute flex flex-col items-center justify-center lg:top-0 lg:right-0 card test bg-white shadow-md w-full lg:w-auto max-w-[400px] lg:min-w-[350px] mx-auto lg:mx-0 p-5 sm:p-[30px] rounded-lg min-h-[250px]">
-            <UserAvatar
-              className="w-[130px] h-[128px] text-[40px]"
-              profile={profile}
-            />
+            <div className="group/avatar relative">
+              <UserAvatar
+                className="w-[130px] h-[128px] text-[40px]"
+                profile={profile}
+              />
+              {canEdit && (
+                <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/0 opacity-0 transition group-hover/avatar:bg-black/40 group-hover/avatar:opacity-100">
+                  <ImagePickButton
+                    label="Change"
+                    iconSize={14}
+                    onPick={saveProfilePicture}
+                  />
+                </div>
+              )}
+            </div>
 
             <div className="flex mt-[30px] justify-center flex-wrap">
               {profile?.link_website && (

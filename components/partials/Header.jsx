@@ -254,7 +254,7 @@ export default function Header() {
       const callerName = payload?.fromUser?.fullName || fallbackName;
       const rawCallerPhotoPath = String(
         payload?.fromUser?.photoPath ||
-          payload?.fromUser?.user_picture?.path ||
+          payload?.fromUser?.profile_picture?.path ||
           "",
       ).trim();
       const callerPhotoPath = rawCallerPhotoPath

@@ -54,8 +54,8 @@ export default function MobileNav({ open, onClose }) {
   }, [open, onClose]);
 
   // Derived display values from the profile schema
-  // (user_picture.path, fullName, username, email)
-  const avatarPath = profile?.user_picture?.path;
+  // (profile_picture.path, fullName, username, email)
+  const avatarPath = profile?.profile_picture?.path;
   const avatarSrc = avatarPath
     ? avatarPath.startsWith("http://") || avatarPath.startsWith("https://")
       ? avatarPath

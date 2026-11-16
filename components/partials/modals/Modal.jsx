@@ -13,6 +13,7 @@ import CourseAIUpdateModal from "./content/CourseAIUpdateModal";
 import InstructorDraftCourseDeleteModal from "./content/InstructorDraftCourseDeleteModal";
 import CourseApprovalReadinessModal from "./content/CourseApprovalReadinessModal";
 import ConfirmModal from "./content/ConfirmModal";
+import SkillEditorModal from "./content/SkillEditorModal";
 import { settleConfirm } from "@/lib/services/confirm";
 
 export default function Modal() {
@@ -78,6 +79,9 @@ export default function Modal() {
       break;
     case "CONFIRM":
       Content = <ConfirmModal />;
+      break;
+    case "SKILL_EDITOR":
+      Content = <SkillEditorModal />;
       break;
     default:
       return null;
