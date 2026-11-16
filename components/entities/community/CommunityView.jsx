@@ -7,6 +7,7 @@ import COMMUNITYAPI from "@/lib/api/community/request";
 import { confirmModal } from "@/lib/services/confirm";
 import CommunityFeed from "./CommunityFeed";
 import CommunitySettings from "./CommunitySettings";
+import CommunityInsights from "./CommunityInsights";
 import { MembersPanel, ReportsPanel } from "./CommunityPanels";
 import { errorMessage, Avatar, isVideoUrl } from "./CommunityShared";
 
@@ -169,6 +170,9 @@ export default function CommunityView({
         { id: "discussion", label: "Discussion" },
         { id: "members", label: "Members" },
         ...(isStaff ? [{ id: "reports", label: "Reports" }] : []),
+        ...(allowSettings && state.isOwner
+          ? [{ id: "insights", label: "Insights" }]
+          : []),
         ...(allowSettings && role === "ADMIN"
           ? [{ id: "settings", label: "Settings" }]
           : []),
@@ -324,6 +328,7 @@ export default function CommunityView({
               <MembersPanel slug={slug} me={me} role={role} />
             ) : null}
             {activeTab === "reports" ? <ReportsPanel slug={slug} /> : null}
+            {activeTab === "insights" ? <CommunityInsights slug={slug} /> : null}
             {activeTab === "settings" ? (
               <CommunitySettings
                 slug={slug}
