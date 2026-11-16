@@ -1,8 +1,19 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { Search, SlidersHorizontal, Star, X } from "lucide-react";
-import CourseCard from "@/components/entities/course/CourseCard";
+import {
+  ChevronDown,
+  CircleHelp,
+  Code2,
+  Search,
+  Sparkles,
+  SlidersHorizontal,
+  Star,
+  Users,
+  X,
+} from "lucide-react";
+import { FeaturedCard } from "@/components/home/sections/FeaturedCoursesCarouselSection";
 import Select from "@/components/forms/Select";
 import Checkbox from "@/components/forms/Checkbox";
 import Radio from "@/components/forms/Radio";
@@ -35,25 +46,172 @@ function toSingle(value, fallback = "") {
   return String(value);
 }
 
-function TrendGroup({ title, rows = [], toHref }) {
-  if (!rows.length) return null;
+const SORT_OPTIONS = [
+  { value: "relevance", label: "Most Relevant" },
+  { value: "most_viewed", label: "Most Viewed" },
+  { value: "most_reviewed", label: "Most Reviewed" },
+];
+
+const HANDS_ON_PILLS = [
+  { value: "quizzes", label: "Quizzes", Icon: CircleHelp },
+  { value: "coding-exercise", label: "Coding Exercises", Icon: Code2 },
+  { value: "role-plays", label: "Practice Role Plays", Icon: Users },
+];
+
+function AiOverview({ data }) {
   return (
-    <div className="bg-white rounded-2xl border border-slate-100 p-5">
-      <h3 className="text-sm font-bold uppercase tracking-wide text-slate-500 mb-3">
-        {title}
-      </h3>
-      <div className="flex flex-wrap gap-2">
-        {rows.map((row) => (
-          <Link
-            key={row.id}
-            href={toHref(row)}
-            className="px-3 py-1.5 rounded-full border border-slate-200 text-sm text-slate-700 hover:border-primary hover:text-primary transition-colors"
-          >
-            {row.title}
-          </Link>
+    <section className="mb-6 rounded-2xl bg-white p-6 shadow-sm">
+      <div className="flex items-center gap-2">
+        <Sparkles size={22} className="fill-primary text-primary" />
+        <h2 className="text-xl font-bold text-slate-900">AI Overview</h2>
+      </div>
+      <p className="mt-2 text-sm text-slate-600">
+        {data.summary ||
+          `Here are the top matches for \u201C${data.search}\u201D.`}
+      </p>
+      <div className="mt-5 grid gap-4 lg:grid-cols-3">
+        {data.picks.map(({ course, reason }, index) => {
+          const lectures = Number(
+            course?.stats?.total_lectures ?? course?.resources_count?.curriculum_count ?? 0,
+          );
+          const reviews = Number(course?.stats?.total_reviews || 0);
+          const rating = Number(course?.stats?.average_rating || 0);
+          return (
+            <div
+              key={course.id}
+              className="flex flex-col rounded-xl border border-slate-200 p-5"
+            >
+              <span className="w-fit rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
+                {index === 0 ? "Top pick" : `Pick #${index + 1}`}
+              </span>
+              <div className="mt-4 flex gap-4">
+                <Image
+                  src={course?.cover_image?.path || "/placeholder-cover.webp"}
+                  alt={course.title}
+                  width={120}
+                  height={120}
+                  className="h-[60px] w-[60px] shrink-0 rounded object-cover"
+                />
+                <div className="min-w-0">
+                  <h3 className="line-clamp-2 font-bold leading-snug text-slate-900">
+                    {course.title}
+                  </h3>
+                  {reason && <p className="mt-1 line-clamp-3 text-sm text-slate-600">{reason}</p>}
+                  <p className="mt-2 flex flex-wrap items-center gap-x-2 text-xs text-slate-500">
+                    {reviews > 0 && (
+                      <span className="flex items-center gap-1">
+                        <Star size={12} className="fill-amber-500 text-amber-500" />
+                        {rating.toFixed(1)} ({reviews.toLocaleString("en-PH")})
+                      </span>
+                    )}
+                    {lectures > 0 && <span>{lectures.toLocaleString("en-PH")} lectures</span>}
+                    {course?.instructional_level?.title && (
+                      <span>{course.instructional_level.title}</span>
+                    )}
+                  </p>
+                </div>
+              </div>
+              <div className="mt-auto flex justify-end pt-4">
+                <Link
+                  href={`/courses/${course.slug}`}
+                  className="rounded-lg border border-primary px-5 py-2.5 text-sm font-bold text-primary hover:bg-blue-50"
+                >
+                  View course
+                </Link>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+function AiOverviewSkeleton() {
+  const bar = "rounded bg-slate-200/70";
+  return (
+    <section
+      className="mb-6 animate-pulse rounded-2xl bg-white p-6 shadow-sm"
+      aria-busy="true"
+      aria-label="Loading AI Overview"
+    >
+      <div className="flex items-center gap-2">
+        <Sparkles size={22} className="fill-primary text-primary" />
+        <h2 className="text-xl font-bold text-slate-900">AI Overview</h2>
+      </div>
+      <div className="mt-3 space-y-1.5">
+        <div className={`h-2 w-[65%] ${bar}`} />
+        <div className={`h-2 w-[55%] ${bar}`} />
+        <div className={`h-2 w-[40%] ${bar}`} />
+      </div>
+      <div className="mt-5 grid gap-4 lg:grid-cols-3">
+        {Array.from({ length: 3 }).map((_, index) => (
+          <div key={index} className="rounded-xl border border-slate-200 p-5">
+            <div className={`h-7 w-[120px] rounded-full ${bar}`} />
+            <div className="mt-5 flex gap-4">
+              <div className={`h-[60px] w-[60px] shrink-0 ${bar}`} />
+              <div className="flex-1 space-y-2.5">
+                <div className={`h-4 w-[90%] ${bar}`} />
+                <div className={`h-4 w-[60%] ${bar}`} />
+                <div className={`h-3 w-[70%] ${bar}`} />
+              </div>
+            </div>
+            <div className="mt-4 flex justify-end">
+              <div className={`h-10 w-[150px] rounded-md ${bar}`} />
+            </div>
+          </div>
         ))}
       </div>
+    </section>
+  );
+}
+
+const pillClass = (active) =>
+  `flex items-center gap-2 whitespace-nowrap rounded-full border px-4 py-2.5 text-sm transition-colors ${
+    active
+      ? "border-slate-900 bg-slate-900 text-white"
+      : "border-slate-900/70 bg-white text-slate-900 hover:bg-slate-50"
+  }`;
+
+function FilterDropdown({ label, active, children }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const close = (event) => {
+      if (ref.current && !ref.current.contains(event.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, [open]);
+
+  return (
+    <div className="relative" ref={ref}>
+      <button type="button" className={pillClass(active)} onClick={() => setOpen((v) => !v)}>
+        {label}
+        <ChevronDown size={14} />
+      </button>
+      {open && (
+        <div className="absolute left-0 top-full z-30 mt-2 max-h-72 min-w-[220px] overflow-y-auto rounded-xl border border-slate-200 bg-white p-2 shadow-xl">
+          {typeof children === "function" ? children(() => setOpen(false)) : children}
+        </div>
+      )}
     </div>
+  );
+}
+
+function DropdownOption({ selected, onClick, children }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left text-sm hover:bg-slate-50 ${
+        selected ? "font-bold text-primary" : "text-slate-700"
+      }`}
+    >
+      {children}
+      {selected && <span aria-hidden>?</span>}
+    </button>
   );
 }
 
@@ -62,8 +220,9 @@ export default function CoursesPage() {
   const [courses, setCourses] = useState([]);
   const [total, setTotal] = useState(0);
   const [query, setQuery] = useState("");
-  const [sortBy, setSortBy] = useState("Most Relevant");
-  const [discovery, setDiscovery] = useState(null);
+  const [sortBy, setSortBy] = useState("relevance");
+  const [aiOverview, setAiOverview] = useState(null);
+  const [isAiLoading, setIsAiLoading] = useState(false);
   const [topicOptions, setTopicOptions] = useState([]);
   const [languageOptions, setLanguageOptions] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -93,22 +252,6 @@ export default function CoursesPage() {
       handsOn: asList(router.query.handsOn || router.query.hands_on),
     });
   }, [router.query]);
-
-  useEffect(() => {
-    const fetchDiscovery = async () => {
-      try {
-        const response = await BaseApi.get(
-          `${process.env.NEXT_PUBLIC_API_URL}/courses/discovery`,
-          { params: { q: router.query.search || "", limit: 8, nocache: true } },
-        );
-        setDiscovery(response?.data?.data || null);
-      } catch (_error) {
-        setDiscovery(null);
-      }
-    };
-
-    fetchDiscovery();
-  }, [router.query.search]);
 
   useEffect(() => {
     const fetchFilterOptions = async () => {
@@ -224,7 +367,7 @@ export default function CoursesPage() {
             ...(router.query.price ? { price: router.query.price } : {}),
             ...(router.query.language ? { language: router.query.language } : {}),
             ...(router.query.handsOn ? { handsOn: router.query.handsOn } : {}),
-            ...(sortBy === "Newest" ? { sortBy: "newest" } : { sortBy: "relevance" }),
+            sortBy,
             limit: 100,
             nocache: true,
           },
@@ -244,10 +387,32 @@ export default function CoursesPage() {
     fetchCourses();
   }, [router.query, sortBy]);
 
-  const trendingTags = useMemo(
-    () => asArray(discovery?.trending_topics).slice(0, 6),
-    [discovery?.trending_topics],
-  );
+  const searchTerm = toSingle(router.query.search, "").trim();
+
+  useEffect(() => {
+    if (searchTerm.length < 2) {
+      setAiOverview(null);
+      setIsAiLoading(false);
+      return undefined;
+    }
+    let cancelled = false;
+    setIsAiLoading(true);
+    BaseApi.get(`${process.env.NEXT_PUBLIC_API_URL}/courses/ai-overview`, {
+      params: { q: searchTerm, nocache: true },
+    })
+      .then((response) => {
+        if (!cancelled) setAiOverview(response?.data?.data || null);
+      })
+      .catch(() => {
+        if (!cancelled) setAiOverview(null);
+      })
+      .finally(() => {
+        if (!cancelled) setIsAiLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [searchTerm]);
 
   const visibleTopicOptions = useMemo(
     () => (showAllTopics ? topicOptions : topicOptions.slice(0, 12)),
@@ -283,6 +448,33 @@ export default function CoursesPage() {
     const trimmedSearch = query.trim();
     router.push(trimmedSearch ? `/courses?search=${encodeURIComponent(trimmedSearch)}` : "/courses");
     setIsFilterDrawerOpen(false);
+  };
+
+  const pushQuery = (patch) => {
+    const next = { ...router.query, ...patch };
+    Object.keys(next).forEach((key) => {
+      if (next[key] === "" || next[key] === undefined || next[key] === null) delete next[key];
+    });
+    router.push({ pathname: "/courses", query: next }, undefined, { shallow: true });
+  };
+
+  const activeHandsOn = asList(router.query.handsOn || router.query.hands_on);
+  const activeLanguages = asList(router.query.language);
+  const activeLevel = toSingle(router.query.levelId || router.query.instructional_level, "");
+  const activeRating = toSingle(router.query.rating, "");
+
+  const toggleHandsOn = (value) => {
+    const next = activeHandsOn.includes(value)
+      ? activeHandsOn.filter((item) => item !== value)
+      : [...activeHandsOn, value];
+    pushQuery({ handsOn: next.join(","), hands_on: "" });
+  };
+
+  const toggleLanguage = (key) => {
+    const next = activeLanguages.includes(key)
+      ? activeLanguages.filter((item) => item !== key)
+      : [...activeLanguages, key];
+    pushQuery({ language: next.join(",") });
   };
 
   const toggleMultiFilter = (key, value) => {
@@ -327,69 +519,92 @@ export default function CoursesPage() {
             </button>
           </div>
 
-          {trendingTags.length > 0 && (
-            <div className="mt-4 flex flex-wrap gap-2">
-              <span className="text-xs font-bold text-slate-400 mr-2 self-center uppercase tracking-wider">
-                Trending topics:
-              </span>
-              {trendingTags.map((topic) => (
-                <Link
-                  key={topic.id}
-                  className="px-3 py-1 bg-white border border-gray-200 rounded-full text-xs font-medium hover:border-primary transition-colors"
-                  href={`/courses?topic=${encodeURIComponent(topic.slug)}`}
-                >
-                  {topic.title}
-                </Link>
-              ))}
-            </div>
-          )}
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-4 mb-8">
-          <TrendGroup
-            title="Trending categories"
-            rows={asArray(discovery?.trending_categories).slice(0, 8)}
-            toHref={(row) => `/categories/${row.slug}`}
-          />
-          <TrendGroup
-            title="Trending subcategories"
-            rows={asArray(discovery?.trending_subcategories).slice(0, 8)}
-            toHref={(row) => `/categories/${row.slug}`}
-          />
-          <TrendGroup
-            title="Trending topics"
-            rows={asArray(discovery?.trending_topics).slice(0, 8)}
-            toHref={(row) => `/courses?topic=${encodeURIComponent(row.slug)}`}
-          />
-        </div>
+        {isAiLoading && <AiOverviewSkeleton />}
+        {!isAiLoading && aiOverview?.picks?.length > 0 && <AiOverview data={aiOverview} />}
 
-        <div className="flex items-center justify-between mb-8 gap-4 flex-wrap">
-          <div className="flex items-center gap-4">
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 serif-heading">
-              Showing {total} results
-            </h2>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
+          <div className="flex flex-wrap items-center gap-2">
             <button
-              className="cursor-pointer p-3 bg-primary text-white rounded-xl hover:bg-blue-700 transition-all flex items-center justify-center shadow-lg shadow-blue-200 active:scale-95 group"
-              onClick={() => setIsFilterDrawerOpen(true)}
               type="button"
+              className={pillClass(false)}
+              onClick={() => setIsFilterDrawerOpen(true)}
             >
-              <SlidersHorizontal size={20} className="group-hover:animate-pulse" />
-              <span className="ml-2 font-bold text-sm hidden sm:inline">Filter</span>
+              <SlidersHorizontal size={16} />
+              All filters
             </button>
+            {HANDS_ON_PILLS.map(({ value, label, Icon }) => (
+              <button
+                key={value}
+                type="button"
+                className={pillClass(activeHandsOn.includes(value))}
+                onClick={() => toggleHandsOn(value)}
+              >
+                <Icon size={16} />
+                {label}
+              </button>
+            ))}
+            <FilterDropdown label="Language" active={activeLanguages.length > 0}>
+              {languageOptions.map((language) => (
+                <DropdownOption
+                  key={language.key}
+                  selected={activeLanguages.includes(language.key)}
+                  onClick={() => toggleLanguage(language.key)}
+                >
+                  {language.label}
+                </DropdownOption>
+              ))}
+            </FilterDropdown>
+            <FilterDropdown label="Ratings" active={Boolean(activeRating)}>
+              {(close) =>
+                [
+                  { label: "Any rating", value: "" },
+                  { label: "4.5 stars & up", value: "4.5" },
+                  { label: "4.0 stars & up", value: "4" },
+                  { label: "3.5 stars & up", value: "3.5" },
+                ].map((item) => (
+                  <DropdownOption
+                    key={item.value || "any"}
+                    selected={activeRating === item.value}
+                    onClick={() => {
+                      pushQuery({ rating: item.value });
+                      close();
+                    }}
+                  >
+                    {item.label}
+                  </DropdownOption>
+                ))
+              }
+            </FilterDropdown>
+            <FilterDropdown label="Level" active={Boolean(activeLevel)}>
+              {(close) =>
+                difficultyOptions.map((item) => (
+                  <DropdownOption
+                    key={item.label}
+                    selected={activeLevel === item.value}
+                    onClick={() => {
+                      pushQuery({ levelId: item.value });
+                      close();
+                    }}
+                  >
+                    {item.label}
+                  </DropdownOption>
+                ))
+              }
+            </FilterDropdown>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-slate-500">Sort by:</span>
-            <Select
-              className="text-sm font-bold bg-transparent border-none focus:ring-0 cursor-pointer"
-              value={sortBy}
-              onChange={(event) => setSortBy(event.target.value)}
-            >
-              <option>Most Relevant</option>
-              <option>Newest</option>
-            </Select>
-          </div>
+          <Select
+            className="flex items-center gap-2 text-sm font-bold bg-transparent border-none focus:ring-0 cursor-pointer"
+            value={sortBy}
+            options={SORT_OPTIONS}
+            onChange={(event) => setSortBy(event.target.value)}
+          />
         </div>
 
+        <h2 className="mb-6 text-2xl sm:text-3xl font-extrabold text-slate-900 serif-heading">
+          Showing {total} results
+        </h2>
         {isLoading ? (
           <div className="grid xl:grid-cols-4 md:grid-cols-2 grid-cols-1 gap-[15px]">
             {Array.from({ length: 8 }).map((_, index) => (
@@ -402,7 +617,7 @@ export default function CoursesPage() {
         ) : (
           <div className="grid xl:grid-cols-4 md:grid-cols-2 grid-cols-1 gap-[15px]">
             {courses.map((course) => (
-              <CourseCard key={course.id} course={course} />
+              <FeaturedCard key={course.id} course={course} />
             ))}
           </div>
         )}

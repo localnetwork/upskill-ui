@@ -32,6 +32,17 @@ export function FeaturedCard({ course }) {
   const reviews = Number(
     course?.stats?.total_reviews ?? course?.total_reviews ?? 0,
   );
+  const totalSeconds = Number(course?.stats?.total_duration_seconds || 0);
+  const lectures = Number(
+    course?.stats?.total_lectures ?? course?.resources_count?.curriculum_count ?? 0,
+  );
+  const levelTitle = course?.instructional_level?.title;
+  const durationLabel =
+    totalSeconds >= 3600
+      ? `${(totalSeconds / 3600).toFixed(1).replace(/\.0$/, "")} total hours`
+      : totalSeconds > 0
+        ? `${Math.max(1, Math.round(totalSeconds / 60))} total mins`
+        : null;
   const author = course?.author?.data;
   const instructor = author?.fullName || "Instructor";
   const price = course?.price_tier?.price;
@@ -122,7 +133,6 @@ export function FeaturedCard({ course }) {
           </h3>
           <p className="mt-1 line-clamp-1 text-sm text-slate-500">{instructor}</p>
           <div className="mt-4 flex flex-wrap gap-2">
-            <span className={chip}>Course</span>
             <span className={`${chip} flex items-center gap-1`}>
               <Star size={12} className="fill-amber-500 text-amber-500" />
               {rating.toFixed(1)}
@@ -130,6 +140,13 @@ export function FeaturedCard({ course }) {
             <span className={chip}>
               {reviews.toLocaleString("en-PH")} ratings
             </span>
+            {durationLabel && <span className={chip}>{durationLabel}</span>}
+            {lectures > 0 && (
+              <span className={chip}>
+                {lectures.toLocaleString("en-PH")} {lectures === 1 ? "lecture" : "lectures"}
+              </span>
+            )}
+            {levelTitle && <span className={chip}>{levelTitle}</span>}
           </div>
         </Link>
         <div className="mt-5 flex items-center justify-between gap-3">
