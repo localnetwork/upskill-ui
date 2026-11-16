@@ -3,7 +3,7 @@ import ProfileManagementLayout from "@/components/partials/ProfileManagementLayo
 import BaseApi from "@/lib/api/_base.api";
 import persistentStore from "@/lib/store/persistentStore";
 import { ChevronDown, Plus, Trash2, X } from "lucide-react";
-import { getSkillIcon, SKILL_ICONS } from "@/lib/skillIcons";
+import { canonicalSkillIcon, getSkillIcon, SKILL_ICONS } from "@/lib/skillIcons";
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
@@ -49,10 +49,11 @@ export default function StorefrontSettings() {
   };
 
   useEffect(() => {
-    if (!profile?.id || !isEducator) return;
+    if (!profile?.id) return;
     BaseApi.get(`${process.env.NEXT_PUBLIC_API_URL}/profile/storefront`)
       .then((res) => res?.data?.data && setStorefront(res.data.data))
       .catch(() => {});
+    if (!isEducator) return;
     BaseApi.get(
       `${process.env.NEXT_PUBLIC_API_URL}/instructor/courses/${profile.id}`,
     )
@@ -97,16 +98,6 @@ export default function StorefrontSettings() {
     }
   };
 
-  if (!isEducator) {
-    return (
-      <ProfileManagementLayout>
-        <p className="text-gray-600">
-          Storefront customization is available for instructors only.
-        </p>
-      </ProfileManagementLayout>
-    );
-  }
-
   return (
     <ProfileManagementLayout>
       <form onSubmit={onSubmit} className="space-y-10">
@@ -133,7 +124,7 @@ export default function StorefrontSettings() {
         </section>
 
         <section>
-          <h2 className="text-xl font-semibold mb-1">Skills I teach</h2>
+          <h2 className="text-xl font-semibold mb-1">{isEducator ? "Skills I teach" : "Skills"}</h2>
           <p className="text-sm text-gray-600 mb-3">
             Up to {MAX_SKILLS} short labels shown under your banner.
           </p>
@@ -302,6 +293,7 @@ export default function StorefrontSettings() {
           )}
         </section>
 
+        {isEducator && (
         <section>
           <h2 className="text-xl font-semibold mb-1">Featured courses</h2>
           <p className="text-sm text-gray-600 mb-3">
@@ -330,7 +322,9 @@ export default function StorefrontSettings() {
             </p>
           )}
         </section>
+        )}
 
+        {isEducator && (
         <section>
           <label className="flex items-center gap-3 cursor-pointer">
             <input
@@ -343,6 +337,7 @@ export default function StorefrontSettings() {
             </span>
           </label>
         </section>
+        )}
 
         <button
           type="submit"
@@ -384,7 +379,7 @@ export default function StorefrontSettings() {
                   aria-label={`Use ${name} icon`}
                   onClick={() => chooseIcon(name)}
                   className={`flex h-12 w-full items-center justify-center rounded-lg border ${
-                    pickerSkill.icon === name
+                    canonicalSkillIcon(pickerSkill.icon) === name
                       ? "border-[#0056D2] bg-[#F0F6FF] text-[#0056D2]"
                       : "text-gray-700 hover:bg-gray-50"
                   }`}

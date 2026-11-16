@@ -59,7 +59,8 @@ const getNodeIcon = (node, parent = null) => {
     return PARENT_ICON_BY_SLUG[node?.slug] || BookOpen;
   }
 
-  const poolIndex = hashText(node?.slug || node?.title) % CHILD_ICON_POOL.length;
+  const poolIndex =
+    hashText(node?.slug || node?.title) % CHILD_ICON_POOL.length;
   return CHILD_ICON_POOL[poolIndex];
 };
 
@@ -213,11 +214,17 @@ export default function CategoryPicker({
     const map = new Map();
 
     for (const { parent, sub } of selectedCategories) {
-      const parentCategory = categories.find((item) => String(item.id) === parent);
-      const childCategory = findDescendantById(parentCategory?.children ?? [], sub);
+      const parentCategory = categories.find(
+        (item) => String(item.id) === parent,
+      );
+      const childCategory = findDescendantById(
+        parentCategory?.children ?? [],
+        sub,
+      );
       map.set(
         `${parent}-${sub}`,
-        childCategory || parentCategory || { id: sub, title: `Category #${sub}` },
+        childCategory ||
+          parentCategory || { id: sub, title: `Category #${sub}` },
       );
     }
 
@@ -310,7 +317,8 @@ export default function CategoryPicker({
         >
           {currentNodes.map((node) => {
             const isChosen = getSelectionState(node);
-            const hasChildren = Array.isArray(node?.children) && node.children.length > 0;
+            const hasChildren =
+              Array.isArray(node?.children) && node.children.length > 0;
             const NodeIcon = getNodeIcon(
               node,
               navigationPath.length === 0 ? null : navigationPath[0],
@@ -323,20 +331,30 @@ export default function CategoryPicker({
                 onClick={() => handleNodeSelect(node)}
                 className={`relative rounded-xl border px-4 py-5 min-h-[132px] transition-colors ${
                   isChosen
-                    ? "border-violet-300 bg-violet-50 text-violet-700"
+                    ? "border-violet-300 bg-violet-50 text-primary"
                     : "border-gray-200 text-gray-700 hover:bg-gray-50"
                 }`}
               >
                 <span className="inline-flex flex-col items-center justify-center w-full h-full gap-3 text-center">
                   {showIcons ? (
-                    <NodeIcon size={24} className="text-[#64748b]" aria-hidden />
+                    <NodeIcon
+                      size={24}
+                      className="text-[#64748b]"
+                      aria-hidden
+                    />
                   ) : null}
-                  <span className="text-sm font-medium leading-tight">{node.title}</span>
+                  <span className="text-sm font-medium leading-tight">
+                    {node.title}
+                  </span>
                 </span>
                 {hasChildren ? (
-                  <span className="absolute top-2 right-2 text-xs text-[#94a3b8]">{">"}</span>
+                  <span className="absolute top-2 right-2 text-xs text-[#94a3b8]">
+                    {">"}
+                  </span>
                 ) : isChosen ? (
-                  <span className="absolute top-2 right-2 text-xs text-violet-500">✓</span>
+                  <span className="absolute top-2 right-2 text-xs text-violet-500">
+                    ✓
+                  </span>
                 ) : null}
               </button>
             );
@@ -353,13 +371,13 @@ export default function CategoryPicker({
             return (
               <span
                 key={`${parent}-${sub}`}
-                className="flex items-center gap-1 bg-violet-50 text-violet-700 text-xs rounded-full px-3 py-1"
+                className="flex items-center gap-1 bg-violet-50 text-primary text-xs rounded-full px-3 py-1"
               >
                 {selectedItem?.title ?? `Category #${sub}`}
                 <button
                   type="button"
                   onClick={() => removeTag(parent, sub)}
-                  className="text-violet-400 hover:text-violet-700 leading-none"
+                  className="text-violet-400 hover:text-primary leading-none"
                 >
                   &times;
                 </button>

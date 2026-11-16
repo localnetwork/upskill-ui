@@ -1,84 +1,14 @@
 import Image from "next/image";
 import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
+import BaseApi from "@/lib/api/_base.api";
 
-const search = (term) => `/courses?search=${encodeURIComponent(term)}`;
+const byPopularity = (a, b) =>
+  (b.learners_count || 0) - (a.learners_count || 0) ||
+  (b.courses_count || 0) - (a.courses_count || 0) ||
+  String(a.name || a.title).localeCompare(String(b.name || b.title));
 
-const skillGroups = [
-  {
-    title: "In-demand Careers",
-    links: [
-      "Data Scientist",
-      "Full Stack Web Developer",
-      "Cloud Engineer",
-      "Project Manager",
-      "Game Developer",
-    ],
-  },
-  {
-    title: "Web Development",
-    links: ["Web Development", "JavaScript", "React JS", "Angular", "Java"],
-  },
-  {
-    title: "IT Certifications",
-    links: [
-      "Amazon AWS",
-      "AWS Certified Cloud Practitioner",
-      "AZ-900: Microsoft Azure Fundamentals",
-      "AWS Certified Solutions Architect - Associate",
-      "Kubernetes",
-    ],
-  },
-  {
-    title: "Leadership",
-    links: [
-      "Leadership",
-      "Management Skills",
-      "Project Management",
-      "Personal Productivity",
-      "Emotional Intelligence",
-    ],
-  },
-  {
-    title: "Certifications by Skill",
-    links: [
-      "Cybersecurity Certification",
-      "Project Management Certification",
-      "Cloud Certification",
-      "Data Analytics Certification",
-      "HR Management Certification",
-    ],
-  },
-  {
-    title: "Data Science",
-    links: [
-      "Data Science",
-      "Python",
-      "Machine Learning",
-      "ChatGPT",
-      "Deep Learning",
-    ],
-  },
-  {
-    title: "Communication",
-    links: [
-      "Communication Skills",
-      "Presentation Skills",
-      "Public Speaking",
-      "Writing",
-      "PowerPoint",
-    ],
-  },
-  {
-    title: "Business Analytics & Intelligence",
-    links: [
-      "Microsoft Excel",
-      "SQL",
-      "Microsoft Power BI",
-      "Data Analysis",
-      "Business Analysis",
-    ],
-  },
-];
+const labelOf = (item) => item.name || item.title;
 
 const companyGroups = [
   {
@@ -120,8 +50,46 @@ const linkClass =
   "text-[13px] text-[#1f1f1f] transition-colors hover:underline";
 
 const Footer = () => {
+  const [categories, setCategories] = useState([]);
+
+  useEffect(() => {
+    let active = true;
+    BaseApi.get(`${process.env.NEXT_PUBLIC_API_URL}/categories?tree=true`)
+      .then((res) => {
+        if (active) setCategories(res?.data?.data || []);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const skillGroups = useMemo(
+    () =>
+      [...categories]
+        .filter((c) => (c.courses_count || 0) > 0)
+        .sort(byPopularity)
+        .slice(0, 8)
+        .map((c) => ({
+          id: c.id,
+          title: labelOf(c),
+          href: `/categories/${c.slug}`,
+          links: [...(c.children || [])]
+            .filter((child) => (child.courses_count || 0) > 0)
+            .sort(byPopularity)
+            .slice(0, 5)
+            .map((child) => ({
+              id: child.id,
+              label: labelOf(child),
+              href: `/categories/${child.slug}`,
+            })),
+        })),
+    [categories],
+  );
+
   return (
     <footer className="text-white">
+      {skillGroups.length > 0 && (
       <div className="border-t border-white/20 bg-[#F1F5F9]">
         <div className="container py-12">
           <h2 className="text-lg font-bold text-[#1f1f1f]">
@@ -129,15 +97,17 @@ const Footer = () => {
           </h2>
           <div className="mt-10 grid gap-x-10 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
             {skillGroups.map((group) => (
-              <div key={group.title}>
+              <div key={group.id}>
                 <h3 className="text-[15px] font-bold text-[#1f1f1f]">
-                  {group.title}
+                  <Link href={group.href} className="hover:underline">
+                    {group.title}
+                  </Link>
                 </h3>
                 <ul className="mt-4 space-y-2.5">
-                  {group.links.map((label) => (
-                    <li key={label}>
-                      <Link href={search(label)} className={linkClass}>
-                        {label}
+                  {group.links.map((item) => (
+                    <li key={item.id}>
+                      <Link href={item.href} className={linkClass}>
+                        {item.label}
                       </Link>
                     </li>
                   ))}
@@ -147,6 +117,7 @@ const Footer = () => {
           </div>
         </div>
       </div>
+      )}
 
       <div className="bg-[#1F1F1F] ">
         <div className="container py-12">

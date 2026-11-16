@@ -279,7 +279,13 @@ export default function Register({ googleClientId }) {
 
             {step === "form" && (
               <>
-                <div className="divider border-b border-[2px] border-[#f5f5f5] my-[40px]" />
+                <div className="my-[40px] flex items-center gap-4">
+                  <div className="h-px flex-1 bg-gray-200" />
+                  <span className="text-xs text-gray-400 sm:text-sm">
+                    OR CONTINUE WITH
+                  </span>
+                  <div className="h-px flex-1 bg-gray-200" />
+                </div>
 
                 <GoogleAuthButton
                   clientId={googleClientId}

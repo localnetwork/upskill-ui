@@ -12,6 +12,8 @@ import {
   Youtube,
 } from "lucide-react";
 import persistentStore from "@/lib/store/persistentStore";
+import Tiktok from "@/components/icons/Tiktok";
+import FriendActions from "./FriendActions";
 import UserAvatar from "../UserAvatar";
 import {
   EditableText,
@@ -27,6 +29,14 @@ function formatCount(value) {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
   if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
   return String(n);
+}
+
+export function roleLabel(roleName) {
+  return String(roleName || "")
+    .toLowerCase()
+    .split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
 }
 
 export function getSocialLinks(profile) {
@@ -71,6 +81,11 @@ export function getSocialLinks(profile) {
         profile?.link_github && `https://www.github.com/${profile.link_github}`,
       icon: Github,
     },
+    {
+      key: "tiktok",
+      href: profile?.link_tiktok && `https://www.tiktok.com/@${profile.link_tiktok}`,
+      icon: Tiktok,
+    },
   ].filter((item) => item.href);
 }
 
@@ -80,10 +95,18 @@ export default function InstructorHero({ profile }) {
   const skillActions = useSkillActions();
   const storefront = profile?.storefront || {};
   const stats = profile?.stats?.educator || {};
+  const learnerStats = profile?.stats?.learner || {};
+  const roleNames = (profile?.roles || []).map((role) => role.role_name);
+  const isEducator = roleNames.includes("Instructor");
+  const isLearner = roleNames.includes("Learner");
+  const staffRoles = roleNames.filter(
+    (name) => name !== "Instructor" && name !== "Learner",
+  );
   const skills = (storefront.skills || []).map(normalizeSkill);
   const picture = mediaUrl(profile?.profile_picture);
   const isOwnProfile = currentProfile?.id && currentProfile.id === profile?.id;
   const hasBanner = Boolean(storefront.banner_url);
+  const showSkills = skills.length > 0 || canEdit;
 
   return (
     <div className="relative">
@@ -94,21 +117,42 @@ export default function InstructorHero({ profile }) {
         }
       >
         {hasBanner && <div className="absolute inset-0 bg-black/35" />}
-        <div className="container relative flex min-h-[260px] items-end justify-between gap-6 px-4 pb-[90px] pt-10 sm:px-8 lg:min-h-[320px]">
+        <div
+          className={`container relative flex min-h-[260px] items-end justify-between gap-6 px-4 pt-10 sm:px-8 lg:min-h-[320px] ${showSkills ? "pb-[90px]" : "pb-10"}`}
+        >
           <div className="min-w-0 max-w-[640px] break-words">
             <div className="flex flex-wrap items-center gap-2 text-[14px] font-semibold">
-              <span>{formatCount(stats.total_learners)} Learners</span>
-              <span className="flex items-center gap-1">
-                <Star
-                  size={14}
-                  fill="currentColor"
-                  className="text-amber-300"
-                />
-                {Number(stats.average_rating || 0).toFixed(1)}
-              </span>
-              <span className="underline">
-                {formatCount(stats.total_reviews)} ratings
-              </span>
+              {isEducator ? (
+                <>
+                  <span>{formatCount(stats.total_learners)} Learners</span>
+                  <span className="flex items-center gap-1">
+                    <Star
+                      size={14}
+                      fill="currentColor"
+                      className="text-amber-300"
+                    />
+                    {Number(stats.average_rating || 0).toFixed(1)}
+                  </span>
+                  <span className="underline">
+                    {formatCount(stats.total_reviews)} ratings
+                  </span>
+                </>
+              ) : isLearner ? (
+                <>
+                  <span>
+                    {formatCount(learnerStats.completed_courses_count)}{" "}
+                    Completed courses
+                  </span>
+                  <span>
+                    {formatCount(learnerStats.certifications_count)}{" "}
+                    Certifications
+                  </span>
+                </>
+              ) : (
+                <span className="uppercase">
+                  {staffRoles.map(roleLabel).join(", ")}
+                </span>
+              )}
             </div>
             <h1 className="mt-2 text-[32px] font-bold leading-tight sm:text-[44px] lg:text-[52px]">
               <EditableText
@@ -138,6 +182,10 @@ export default function InstructorHero({ profile }) {
                 Edit Profile
               </Link>
             )}
+            <FriendActions
+              profile={profile}
+              className="mt-5 max-w-[260px] rounded-[12px] bg-white p-2 empty:hidden"
+            />
           </div>
           <div className="group/avatar relative hidden shrink-0 sm:block">
             {picture ? (
@@ -170,11 +218,11 @@ export default function InstructorHero({ profile }) {
         )}
       </div>
 
-      {(skills.length > 0 || canEdit) && (
+      {showSkills && (
         <div className="container relative z-10 -mt-[60px] px-4 sm:px-8">
           <div className="bg-white/70 backdrop-blur-xl rounded-3xl flex flex-col items-center gap-6 max-w-[70.375rem] mx-auto py-6 px-10 shadow-[0_14px_17px_#2f38491a]">
             <div className="mb-3 text-center text-[20px] font-semibold text-[#2a2b3f]">
-              Skills I teach
+              {isEducator ? "Skills I teach" : "Skills"}
             </div>
             <div
               className="flex flex-nowrap justify-between self-stretch gap-6 w-full max-w-none m-0 p-0 list-none"

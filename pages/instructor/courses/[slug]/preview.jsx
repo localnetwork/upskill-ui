@@ -64,7 +64,9 @@ function normalizeQuizQuestionsForPreview(rawQuestions) {
     return {
       ...question,
       question: text,
-      choices: choices.map((choice) => String(choice || "").trim()).filter(Boolean),
+      choices: choices
+        .map((choice) => String(choice || "").trim())
+        .filter(Boolean),
     };
   });
 }
@@ -100,27 +102,33 @@ function normalizeSections(rawSections = []) {
                 questions: normalizeQuizQuestionsForPreview(
                   Array.isArray(safeParseMaybeJson(curriculum?.quizQuestions))
                     ? safeParseMaybeJson(curriculum?.quizQuestions)
-                    : safeParseMaybeJson(curriculum?.quizQuestions)?.questions || [],
+                    : safeParseMaybeJson(curriculum?.quizQuestions)
+                        ?.questions || [],
                 ),
               }
             : curriculum?.type === "CODING_EXERCISE"
               ? {
                   instructions: curriculum?.codingInstructions || "",
                   starter_code:
-                    safeParseMaybeJson(curriculum?.codingStarterCode)?.starter_code ||
+                    safeParseMaybeJson(curriculum?.codingStarterCode)
+                      ?.starter_code ||
                     safeParseMaybeJson(curriculum?.codingStarterCode) ||
                     {},
                   languages:
-                    safeParseMaybeJson(curriculum?.codingStarterCode)?.languages || [],
+                    safeParseMaybeJson(curriculum?.codingStarterCode)
+                      ?.languages || [],
                 }
               : curriculum?.videoUrl || curriculum?.type === "VIDEO"
                 ? {
-                  id: curriculum?.id || curriculum?.uuid,
-                  path: curriculum?.videoUrl || "",
-                }
-              : curriculum?.assignmentText
-                ? { id: curriculum?.id || curriculum?.uuid, content: curriculum.assignmentText }
-                : null),
+                    id: curriculum?.id || curriculum?.uuid,
+                    path: curriculum?.videoUrl || "",
+                  }
+                : curriculum?.assignmentText
+                  ? {
+                      id: curriculum?.id || curriculum?.uuid,
+                      content: curriculum.assignmentText,
+                    }
+                  : null),
       })),
     };
   });
@@ -149,7 +157,7 @@ function LecturePreview({ lecture }) {
 
   if (lecture.curriculum_resource_type === "article") {
     return (
-      <div className="w-full h-[500px] bg-white p-6 overflow-y-auto">
+      <div className="w-full rich-content h-[500px] bg-white p-6 overflow-y-auto">
         <div
           className="prose prose-slate max-w-4xl mx-auto"
           dangerouslySetInnerHTML={{
@@ -182,7 +190,8 @@ function LecturePreview({ lecture }) {
                   <p className="text-sm font-semibold text-slate-800">
                     {index + 1}. {question?.question || `Question ${index + 1}`}
                   </p>
-                  {Array.isArray(question?.choices) && question.choices.length ? (
+                  {Array.isArray(question?.choices) &&
+                  question.choices.length ? (
                     <ul className="mt-2 text-sm text-slate-600 list-disc pl-5 space-y-1">
                       {question.choices.map((choice, choiceIndex) => (
                         <li key={`choice-${index + 1}-${choiceIndex + 1}`}>
@@ -195,7 +204,9 @@ function LecturePreview({ lecture }) {
               ))}
             </div>
           ) : (
-            <p className="text-slate-500 mt-2 text-center">No quiz questions available.</p>
+            <p className="text-slate-500 mt-2 text-center">
+              No quiz questions available.
+            </p>
           )}
         </div>
       </div>
@@ -219,14 +230,17 @@ function LecturePreview({ lecture }) {
           <Code className="mb-3 text-slate-500" size={32} />
           <h3 className="text-xl font-semibold">{lecture.title}</h3>
           <p className="text-slate-600 mt-3 whitespace-pre-wrap">
-            {lecture?.asset?.instructions || "No coding instructions available."}
+            {lecture?.asset?.instructions ||
+              "No coding instructions available."}
           </p>
 
           <div className="mt-4">
             <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
               Language
             </p>
-            <p className="text-sm font-semibold text-slate-700">{defaultLanguage}</p>
+            <p className="text-sm font-semibold text-slate-700">
+              {defaultLanguage}
+            </p>
           </div>
 
           <div className="mt-4">
@@ -247,7 +261,9 @@ function LecturePreview({ lecture }) {
       <div className="max-w-xl text-center">
         <FileText className="mx-auto mb-3 text-slate-500" size={32} />
         <h3 className="text-xl font-semibold">{lecture.title}</h3>
-        <p className="text-slate-500 mt-2">This lecture type has no inline preview yet.</p>
+        <p className="text-slate-500 mt-2">
+          This lecture type has no inline preview yet.
+        </p>
       </div>
     </div>
   );
@@ -258,7 +274,9 @@ export async function getServerSideProps(context) {
   setContext(context);
 
   try {
-    const meResponse = await BaseApi.get(`${process.env.NEXT_PUBLIC_API_URL}/users/me`);
+    const meResponse = await BaseApi.get(
+      `${process.env.NEXT_PUBLIC_API_URL}/users/me`,
+    );
     const me = meResponse?.data?.data || {};
     const roles = normalizeRoleNames(me?.roles);
     const isAdmin = roles.includes("ADMIN");
@@ -279,7 +297,10 @@ export async function getServerSideProps(context) {
     );
     const course = courseResponse?.data?.data || null;
     const authorId =
-      course?.educatorId || course?.author?.data?.id || course?.educator?.id || null;
+      course?.educatorId ||
+      course?.author?.data?.id ||
+      course?.educator?.id ||
+      null;
     const isOwner = Boolean(me?.id && authorId && me.id === authorId);
 
     if (!isAdmin && !isOwner && !isReviewer) {

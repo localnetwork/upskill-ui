@@ -36,7 +36,9 @@ function formatDateTime(value) {
 
 function toBoolean(value) {
   if (typeof value === "boolean") return value;
-  const normalized = String(value || "").trim().toLowerCase();
+  const normalized = String(value || "")
+    .trim()
+    .toLowerCase();
   return normalized === "1" || normalized === "true" || normalized === "yes";
 }
 
@@ -58,9 +60,12 @@ const INITIAL_ANNOUNCEMENT_FORM = {
 export default function Page() {
   const [activeTab, setActiveTab] = useState("qa");
   const [courses, setCourses] = useState([]);
-  const [announcementForm, setAnnouncementForm] = useState(INITIAL_ANNOUNCEMENT_FORM);
+  const [announcementForm, setAnnouncementForm] = useState(
+    INITIAL_ANNOUNCEMENT_FORM,
+  );
   const [announcementStatus, setAnnouncementStatus] = useState("");
-  const [isAnnouncementComposerOpen, setIsAnnouncementComposerOpen] = useState(false);
+  const [isAnnouncementComposerOpen, setIsAnnouncementComposerOpen] =
+    useState(false);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [isSendingAnnouncement, setIsSendingAnnouncement] = useState(false);
   const [announcements, setAnnouncements] = useState([]);
@@ -109,7 +114,9 @@ export default function Page() {
         useCourseProgress: toBoolean(draft.useCourseProgress),
         progressZero: toBoolean(draft.progressZero ?? true),
         progressOneToFortyNine: toBoolean(draft.progressOneToFortyNine ?? true),
-        progressFiftyToNinetyNine: toBoolean(draft.progressFiftyToNinetyNine ?? true),
+        progressFiftyToNinetyNine: toBoolean(
+          draft.progressFiftyToNinetyNine ?? true,
+        ),
         progressCompleted: toBoolean(draft.progressCompleted ?? true),
       }));
     } catch (error) {
@@ -134,7 +141,9 @@ export default function Page() {
     setIsAssignmentsLoading(true);
     try {
       const response = await COMMUNICATIONAPI.getInstructorAssignments();
-      setAssignments(Array.isArray(response?.data?.data) ? response.data.data : []);
+      setAssignments(
+        Array.isArray(response?.data?.data) ? response.data.data : [],
+      );
     } catch (error) {
       toast.error(error?.data?.message || "Failed to load assignments.");
       setAssignments([]);
@@ -146,8 +155,13 @@ export default function Page() {
   const loadAnnouncements = async () => {
     setIsAnnouncementsLoading(true);
     try {
-      const response = await COMMUNICATIONAPI.getAnnouncements({ page: 1, limit: 20 });
-      setAnnouncements(Array.isArray(response?.data?.data) ? response.data.data : []);
+      const response = await COMMUNICATIONAPI.getAnnouncements({
+        page: 1,
+        limit: 20,
+      });
+      setAnnouncements(
+        Array.isArray(response?.data?.data) ? response.data.data : [],
+      );
     } catch (error) {
       toast.error(error?.data?.message || "Failed to load announcements.");
       setAnnouncements([]);
@@ -180,7 +194,8 @@ export default function Page() {
     setIsSavingDraft(true);
     setAnnouncementStatus("");
     try {
-      const response = await COMMUNICATIONAPI.saveAnnouncementDraft(announcementForm);
+      const response =
+        await COMMUNICATIONAPI.saveAnnouncementDraft(announcementForm);
       const updatedAt = response?.data?.data?.updatedAt;
       setAnnouncementStatus(
         `Draft saved${updatedAt ? ` at ${formatDateTime(updatedAt)}` : "."}`,
@@ -194,15 +209,21 @@ export default function Page() {
   };
 
   const sendAnnouncement = async () => {
-    if (!announcementForm.subject.trim() || !announcementForm.body.replace(/<[^>]*>|&nbsp;/g, "").trim()) {
+    if (
+      !announcementForm.subject.trim() ||
+      !announcementForm.body.replace(/<[^>]*>|&nbsp;/g, "").trim()
+    ) {
       toast.error("Subject and body are required.");
       return;
     }
     setIsSendingAnnouncement(true);
     setAnnouncementStatus("");
     try {
-      const response = await COMMUNICATIONAPI.sendAnnouncement(announcementForm);
-      const recipientsCount = Number(response?.data?.data?.recipientsCount || 0);
+      const response =
+        await COMMUNICATIONAPI.sendAnnouncement(announcementForm);
+      const recipientsCount = Number(
+        response?.data?.data?.recipientsCount || 0,
+      );
       const sentAt = response?.data?.data?.sentAt;
       setAnnouncementStatus(
         `Announcement sent to ${recipientsCount} recipients${sentAt ? ` at ${formatDateTime(sentAt)}` : "."}`,
@@ -219,11 +240,14 @@ export default function Page() {
 
   return (
     <InstructorLayout>
-      <div className="mx-auto w-full max-w-6xl space-y-6">
+      <div className="mx-auto w-full space-y-6">
         <section className="rounded-lg border border-[#e2e8f0] bg-white p-6">
-          <h1 className="text-2xl font-bold text-on-surface">Communication center</h1>
+          <h1 className="text-2xl font-bold text-on-surface">
+            Communication center
+          </h1>
           <p className="mt-1 text-sm text-on-surface-variant">
-            Manage learner conversations, insights, assignments, and announcements.
+            Manage learner conversations, insights, assignments, and
+            announcements.
           </p>
         </section>
 
@@ -248,21 +272,29 @@ export default function Page() {
 
         {activeTab === "ai" ? (
           <section className="rounded-lg border border-[#e2e8f0] bg-white p-6">
-            <h2 className="text-lg font-semibold text-on-surface">AI assistant insights</h2>
+            <h2 className="text-lg font-semibold text-on-surface">
+              AI assistant insights
+            </h2>
             {isAiLoading ? (
               <p className="mt-4 text-sm text-slate-500">Loading insights...</p>
             ) : !aiInsights ? (
-              <p className="mt-4 text-sm text-slate-500">No insights available yet.</p>
+              <p className="mt-4 text-sm text-slate-500">
+                No insights available yet.
+              </p>
             ) : (
               <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
                 <div className="rounded-lg border border-slate-200 p-4">
-                  <p className="text-xs uppercase tracking-wide text-slate-500">Total learners</p>
+                  <p className="text-xs uppercase tracking-wide text-slate-500">
+                    Total learners
+                  </p>
                   <p className="mt-2 text-2xl font-bold text-on-surface">
                     {Number(aiInsights.totalLearners || 0)}
                   </p>
                 </div>
                 <div className="rounded-lg border border-slate-200 p-4">
-                  <p className="text-xs uppercase tracking-wide text-slate-500">At-risk learners</p>
+                  <p className="text-xs uppercase tracking-wide text-slate-500">
+                    At-risk learners
+                  </p>
                   <p className="mt-2 text-2xl font-bold text-on-surface">
                     {Number(aiInsights.atRiskLearners || 0)}
                   </p>
@@ -284,34 +316,51 @@ export default function Page() {
                   </p>
                 </div>
                 <div className="rounded-lg border border-slate-200 p-4 md:col-span-2 xl:col-span-4">
-                  <p className="text-xs uppercase tracking-wide text-slate-500">Top concern</p>
+                  <p className="text-xs uppercase tracking-wide text-slate-500">
+                    Top concern
+                  </p>
                   <p className="mt-2 text-sm font-semibold text-on-surface">
                     {aiInsights.topConcern}
                   </p>
                   <p className="mt-3 text-xs uppercase tracking-wide text-slate-500">
                     Suggested action
                   </p>
-                  <p className="mt-1 text-sm text-slate-700">{aiInsights.suggestedAction}</p>
+                  <p className="mt-1 text-sm text-slate-700">
+                    {aiInsights.suggestedAction}
+                  </p>
                 </div>
               </div>
             )}
           </section>
         ) : null}
 
-        {activeTab === "messages" ? <InstructorMessagesPanel courses={courseOptions} /> : null}
+        {activeTab === "messages" ? (
+          <InstructorMessagesPanel courses={courseOptions} />
+        ) : null}
 
         {activeTab === "assignments" ? (
           <section className="rounded-lg border border-[#e2e8f0] bg-white p-6">
-            <h2 className="text-lg font-semibold text-on-surface">Assignments</h2>
+            <h2 className="text-lg font-semibold text-on-surface">
+              Assignments
+            </h2>
             {isAssignmentsLoading ? (
-              <p className="mt-4 text-sm text-slate-500">Loading assignments...</p>
+              <p className="mt-4 text-sm text-slate-500">
+                Loading assignments...
+              </p>
             ) : assignments.length === 0 ? (
-              <p className="mt-4 text-sm text-slate-500">No assignments found.</p>
+              <p className="mt-4 text-sm text-slate-500">
+                No assignments found.
+              </p>
             ) : (
               <div className="mt-4 space-y-3">
                 {assignments.map((assignment) => (
-                  <div key={assignment.id} className="rounded-lg border border-slate-200 p-4">
-                    <p className="font-semibold text-on-surface">{assignment.title}</p>
+                  <div
+                    key={assignment.id}
+                    className="rounded-lg border border-slate-200 p-4"
+                  >
+                    <p className="font-semibold text-on-surface">
+                      {assignment.title}
+                    </p>
                     <p className="mt-1 text-xs text-slate-600">
                       {assignment?.course?.title || "Course"} • Created{" "}
                       {formatDateTime(assignment.createdAt)}
@@ -319,15 +368,21 @@ export default function Page() {
                     <div className="mt-3 grid grid-cols-3 gap-2 text-sm">
                       <div className="rounded-md bg-slate-50 p-2">
                         <p className="text-xs text-slate-500">Enrolled</p>
-                        <p className="font-semibold">{Number(assignment.enrolledCount || 0)}</p>
+                        <p className="font-semibold">
+                          {Number(assignment.enrolledCount || 0)}
+                        </p>
                       </div>
                       <div className="rounded-md bg-slate-50 p-2">
                         <p className="text-xs text-slate-500">Completed</p>
-                        <p className="font-semibold">{Number(assignment.completedCount || 0)}</p>
+                        <p className="font-semibold">
+                          {Number(assignment.completedCount || 0)}
+                        </p>
                       </div>
                       <div className="rounded-md bg-slate-50 p-2">
                         <p className="text-xs text-slate-500">Pending</p>
-                        <p className="font-semibold">{Number(assignment.pendingCount || 0)}</p>
+                        <p className="font-semibold">
+                          {Number(assignment.pendingCount || 0)}
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -340,7 +395,9 @@ export default function Page() {
         {activeTab === "announcements" ? (
           <section className="space-y-5 rounded-lg border border-[#e2e8f0] bg-white p-6">
             <div className="flex items-center justify-between gap-3">
-              <h2 className="text-lg font-semibold text-on-surface">Announcements</h2>
+              <h2 className="text-lg font-semibold text-on-surface">
+                Announcements
+              </h2>
               <button
                 type="button"
                 onClick={() => setIsAnnouncementComposerOpen((prev) => !prev)}
@@ -353,12 +410,19 @@ export default function Page() {
             {!isAnnouncementComposerOpen ? (
               <div className="space-y-3">
                 {isAnnouncementsLoading ? (
-                  <p className="text-sm text-slate-500">Loading announcements...</p>
+                  <p className="text-sm text-slate-500">
+                    Loading announcements...
+                  </p>
                 ) : announcements.length === 0 ? (
-                  <p className="text-sm text-slate-500">No announcements yet.</p>
+                  <p className="text-sm text-slate-500">
+                    No announcements yet.
+                  </p>
                 ) : (
                   announcements.map((announcement) => (
-                    <div key={announcement.id} className="rounded-lg border border-slate-200 p-4">
+                    <div
+                      key={announcement.id}
+                      className="rounded-lg border border-slate-200 p-4"
+                    >
                       <div className="flex items-center justify-between gap-2">
                         <p className="font-semibold text-on-surface">
                           {announcement.subject || "Untitled announcement"}
@@ -386,7 +450,9 @@ export default function Page() {
                     <Select
                       name="courseId"
                       value={announcementForm.courseId}
-                      onChange={(event) => setAnnouncementField("courseId", event.target.value)}
+                      onChange={(event) =>
+                        setAnnouncementField("courseId", event.target.value)
+                      }
                       options={courseOptions.map((course) => ({
                         value: course.id,
                         label: course.title,
@@ -396,18 +462,26 @@ export default function Page() {
                   </div>
 
                   <div>
-                    <p className="mb-1 text-sm text-slate-700">Exclude students by course</p>
+                    <p className="mb-1 text-sm text-slate-700">
+                      Exclude students by course
+                    </p>
                     <Select
                       name="excludeCourseId"
                       value={announcementForm.excludeCourseId || ""}
                       onChange={(event) =>
-                        setAnnouncementField("excludeCourseId", event.target.value)
+                        setAnnouncementField(
+                          "excludeCourseId",
+                          event.target.value,
+                        )
                       }
                       options={[
                         { value: "", label: "None" },
                         ...courseOptions
                           .filter((course) => course.id !== "all")
-                          .map((course) => ({ value: course.id, label: course.title })),
+                          .map((course) => ({
+                            value: course.id,
+                            label: course.title,
+                          })),
                       ]}
                       controlClassName="border border-[#4b4c54] rounded-lg min-h-[48px] px-4 py-2 text-sm"
                     />
@@ -415,20 +489,28 @@ export default function Page() {
                 </div>
 
                 <div className="rounded-lg border border-slate-200 p-4">
-                  <p className="text-sm font-semibold text-slate-800">Filter recipients by</p>
+                  <p className="text-sm font-semibold text-slate-800">
+                    Filter recipients by
+                  </p>
                   <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
                     <Checkbox
                       label="Enrollment date"
                       checked={announcementForm.useEnrollmentDate}
                       onChange={(event) =>
-                        setAnnouncementField("useEnrollmentDate", event.target.checked)
+                        setAnnouncementField(
+                          "useEnrollmentDate",
+                          event.target.checked,
+                        )
                       }
                     />
                     <Checkbox
                       label="Course progress"
                       checked={announcementForm.useCourseProgress}
                       onChange={(event) =>
-                        setAnnouncementField("useCourseProgress", event.target.checked)
+                        setAnnouncementField(
+                          "useCourseProgress",
+                          event.target.checked,
+                        )
                       }
                     />
                   </div>
@@ -442,28 +524,40 @@ export default function Page() {
                         label="0% (Not started)"
                         checked={announcementForm.progressZero}
                         onChange={(event) =>
-                          setAnnouncementField("progressZero", event.target.checked)
+                          setAnnouncementField(
+                            "progressZero",
+                            event.target.checked,
+                          )
                         }
                       />
                       <Checkbox
                         label="1-49%"
                         checked={announcementForm.progressOneToFortyNine}
                         onChange={(event) =>
-                          setAnnouncementField("progressOneToFortyNine", event.target.checked)
+                          setAnnouncementField(
+                            "progressOneToFortyNine",
+                            event.target.checked,
+                          )
                         }
                       />
                       <Checkbox
                         label="50-99%"
                         checked={announcementForm.progressFiftyToNinetyNine}
                         onChange={(event) =>
-                          setAnnouncementField("progressFiftyToNinetyNine", event.target.checked)
+                          setAnnouncementField(
+                            "progressFiftyToNinetyNine",
+                            event.target.checked,
+                          )
                         }
                       />
                       <Checkbox
                         label="100% completed"
                         checked={announcementForm.progressCompleted}
                         onChange={(event) =>
-                          setAnnouncementField("progressCompleted", event.target.checked)
+                          setAnnouncementField(
+                            "progressCompleted",
+                            event.target.checked,
+                          )
                         }
                       />
                     </div>
@@ -476,14 +570,24 @@ export default function Page() {
                         name="includeAfter"
                         label="Enrolled after"
                         value={announcementForm.includeAfter}
-                        onChange={(event) => setAnnouncementField("includeAfter", event.target.value)}
+                        onChange={(event) =>
+                          setAnnouncementField(
+                            "includeAfter",
+                            event.target.value,
+                          )
+                        }
                       />
                       <Input
                         type="date"
                         name="includeBefore"
                         label="Enrolled before"
                         value={announcementForm.includeBefore}
-                        onChange={(event) => setAnnouncementField("includeBefore", event.target.value)}
+                        onChange={(event) =>
+                          setAnnouncementField(
+                            "includeBefore",
+                            event.target.value,
+                          )
+                        }
                       />
                     </div>
                   ) : null}
@@ -495,7 +599,9 @@ export default function Page() {
                     name="subject"
                     label="Subject"
                     value={announcementForm.subject}
-                    onChange={(event) => setAnnouncementField("subject", event.target.value)}
+                    onChange={(event) =>
+                      setAnnouncementField("subject", event.target.value)
+                    }
                   />
                   <div>
                     <p className="mb-1 text-sm text-slate-700">Body</p>
@@ -504,7 +610,9 @@ export default function Page() {
                       value={announcementForm.body}
                       initialValue={announcementForm.body}
                       height={280}
-                      onChange={(event) => setAnnouncementField("body", event.target.value)}
+                      onChange={(event) =>
+                        setAnnouncementField("body", event.target.value)
+                      }
                     />
                   </div>
 
@@ -534,7 +642,9 @@ export default function Page() {
                     </button>
                   </div>
                   {announcementStatus ? (
-                    <p className="text-sm text-slate-600">{announcementStatus}</p>
+                    <p className="text-sm text-slate-600">
+                      {announcementStatus}
+                    </p>
                   ) : null}
                 </div>
               </>

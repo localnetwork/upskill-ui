@@ -101,7 +101,7 @@ export default function CourseSections({ course }) {
     if (type === "article") {
       return (
         <div
-          className="prose max-w-none"
+          className="rich-content max-w-none overflow-x-auto"
           dangerouslySetInnerHTML={{
             __html:
               asset.content || previewCurriculum.curriculum_description || "",
@@ -129,9 +129,13 @@ export default function CourseSections({ course }) {
     if (type === "coding_exercise") {
       return (
         <div className="text-sm text-slate-700 space-y-2">
-          <p>
-            {asset.instructions || previewCurriculum.curriculum_description}
-          </p>
+          <div
+            className="rich-content"
+            dangerouslySetInnerHTML={{
+              __html:
+                asset.instructions || previewCurriculum.curriculum_description || "",
+            }}
+          />
           <p className="text-slate-500">
             Enroll in this course to access the full coding workspace.
           </p>
@@ -140,9 +144,14 @@ export default function CourseSections({ course }) {
     }
 
     return (
-      <div className="text-sm text-slate-700">
-        {previewCurriculum.curriculum_description || "No preview available."}
-      </div>
+      <div
+        className="rich-content text-sm text-slate-700"
+        dangerouslySetInnerHTML={{
+          __html:
+            previewCurriculum.curriculum_description ||
+            "No preview available.",
+        }}
+      />
     );
   };
 

@@ -186,7 +186,8 @@ export default function CourseSidebar({ course }) {
   const handlePublish = async () => {
     const confirm = await confirmModal({
       title: "Publish course",
-      message: "Publishing this course will make it visible to learners. Continue?",
+      message:
+        "Publishing this course will make it visible to learners. Continue?",
       confirmText: "Publish",
     });
     if (!confirm) return;
@@ -344,7 +345,7 @@ export default function CourseSidebar({ course }) {
                         className="relative text-[17px] py-[10px] block pl-[30px] hover:bg-[#f5f5f5]"
                       >
                         {isActive && (
-                          <span className="inline-block absolute left-0 top-0 w-[5px] bg-[#000] h-full" />
+                          <span className="inline-block absolute left-0 top-0 w-[5px] bg-primary h-full" />
                         )}
                         {item.name}
                       </Link>
@@ -369,7 +370,7 @@ export default function CourseSidebar({ course }) {
                         className="relative text-[17px] py-[10px] block pl-[30px] hover:bg-[#f5f5f5]"
                       >
                         {isActive && (
-                          <span className="inline-block absolute left-0 top-0 w-[5px] bg-[#000] h-full" />
+                          <span className="inline-block absolute left-0 top-0 w-[5px] bg-primary h-full" />
                         )}
                         {item.name}
                       </Link>

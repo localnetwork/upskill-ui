@@ -1,22 +1,35 @@
 "use client";
 
+import { useState } from "react";
 import { instructorNavLinks } from "@/lib/menu/instructorDashboardLinks";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
-export default function InstructorSidebar({ collapsed, onToggle }) {
+export const SIDEBAR_COLLAPSED_WIDTH = 88;
+export const SIDEBAR_EXPANDED_WIDTH = 280;
+
+// Fixed sidebar. `pinned` keeps it open; otherwise it expands on hover and hides when the pointer leaves.
+export default function InstructorSidebar({ pinned, onToggle }) {
   const pathname = usePathname();
+  const [hovered, setHovered] = useState(false);
+  const expanded = pinned || hovered;
+  const collapsed = !expanded;
 
   return (
     <aside
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        width: expanded ? SIDEBAR_EXPANDED_WIDTH : SIDEBAR_COLLAPSED_WIDTH,
+      }}
       className={[
-        "h-full min-h-0 border-r border-zinc-200 bg-white",
-        "transition-[width] duration-200 ease-in-out",
-        "max-w-full",
+        "fixed left-0 top-[100px] z-40 h-[calc(100dvh-100px)] border-r border-zinc-200 bg-white",
+        "transition-[width,box-shadow] duration-200 ease-in-out",
+        hovered && !pinned ? "shadow-xl" : "",
       ].join(" ")}
     >
-      <nav className="sticky top-[100px] max-h-[calc(100dvh-100px)] overflow-y-auto overflow-x-hidden px-2 py-4 sm:px-3 sm:py-5">
+      <nav className="h-full overflow-y-auto overflow-x-hidden px-2 py-4 sm:px-3 sm:py-5">
         {/* SIDEBAR HEADER */}
         <div
           className={[
@@ -34,14 +47,14 @@ export default function InstructorSidebar({ collapsed, onToggle }) {
             type="button"
             onClick={onToggle}
             className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-zinc-200 text-zinc-600 transition-colors hover:bg-zinc-50 hover:text-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
-            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-            aria-expanded={!collapsed}
-            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-label={pinned ? "Unpin sidebar" : "Pin sidebar open"}
+            aria-pressed={pinned}
+            title={pinned ? "Unpin sidebar" : "Pin sidebar open"}
           >
-            {collapsed ? (
-              <ChevronRight className="h-4 w-4" />
-            ) : (
+            {pinned ? (
               <ChevronLeft className="h-4 w-4" />
+            ) : (
+              <ChevronRight className="h-4 w-4" />
             )}
           </button>
         </div>
@@ -70,7 +83,6 @@ export default function InstructorSidebar({ collapsed, onToggle }) {
                       : "text-zinc-700 hover:bg-zinc-50",
                   ].join(" ")}
                 >
-                  {/* ACTIVE INDICATOR */}
                   {!collapsed && (
                     <span
                       className={[
@@ -83,7 +95,6 @@ export default function InstructorSidebar({ collapsed, onToggle }) {
                     />
                   )}
 
-                  {/* NAVIGATION ICON */}
                   <span
                     className={[
                       "flex shrink-0 items-center justify-center",
@@ -97,9 +108,8 @@ export default function InstructorSidebar({ collapsed, onToggle }) {
                     {item.icon}
                   </span>
 
-                  {/* NAVIGATION LABEL */}
                   {!collapsed && (
-                    <span className="min-w-0 break-words text-xs font-semibold leading-snug sm:text-sm">
+                    <span className="min-w-0 whitespace-nowrap text-xs font-semibold leading-snug sm:text-sm">
                       {item.name}
                     </span>
                   )}
@@ -109,7 +119,6 @@ export default function InstructorSidebar({ collapsed, onToggle }) {
           })}
         </ul>
 
-        {/* SIDEBAR FOOTER */}
         {!collapsed && (
           <div className="mt-6 border-t border-zinc-100 px-2 pt-4">
             <p className="text-xs leading-relaxed text-zinc-400">

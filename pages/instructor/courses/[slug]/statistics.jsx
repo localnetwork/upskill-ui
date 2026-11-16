@@ -2,13 +2,12 @@ import CourseManagementLayout from "@/components/partials/CourseManagementLayout
 import BaseApi from "@/lib/api/_base.api";
 import { setContext } from "@/lib/api/interceptor";
 import { useEffect, useMemo, useState } from "react";
+import EngagementReport from "@/components/entities/instructor/performance/EngagementReport";
 import {
   Bar,
   BarChart,
   CartesianGrid,
   Cell,
-  Line,
-  LineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -42,7 +41,15 @@ function formatCurrency(value) {
   }).format(Number(value || 0));
 }
 
+const STAT_TABS = [
+  { id: "revenue", label: "Revenue" },
+  { id: "enrollments", label: "Enrollments" },
+  { id: "ratings", label: "Ratings" },
+  { id: "engagement", label: "Course engagement" },
+];
+
 export default function CourseStatisticsManagement({ course }) {
+  const [activeStat, setActiveStat] = useState("revenue");
   const [isLoading, setIsLoading] = useState(false);
   const [stats, setStats] = useState({
     overview: {
@@ -108,43 +115,43 @@ export default function CourseStatisticsManagement({ course }) {
   const cards = useMemo(
     () => [
       {
-        label: "Total students",
+        group: "enrollments", label: "Total students",
         value: Number(stats?.overview?.total_students || 0),
       },
       {
-        label: "New enrollments this month",
+        group: "enrollments", label: "New enrollments this month",
         value: Number(stats?.overview?.enrollments_this_month || 0),
       },
       {
-        label: "Course completion rate",
+        group: "enrollments", label: "Course completion rate",
         value: `${Math.round(Number(stats?.overview?.completion_rate_pct || 0))}%`,
       },
       {
-        label: "Average learner progress",
+        group: "enrollments", label: "Average learner progress",
         value: `${Math.round(Number(stats?.overview?.average_progress_pct || 0))}%`,
       },
       {
-        label: "Average rating",
+        group: "ratings", label: "Average rating",
         value: Number(stats?.overview?.average_rating || 0).toFixed(2),
       },
       {
-        label: "Total reviews",
+        group: "ratings", label: "Total reviews",
         value: Number(stats?.overview?.total_reviews || 0),
       },
       {
-        label: "Total revenue",
+        group: "revenue", label: "Total revenue",
         value: formatCurrency(stats?.overview?.total_revenue || 0),
       },
       {
-        label: "Revenue this month",
+        group: "revenue", label: "Revenue this month",
         value: formatCurrency(stats?.overview?.revenue_this_month || 0),
       },
       {
-        label: "Course impression",
+        group: "engagement", label: "Course impression",
         value: Number(stats?.overview?.total_impressions || 0),
       },
       {
-        label: "Unique impression visitors",
+        group: "engagement", label: "Unique impression visitors",
         value: Number(stats?.overview?.unique_impression_visitors || 0),
       },
     ],
@@ -161,128 +168,130 @@ export default function CourseStatisticsManagement({ course }) {
         .sort((a, b) => b.count - a.count),
     [stats],
   );
-  const trendChartData = useMemo(
-    () =>
-      (stats?.trends?.monthly_enrollments || []).map((row) => ({
-        label: row.label,
-        enrollments: Number(row.count || 0),
-      })),
-    [stats],
-  );
-  const impressionChartData = useMemo(
-    () => [
-      {
-        label: "Total impressions",
-        value: Number(stats?.overview?.total_impressions || 0),
+  const reportSections = useMemo(() => {
+    const trends = stats?.trends || {};
+    const arr = (value) => (Array.isArray(value) ? value : []);
+    const merge = (a, b) => {
+      const byDate = new Map();
+      arr(a).forEach((row) => byDate.set(row.date, { ...row }));
+      arr(b).forEach((row) => byDate.set(row.date, { ...(byDate.get(row.date) || {}), ...row }));
+      return Array.from(byDate.values());
+    };
+    const id = course?.id || "course";
+    const title = course?.title || "Course";
+    return {
+      engagement: {
+        metrics: [
+          { key: "impressions", label: "Impressions" },
+          { key: "visitors", label: "Unique visitors" },
+        ],
+        courses: [{ id, title, daily: arr(trends.daily_engagement) }],
       },
-      {
-        label: "Unique visitors",
-        value: Number(stats?.overview?.unique_impression_visitors || 0),
+      enrollments: {
+        metrics: [
+          { key: "enrollments", label: "New enrollments" },
+          { key: "completions", label: "Completions" },
+        ],
+        courses: [{ id, title, daily: arr(trends.daily_students) }],
       },
-    ],
-    [stats],
-  );
+      revenue: {
+        metrics: [
+          { key: "revenue", label: "Revenue", currency: true },
+          { key: "enrollments", label: "New enrollments" },
+        ],
+        courses: [
+          { id, title, daily: merge(trends.daily_revenue, trends.daily_students) },
+        ],
+      },
+    };
+  }, [stats, course]);
 
   return (
     <CourseManagementLayout course={course} activeTab="statistics" title="Statistics">
-      <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
-        {cards.map((card) => (
-          <div
-            key={card.label}
-            className="bg-white rounded-lg border border-[#e2e8f0] p-5"
+      <nav
+        aria-label="Statistics sections"
+        className="mb-6 flex gap-1 overflow-x-auto border-b border-slate-200"
+      >
+        {STAT_TABS.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => setActiveStat(tab.id)}
+            className={`-mb-px shrink-0 border-b-2 px-4 py-3 text-sm font-semibold transition-colors ${
+              activeStat === tab.id
+                ? "border-blue-600 text-blue-700"
+                : "border-transparent text-slate-600 hover:border-slate-300 hover:text-slate-900"
+            }`}
           >
-            <p className="text-[11px] font-extrabold uppercase tracking-widest text-on-surface-variant">
-              {card.label}
-            </p>
-            <p className="mt-2 text-3xl font-black text-on-surface">
-              {isLoading ? "..." : card.value}
-            </p>
-          </div>
+            {tab.label}
+          </button>
         ))}
+      </nav>
+
+      <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
+        {cards
+          .filter((card) => card.group === activeStat)
+          .map((card) => (
+            <div
+              key={card.label}
+              className="bg-white rounded-lg border border-[#e2e8f0] p-5"
+            >
+              <p className="text-[11px] font-extrabold uppercase tracking-widest text-on-surface-variant">
+                {card.label}
+              </p>
+              <p className="mt-2 text-3xl font-black text-on-surface">
+                {isLoading ? "..." : card.value}
+              </p>
+            </div>
+          ))}
       </section>
 
-      <section className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        <div className="bg-white rounded-lg border border-[#e2e8f0] p-6">
-          <h2 className="text-xl font-bold mb-4">Rating distribution</h2>
-          <div className="h-[280px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={ratingChartData}
-                margin={{ top: 10, right: 10, left: -20, bottom: 10 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis dataKey="label" tick={{ fontSize: 12 }} />
-                <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
-                <Tooltip
-                  formatter={(value, _name, item) => [
-                    `${value} reviews (${Number(item?.payload?.percentage || 0).toFixed(2)}%)`,
-                    "Count",
-                  ]}
-                />
-                <Bar dataKey="count" radius={[8, 8, 0, 0]}>
-                  {ratingChartData.map((row) => (
-                    <Cell
-                      key={`rating-cell-${row.label}`}
-                      fill={
-                        row.label === "5★"
-                          ? "#0056D2"
-                          : row.label === "4★"
-                            ? "#3b82f6"
-                            : "#93c5fd"
-                      }
-                    />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+      {activeStat === "ratings" ? (
+        <section className="grid grid-cols-1 gap-6">
+          <div className="bg-white rounded-lg border border-[#e2e8f0] p-6">
+            <h2 className="text-xl font-bold mb-4">Rating distribution</h2>
+            <div className="h-[280px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={ratingChartData}
+                  margin={{ top: 10, right: 10, left: -20, bottom: 10 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                  <XAxis dataKey="label" tick={{ fontSize: 12 }} />
+                  <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
+                  <Tooltip
+                    formatter={(value, _name, item) => [
+                      `${value} reviews (${Number(item?.payload?.percentage || 0).toFixed(2)}%)`,
+                      "Count",
+                    ]}
+                  />
+                  <Bar dataKey="count" radius={[8, 8, 0, 0]}>
+                    {ratingChartData.map((row) => (
+                      <Cell
+                        key={`rating-cell-${row.label}`}
+                        fill={
+                          row.label === "5?"
+                            ? "#0056D2"
+                            : row.label === "4?"
+                              ? "#3b82f6"
+                              : "#93c5fd"
+                        }
+                      />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </div>
-        </div>
-
-        <div className="bg-white rounded-lg border border-[#e2e8f0] p-6">
-          <h2 className="text-xl font-bold mb-4">Enrollment trend (last 6 months)</h2>
-          <div className="h-[280px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart
-                data={trendChartData}
-                margin={{ top: 10, right: 10, left: -20, bottom: 10 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis dataKey="label" tick={{ fontSize: 12 }} />
-                <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
-                <Tooltip formatter={(value) => [`${value} enrollments`, "Enrollments"]} />
-                <Line
-                  type="monotone"
-                  dataKey="enrollments"
-                  stroke="#C4710D"
-                  strokeWidth={3}
-                  dot={{ r: 4, fill: "#C4710D" }}
-                  activeDot={{ r: 6 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      </section>
-
-      <section className="mt-6">
-        <div className="bg-white rounded-lg border border-[#e2e8f0] p-6">
-          <h2 className="text-xl font-bold mb-4">Course impression</h2>
-          <div className="h-[280px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={impressionChartData}
-                margin={{ top: 10, right: 10, left: -20, bottom: 10 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis dataKey="label" tick={{ fontSize: 12 }} />
-                <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
-                <Tooltip formatter={(value) => [`${value}`, "Impressions"]} />
-                <Bar dataKey="value" radius={[8, 8, 0, 0]} fill="#0056D2" />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      </section>
+        </section>
+      ) : (
+        <EngagementReport
+          key={activeStat}
+          courses={reportSections[activeStat].courses}
+          metrics={reportSections[activeStat].metrics}
+          hideTable
+        />
+      )}
     </CourseManagementLayout>
   );
 }

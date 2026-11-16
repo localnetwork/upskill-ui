@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Plus, Star, Trash2, X } from "lucide-react";
 import { useState } from "react";
+import { ScrollCarousel } from "./ProfileCourseCarousel";
 import toast from "react-hot-toast";
 import { getSkillIcon, normalizeSkill } from "@/lib/skillIcons";
 import {
@@ -221,45 +222,72 @@ export function StorefrontCtas({ storefront }) {
   );
 }
 
+function timeAgo(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const seconds = Math.max(0, (Date.now() - date.getTime()) / 1000);
+  const units = [
+    ["year", 31536000],
+    ["month", 2592000],
+    ["week", 604800],
+    ["day", 86400],
+    ["hour", 3600],
+    ["minute", 60],
+  ];
+  for (const [name, size] of units) {
+    const count = Math.floor(seconds / size);
+    if (count >= 1) {
+      if (count === 1) {
+        return `${name === "hour" ? "an" : "a"} ${name} ago`;
+      }
+      return `${count} ${name}s ago`;
+    }
+  }
+  return "just now";
+}
+
 export function StorefrontReviews({ storefront, reviews }) {
   if (storefront?.show_reviews === false || !reviews?.length) return null;
   return (
-    <div className="mt-[50px]">
-      <h2 className="font-semibold text-[24px] lg:text-[30px] mb-4">
-        What people say
-      </h2>
-      <div className="flex snap-x gap-4 overflow-x-auto pb-3">
-        {reviews.map((review) => (
-          <div
-            key={review.id}
-            className="w-[290px] shrink-0 snap-start rounded-xl border bg-white p-5"
+    <ScrollCarousel
+      title="What people say"
+      items={reviews.map((review) => ({ ...review, key: review.id }))}
+      renderItem={(review) => (
+        <div className="flex h-full min-h-[320px] flex-col rounded-[28px] bg-white p-7">
+          <svg
+            width="42"
+            height="32"
+            viewBox="0 0 42 32"
+            fill="#e4e6f0"
+            aria-hidden="true"
           >
-            <div className="flex items-center gap-1 text-amber-500">
-              <Star size={16} fill="currentColor" />
-              <span className="font-bold text-gray-900">
-                {Number(review.rating).toFixed(1)}
-              </span>
-              <span className="ml-2 text-xs text-gray-500">
-                {new Date(review.created_at).toLocaleDateString()}
-              </span>
-            </div>
-            <p className="mt-3 line-clamp-6 text-[15px] text-gray-700">
-              {review.comment}
-            </p>
-            <div className="mt-4 text-sm font-semibold text-gray-900">
-              {review.reviewer}
-            </div>
+            <path d="M0 32V19.2C0 8.5 5.6 2 16 0l2 4.6C12.6 6.2 10 9.4 9.6 13.6H18V32H0Zm24 0V19.2C24 8.5 29.6 2 40 0l2 4.6c-5.4 1.6-8 4.8-8.4 9H42V32H24Z" />
+          </svg>
+          <div className="mt-5 flex items-center gap-2">
+            <Star size={20} fill="#f5a623" className="text-[#f5a623]" />
+            <span className="text-[20px] text-[#1f1f2e]">
+              {Number(review.rating).toFixed(1)}
+            </span>
+            <span className="ml-1 text-[13px] text-gray-500">
+              {timeAgo(review.created_at)}
+            </span>
+          </div>
+          <p className="mt-5 line-clamp-6 text-[17px] leading-8 text-gray-500">
+            {review.comment}
+          </p>
+          <div className="mt-auto pt-6">
+            <div className="text-[18px] text-[#1f1f2e]">{review.reviewer}</div>
             {review.course_title && (
               <Link
                 href={`/courses/${review.course_slug}`}
-                className="text-xs text-gray-500 hover:underline line-clamp-1"
+                className="line-clamp-2 text-[12px] text-gray-500 hover:underline"
               >
-                {review.course_title}
+                Course: {review.course_title}
               </Link>
             )}
           </div>
-        ))}
-      </div>
-    </div>
+        </div>
+      )}
+    />
   );
 }

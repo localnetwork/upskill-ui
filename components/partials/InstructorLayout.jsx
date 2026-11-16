@@ -1,61 +1,39 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import InstructorSidebar from "../entities/instructor/InstructorSidebar";
+import { useEffect, useState } from "react";
+import InstructorSidebar, {
+  SIDEBAR_COLLAPSED_WIDTH,
+  SIDEBAR_EXPANDED_WIDTH,
+} from "../entities/instructor/InstructorSidebar";
 import persistentStore from "@/lib/store/persistentStore";
 import { parseCookies } from "nookies";
 import { useRouter } from "next/router";
 import BaseApi from "@/lib/api/_base.api";
 import { getAuthTokenFromCookieMap } from "@/lib/services/authToken";
 
-const STORAGE_KEY = "instructor_sidebar_collapsed";
-
-// Small hook to detect breakpoints without extra libs
-function useMediaQuery(query) {
-  const [matches, setMatches] = useState(false);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const media = window.matchMedia(query);
-    const onChange = () => setMatches(media.matches);
-
-    // set initial
-    setMatches(media.matches);
-
-    // subscribe
-    if (media.addEventListener) media.addEventListener("change", onChange);
-    else media.addListener(onChange);
-
-    return () => {
-      if (media.removeEventListener)
-        media.removeEventListener("change", onChange);
-      else media.removeListener(onChange);
-    };
-  }, [query]);
-
-  return matches;
-}
+const STORAGE_KEY = "instructor_sidebar_pinned";
 
 export default function InstructorLayout({ children }) {
-  const [collapsed, setCollapsed] = useState(false);
+  const [pinned, setPinned] = useState(false);
   const [canAccess, setCanAccess] = useState(false);
   const [accessResolved, setAccessResolved] = useState(false);
   const profile = persistentStore((state) => state.profile);
   const router = useRouter();
 
-  // Breakpoints (adjust if you want)
-  const isSm = useMediaQuery("(max-width: 639px)"); // <640
-  const isMd = useMediaQuery("(min-width: 640px) and (max-width: 1023px)"); // 640-1023
-  const isLgUp = useMediaQuery("(min-width: 1024px)"); // >=1024
-
-  // Load persisted collapse state
   useEffect(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved !== null) setCollapsed(saved === "true");
+      setPinned(localStorage.getItem(STORAGE_KEY) === "true");
     } catch {}
   }, []);
+
+  const togglePinned = () => {
+    setPinned((prev) => {
+      try {
+        localStorage.setItem(STORAGE_KEY, String(!prev));
+      } catch {}
+      return !prev;
+    });
+  };
 
   useEffect(() => {
     let mounted = true;
@@ -117,47 +95,21 @@ export default function InstructorLayout({ children }) {
     };
   }, [profile, router]);
 
-  const toggleSidebar = () => {
-    setCollapsed((prev) => {
-      const next = !prev;
-      try {
-        localStorage.setItem(STORAGE_KEY, String(next));
-      } catch {}
-      return next;
-    });
-  };
-
-  // Responsive widths
-  const { expandedWidth, collapsedWidth } = useMemo(() => {
-    // You can tweak these numbers to your taste
-    if (isSm) return { expandedWidth: 240, collapsedWidth: 64 }; // small screens
-    if (isMd) return { expandedWidth: 280, collapsedWidth: 72 }; // tablets
-    if (isLgUp) return { expandedWidth: 325, collapsedWidth: 88 }; // desktop
-    return { expandedWidth: 280, collapsedWidth: 72 };
-  }, [isSm, isMd, isLgUp]);
-
-  const sidebarWidth = collapsed ? collapsedWidth : expandedWidth;
-
   if (!accessResolved || !canAccess) {
     return null;
   }
 
   return (
     <div className="min-h-screen">
-      <div className="!px-0">
-        <div
-          className="grid min-h-screen"
-          style={{
-            gridTemplateColumns: `${sidebarWidth}px 1fr`,
-          }}
-        >
-          <InstructorSidebar collapsed={collapsed} onToggle={toggleSidebar} />
-
-          <main className="p-6 sm:p-8 lg:p-[50px] relative overflow-hidden">
-            {children}
-          </main>
-        </div>
-      </div>
+      <InstructorSidebar pinned={pinned} onToggle={togglePinned} />
+      <main
+        style={{
+          marginLeft: pinned ? SIDEBAR_EXPANDED_WIDTH : SIDEBAR_COLLAPSED_WIDTH,
+        }}
+        className="relative overflow-hidden transition-[margin] duration-200 p-6 sm:p-8 lg:p-[50px]"
+      >
+        {children}
+      </main>
     </div>
   );
 }

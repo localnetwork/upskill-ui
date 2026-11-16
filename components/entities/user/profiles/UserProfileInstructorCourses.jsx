@@ -2,7 +2,7 @@ import BaseApi from "@/lib/api/_base.api";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Star } from "lucide-react";
-import CourseCard from "../../course/CourseCard";
+import ProfileCourseCarousel from "./ProfileCourseCarousel";
 
 export default function UserProfileInstructorCourses({ profile }) {
   const [courses, setCourses] = useState([]);
@@ -96,20 +96,26 @@ export default function UserProfileInstructorCourses({ profile }) {
           </div>
         )}
 
-        <h3 className="mb-4 text-[20px] font-bold">All courses</h3>
-        {courses.length > 0 ? (
-          <div className="flex snap-x gap-5 overflow-x-auto pb-4">
-            {courses.map((course) => (
-              <div key={course.id} className="w-[290px] shrink-0 snap-start">
-                <CourseCard course={course} />
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-gray-500">
-            This instructor has not published any courses yet.
-          </p>
-        )}
+        <ProfileCourseCarousel
+          title="All courses"
+          emptyText="This instructor has not published any courses yet."
+          items={courses.map((course) => {
+            const author = course.author?.data;
+            return {
+              key: course.id,
+              href: `/courses/${course.slug}`,
+              image: course.cover_image?.path,
+              title: course.title,
+              authors: [author?.fullName, author?.headline]
+                .filter(Boolean)
+                .join(", "),
+              rating: Number(course.stats?.total_reviews || 0)
+                ? Number(course.stats?.average_rating || 0)
+                : null,
+              ratings: Number(course.stats?.total_reviews || 0),
+            };
+          })}
+        />
       </div>
     </div>
   );

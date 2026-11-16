@@ -178,8 +178,9 @@ function CourseRow({ course }) {
   );
 }
 
-export default function TopicCourses({ topic }) {
+export default function TopicCourses({ topic, kind = "topic" }) {
   const topicSlug = topic?.slug;
+  const filterParam = kind === "category" ? "categorySlug" : "topic";
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [sort, setSort] = useState("best_selling");
   const [page, setPage] = useState(1);
@@ -220,7 +221,7 @@ export default function TopicCourses({ topic }) {
 
     BaseApi.get(`${process.env.NEXT_PUBLIC_API_URL}/courses`, {
       params: {
-        topic: topicSlug,
+        [filterParam]: topicSlug,
         sortBy: sort,
         page,
         limit: PAGE_SIZE,

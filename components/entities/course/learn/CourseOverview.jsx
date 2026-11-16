@@ -115,7 +115,7 @@ export default function CourseOverview({ lecture, course }) {
       <div className="space-y-4">
         <h2 className="text-xl font-bold">About this lesson</h2>
         <div
-          className="text-slate-600 leading-relaxed"
+          className="rich-content text-slate-600"
           dangerouslySetInnerHTML={{ __html: lecture?.curriculum_description }}
         />
 

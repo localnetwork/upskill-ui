@@ -51,7 +51,6 @@ export default function GoogleAuthButton({
   onCredential,
   disabled = false,
   label = "Continue with Google",
-  buttonText = "continue_with",
 }) {
   const [ready, setReady] = useState(false);
   const buttonRef = useRef(null);
@@ -73,11 +72,10 @@ export default function GoogleAuthButton({
         if (buttonRef.current) {
           buttonRef.current.innerHTML = "";
           window.google.accounts.id.renderButton(buttonRef.current, {
-            type: "standard",
+            type: "icon",
             theme: "outline",
             size: "large",
-            text: buttonText,
-            width: "100%",
+            shape: "circle",
           });
         }
         setReady(true);
@@ -92,18 +90,22 @@ export default function GoogleAuthButton({
   }, [clientId, onCredential]);
 
   return (
-    <div className={disabled ? "opacity-70 pointer-events-none" : ""}>
-      {!ready && (
-        <button
-          type="button"
-          disabled
-          className="w-full border border-[#D0D4DC] bg-white text-[#1F2937] font-medium px-[20px] py-[10px] rounded-[8px] inline-flex justify-center items-center gap-[10px] text-[16px] opacity-70 cursor-not-allowed"
+    <div
+      className={`flex justify-center ${disabled ? "opacity-70 pointer-events-none" : ""}`}
+    >
+      <div className="relative h-[40px] w-[40px]" title={label}>
+        <span
+          aria-hidden="true"
+          className={`absolute inset-0 border border-[#D0D4DC] bg-white rounded-full inline-flex justify-center items-center ${ready ? "" : "opacity-70"}`}
         >
           <Google className="w-5 h-5" />
-          {label}
-        </button>
-      )}
-      <div className={ready ? "" : "hidden"} ref={buttonRef} />
+        </span>
+        <div
+          ref={buttonRef}
+          aria-label={label}
+          className="absolute inset-0 overflow-hidden rounded-full opacity-[0.01] [&>div]:!w-[40px] [&>div]:!h-[40px]"
+        />
+      </div>
     </div>
   );
 }

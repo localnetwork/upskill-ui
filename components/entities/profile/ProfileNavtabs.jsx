@@ -4,14 +4,11 @@ import persistentStore from "@/lib/store/persistentStore";
 
 export default function ProfileNavTabs() {
   const router = useRouter();
-  const roles = persistentStore((state) => state.profile?.roles) || [];
 
   const links = [
     { name: "Upskill Profile", href: "/profile/basic-information" },
     { name: "Profile Picture", href: "/profile/photo" },
-    ...(roles.includes("EDUCATOR")
-      ? [{ name: "Storefront", href: "/profile/storefront" }]
-      : []),
+    { name: "Storefront", href: "/profile/storefront" },
   ];
 
   return (

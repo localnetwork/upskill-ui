@@ -12,8 +12,14 @@ import {
   Star,
   Users,
 } from "lucide-react";
+import RevenueRangeFilter, {
+  buildRevenueSeries,
+} from "@/components/entities/instructor/performance/RevenueRangeFilter";
+import EngagementReport from "@/components/entities/instructor/performance/EngagementReport";
 import OverviewDashboard from "@/components/entities/instructor/performance/OverviewDashboard";
 import {
+  Area,
+  AreaChart,
   Bar,
   BarChart,
   CartesianGrid,
@@ -142,6 +148,9 @@ export default function PerformancePage() {
   const [courseStats, setCourseStats] = useState([]);
   const [payoutRows, setPayoutRows] = useState([]);
   const [payoutSummary, setPayoutSummary] = useState(null);
+  const [revenueRange, setRevenueRange] = useState("3m");
+  const [customStart, setCustomStart] = useState("");
+  const [customEnd, setCustomEnd] = useState("");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -234,36 +243,22 @@ export default function PerformancePage() {
     };
   }, [courseStats]);
 
-  const revenueTrend = useMemo(() => {
-    const byMonth = new Map();
-    for (const row of payoutRows) {
-      const requestedAt = row?.requestedAt || row?.createdAt;
-      if (!requestedAt) continue;
-      const key = monthKey(requestedAt);
-      if (!byMonth.has(key)) {
-        byMonth.set(key, {
-          key,
-          label: formatMonth(requestedAt),
-          earnings: 0,
-          payouts: 0,
-        });
-      }
-      const current = byMonth.get(key);
-      current.earnings += toNumber(row?.amount);
-      if (["APPROVED", "EXECUTED"].includes(String(row?.status || "").toUpperCase())) {
-        current.payouts += toNumber(row?.amount);
-      }
-    }
+  const dailyRevenue = useMemo(() => {
+    const map = new Map();
+    courseStats.forEach((row) => {
+      asArray(row?.trends?.daily_revenue).forEach((entry) => {
+        map.set(entry.date, (map.get(entry.date) || 0) + toNumber(entry.revenue));
+      });
+    });
+    return map;
+  }, [courseStats]);
 
-    return Array.from(byMonth.values())
-      .sort((a, b) => a.key.localeCompare(b.key))
-      .slice(-12)
-      .map((row) => ({
-        ...row,
-        earnings: Number(row.earnings.toFixed(2)),
-        payouts: Number(row.payouts.toFixed(2)),
-      }));
-  }, [payoutRows]);
+  const filteredRevenue = useMemo(
+    () => buildRevenueSeries(dailyRevenue, revenueRange, customStart, customEnd),
+    [dailyRevenue, revenueRange, customStart, customEnd],
+  );
+
+  const filteredRevenueTotal = filteredRevenue.reduce((sum, row) => sum + row.revenue, 0);
 
   const studentsByCourse = useMemo(
     () =>
@@ -315,6 +310,62 @@ export default function PerformancePage() {
         .slice(0, 10),
     [courseStats],
   );
+
+  const engagementCourses = useMemo(
+    () =>
+      courseStats.map((row) => ({
+        id: row.courseId,
+        title: row?.title || "Course",
+        daily: asArray(row?.trends?.daily_engagement),
+      })),
+    [courseStats],
+  );
+
+  const studentsCourses = useMemo(
+    () =>
+      courseStats.map((row) => ({
+        id: row.courseId,
+        title: row?.title || "Course",
+        daily: asArray(row?.trends?.daily_students),
+      })),
+    [courseStats],
+  );
+
+  const trafficCourses = useMemo(
+    () =>
+      courseStats.map((row) => {
+        const byDate = new Map();
+        asArray(row?.trends?.daily_engagement).forEach((entry) => {
+          byDate.set(entry.date, { date: entry.date, impressions: entry.impressions, enrollments: 0 });
+        });
+        asArray(row?.trends?.daily_students).forEach((entry) => {
+          const current = byDate.get(entry.date) || { date: entry.date, impressions: 0, enrollments: 0 };
+          current.enrollments = entry.enrollments;
+          byDate.set(entry.date, current);
+        });
+        return { id: row.courseId, title: row?.title || "Course", daily: Array.from(byDate.values()) };
+      }),
+    [courseStats],
+  );
+
+  const codingEngagementCourses = useMemo(() => {
+    const withCoding = new Set(
+      courses
+        .filter((course) =>
+          asArray(course?.sections)
+            .flatMap((section) => asArray(section?.lessons))
+            .some((lesson) => String(lesson?.type || "").toUpperCase() === "CODING_EXERCISE"),
+        )
+        .map((course) => course.id),
+    );
+    return courseStats
+      .filter((row) => withCoding.has(row.courseId))
+      .map((row) => ({
+        id: row.courseId,
+        title: row?.title || "Course",
+        daily: asArray(row?.trends?.daily_coding),
+      }));
+  }, [courses, courseStats]);
 
   const codingRows = useMemo(
     () =>
@@ -417,38 +468,39 @@ export default function PerformancePage() {
           Unified analytics across revenue, learners, reviews, and course health.
         </p>
 
-        <nav
-          aria-label="Performance sections"
-          className="mb-6 flex gap-1 overflow-x-auto border-b border-slate-200"
-        >
-          {NAV_ITEMS.map((item) => {
-            const Icon = item.icon;
-            const isActive = activeTab === item.id;
-            return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => setActiveTab(item.id)}
-                className={`-mb-px flex shrink-0 items-center gap-2 border-b-2 px-4 py-3 text-sm font-semibold transition-colors ${
-                  isActive
-                    ? "border-blue-600 text-blue-700"
-                    : "border-transparent text-slate-600 hover:border-slate-300 hover:text-slate-900"
-                }`}
-              >
-                <Icon className="h-4 w-4" />
-                <span>{item.label}</span>
-                {item.badge ? (
-                  <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
-                    {item.badge}
-                  </span>
-                ) : null}
-              </button>
-            );
-          })}
-        </nav>
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
+          <nav
+            aria-label="Performance sections"
+            className="flex shrink-0 gap-1 overflow-x-auto rounded-2xl border border-slate-200 bg-white p-2 lg:w-60 lg:flex-col lg:overflow-visible"
+          >
+            {NAV_ITEMS.map((item) => {
+              const Icon = item.icon;
+              const isActive = activeTab === item.id;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => setActiveTab(item.id)}
+                  aria-current={isActive ? "page" : undefined}
+                  className={`flex shrink-0 items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition-colors ${
+                    isActive
+                      ? "bg-blue-50 text-blue-700"
+                      : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                  }`}
+                >
+                  <Icon className="h-4 w-4 shrink-0" />
+                  <span className="whitespace-nowrap">{item.label}</span>
+                  {item.badge ? (
+                    <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
+                      {item.badge}
+                    </span>
+                  ) : null}
+                </button>
+              );
+            })}
+          </nav>
 
-        <div>
-          <section className="rounded-2xl border border-slate-200 bg-white p-5 lg:p-6 min-h-[560px]">
+          <section className="min-w-0 flex-1 rounded-2xl border border-slate-200 bg-white p-5 lg:p-6 min-h-[560px]">
             {isLoading ? (
               <div className="grid gap-4 md:grid-cols-2">
                 {Array.from({ length: 6 }).map((_, index) => (
@@ -459,11 +511,8 @@ export default function PerformancePage() {
               <OverviewDashboard
                 courses={courses}
                 courseStats={courseStats}
-                payoutRows={payoutRows}
-                payoutSummary={payoutSummary}
-                overview={overview}
                 reviewDistribution={reviewDistribution}
-                qualityRows={qualityRows}
+                onViewRevenue={() => setActiveTab("revenue")}
               />
             ) : null}
 
@@ -474,21 +523,40 @@ export default function PerformancePage() {
                   <Card label="Recent income" value={formatCurrency(payoutSummary?.thisMonthEarnings)} />
                   <Card label="Payout cycle" value={String(payoutSummary?.payoutCycle || "ANYTIME")} />
                 </div>
-                <Section title="Earnings by month" description="Payout requests per month, with the amount already approved or paid.">
-                  {revenueTrend.length === 0 ? (
-                    <Empty>No earnings recorded yet.</Empty>
+                <Section title="Revenue over time" description="Net revenue per month from your course sales.">
+                  <div className="mb-4 flex flex-wrap items-end gap-3">
+                    <RevenueRangeFilter
+                      range={revenueRange}
+                      customStart={customStart}
+                      customEnd={customEnd}
+                      onChange={(range, start, end) => {
+                        setRevenueRange(range);
+                        setCustomStart(start || "");
+                        setCustomEnd(end || "");
+                      }}
+                    />
+                    <p className="ml-auto text-sm text-slate-500">
+                      Total: <span className="font-bold text-slate-900">{formatCurrency(filteredRevenueTotal)}</span>
+                    </p>
+                  </div>
+                  {filteredRevenueTotal <= 0 ? (
+                    <Empty>No data to display</Empty>
                   ) : (
                     <div className="h-80">
                       <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={revenueTrend}>
+                        <AreaChart data={filteredRevenue}>
+                          <defs>
+                            <linearGradient id="revenueFill" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="0%" stopColor="#0052cc" stopOpacity={0.25} />
+                              <stop offset="100%" stopColor="#0052cc" stopOpacity={0} />
+                            </linearGradient>
+                          </defs>
                           <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                          <XAxis dataKey="label" />
-                          <YAxis tickFormatter={(value) => formatCurrency(value)} width={90} />
+                          <XAxis dataKey="label" tickLine={false} tick={{ fill: "#0052cc", fontSize: 12 }} />
+                          <YAxis tickFormatter={(value) => formatCurrency(value)} tickLine={false} axisLine={false} width={90} tick={{ fill: "#0052cc", fontSize: 12 }} />
                           <Tooltip formatter={(value) => formatCurrency(value)} />
-                          <Legend />
-                          <Bar dataKey="earnings" name="Requested" fill="#93c5fd" radius={[3, 3, 0, 0]} />
-                          <Bar dataKey="payouts" name="Paid out" fill="#2563eb" radius={[3, 3, 0, 0]} />
-                        </BarChart>
+                          <Area type="monotone" dataKey="revenue" name="Revenue" stroke="#0052cc" strokeWidth={2} fill="url(#revenueFill)" dot={filteredRevenue.length <= 31} />
+                        </AreaChart>
                       </ResponsiveContainer>
                     </div>
                   )}
@@ -497,15 +565,14 @@ export default function PerformancePage() {
             ) : null}
 
             {!isLoading && activeTab === "students" ? (
-              <Section title="Students by course" description="Total learners and enrollments gained this month.">
-                <CourseBars
-                  data={studentsByCourse}
-                  series={[
-                    { key: "students", name: "Total students", color: "#2563eb" },
-                    { key: "newEnrollments", name: "New this month", color: "#06b6d4" },
-                  ]}
-                />
-              </Section>
+              <EngagementReport
+                courses={studentsCourses}
+                metrics={[
+                  { key: "enrollments", label: "New enrollments" },
+                  { key: "completions", label: "Completions" },
+                ]}
+                tableTitle="Students by course"
+              />
             ) : null}
 
             {!isLoading && activeTab === "reviews" ? (
@@ -529,18 +596,20 @@ export default function PerformancePage() {
             ) : null}
 
             {!isLoading && activeTab === "engagement" ? (
-              <Section title="Impressions and unique visitors" description="How often each course page was seen, and by how many people.">
-                <CourseBars
-                  data={engagementRows}
-                  series={[
-                    { key: "impressions", name: "Impressions", color: "#0ea5e9" },
-                    { key: "visitors", name: "Unique visitors", color: "#22c55e" },
-                  ]}
-                />
-              </Section>
+              <EngagementReport courses={engagementCourses} />
             ) : null}
 
             {!isLoading && activeTab === "coding" ? (
+              <div className="space-y-8">
+                <EngagementReport
+                  courses={codingEngagementCourses}
+                  metrics={[
+                    { key: "learners", label: "Active learners" },
+                    { key: "completions", label: "Completions" },
+                  ]}
+                  tableTitle="Courses with coding exercises"
+                  emptyMessage="None of your courses have coding exercises yet."
+                />
               <Section title="Coding exercise coverage" description="Coding exercises versus video lessons in each course.">
                 <CourseBars
                   data={codingRows}
@@ -550,6 +619,7 @@ export default function PerformancePage() {
                   ]}
                 />
               </Section>
+              </div>
             ) : null}
 
             {!isLoading && activeTab === "practice" ? (
@@ -592,39 +662,15 @@ export default function PerformancePage() {
             ) : null}
 
             {!isLoading && activeTab === "traffic" ? (
-              <Section title="Traffic and conversion" description="Conversion is students divided by impressions.">
-                {conversionRows.length === 0 ? (
-                  <Empty>No traffic data yet.</Empty>
-                ) : (
-                  <div className="overflow-x-auto rounded-lg border border-slate-200">
-                    <table className="w-full text-sm">
-                      <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
-                        <tr>
-                          <th className="px-4 py-2">Course</th>
-                          <th className="px-4 py-2 text-right">Impressions</th>
-                          <th className="px-4 py-2 text-right">Students</th>
-                          <th className="px-4 py-2 w-48">Conversion</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-200">
-                        {conversionRows.map((row) => (
-                          <tr key={row.name}>
-                            <td className="max-w-xs truncate px-4 py-2 font-medium text-slate-900">{row.name}</td>
-                            <td className="px-4 py-2 text-right">{row.impressions.toLocaleString("en-PH")}</td>
-                            <td className="px-4 py-2 text-right">{row.students.toLocaleString("en-PH")}</td>
-                            <td className="px-4 py-2">
-                              <div className="flex items-center gap-2">
-                                <ScoreBar value={row.conversion} max={Math.max(10, ...conversionRows.map((item) => item.conversion))} color="bg-orange-500" />
-                                <span className="w-12 text-right text-xs font-semibold">{row.conversion}%</span>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </Section>
+              <EngagementReport
+                courses={trafficCourses}
+                metrics={[
+                  { key: "impressions", label: "Impressions" },
+                  { key: "enrollments", label: "New enrollments" },
+                ]}
+                tableTitle="Traffic and conversion by course"
+                showConversion
+              />
             ) : null}
           </section>
         </div>

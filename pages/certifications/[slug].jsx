@@ -1,6 +1,8 @@
 import BaseApi from "@/lib/api/_base.api";
 import { setContext } from "@/lib/api/interceptor";
 import modalState from "@/lib/store/modalState";
+import persistentStore from "@/lib/store/persistentStore";
+import { useEffect, useState } from "react";
 import {
   BadgeCheck,
   Calendar,
@@ -39,6 +41,16 @@ export async function getServerSideProps(context) {
 }
 
 export default function CertificationPage({ certificate }) {
+  const currentProfile = persistentStore((state) => state.profile);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  const isOwner =
+    mounted &&
+    Boolean(
+      currentProfile?.id &&
+        certificate?.user_id &&
+        currentProfile.id === certificate.user_id,
+    );
   const issueDate = certificate?.issued_at
     ? new Date(certificate.issued_at).toLocaleDateString("en-US", {
         month: "long",
@@ -79,18 +91,20 @@ export default function CertificationPage({ certificate }) {
   return (
     <main className="py-24 px-4 bg-[#F8FAFC]">
       <div className="max-w-lg mx-auto">
-        <div className="mb-8 text-center">
-          <div className="inline-block px-4 py-1.5 rounded-full bg-primary-container text-on-primary-container text-[10px] font-extrabold uppercase tracking-widest mb-4">
-            Verified Achievement
+        {isOwner && (
+          <div className="mb-8 text-center">
+            <div className="inline-block px-4 py-1.5 rounded-full bg-primary-container text-on-primary-container text-[10px] font-extrabold uppercase tracking-widest mb-4">
+              Verified Achievement
+            </div>
+            <h2 className="text-3xl font-extrabold text-secondary tracking-tight">
+              Your Certification
+            </h2>
+            <p className="text-[#475569] mt-2 text-sm">
+              Congratulations on completing your professional journey with
+              Upskill.
+            </p>
           </div>
-          <h2 className="text-3xl font-extrabold text-secondary tracking-tight">
-            Your Certification
-          </h2>
-          <p className="text-[#475569] mt-2 text-sm">
-            Congratulations on completing your professional journey with
-            Upskill.
-          </p>
-        </div>
+        )}
 
         <div className="relative bg-white rounded-lg p-1 shadow-2xl overflow-hidden mb-10 certification-card">
           <div className="absolute inset-0 flex items-center justify-center opacity-[0.05] pointer-events-none">

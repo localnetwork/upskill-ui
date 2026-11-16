@@ -176,11 +176,8 @@ export default function CoursePromotionsPage({ course }) {
       title="Promotions"
     >
       <div className="space-y-6">
-        <section className="flex-1 bg-surface p-8 lg:p-12">
+        <section className="flex-1 bg-surface p-8 lg:px-12 lg:pb-12">
           <div className="mx-auto mb-10 max-w-5xl">
-            <h1 className="mb-2 text-4xl font-extrabold tracking-tight text-on-background">
-              Promotions
-            </h1>
             <p className="text-lg text-on-surface-variant">
               Drive enrollment and grow your audience with tailored coupons and
               referral tools.

@@ -1,5 +1,6 @@
 import FeaturedCourse from "@/components/entities/categories/show/FeaturedCourse";
 import PopularEducators from "@/components/entities/categories/show/PopularEducators";
+import TopicCourses from "@/components/entities/categories/show/TopicCourses";
 import TopicsCarousel from "@/components/entities/categories/show/TopicsCarousel";
 import BaseApi from "@/lib/api/_base.api";
 import Seo from "@/components/partials/Seo";
@@ -114,6 +115,8 @@ export default function Page({ category, topics = [] }) {
       <FeaturedCourse categorySlug={category?.slug} />
 
       <TopicsCarousel title="Popular topics" topics={topics} />
+
+      <TopicCourses topic={category} kind="category" />
 
       <PopularEducators category={category} />
     </>

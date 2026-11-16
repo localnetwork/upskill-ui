@@ -1,11 +1,12 @@
 import modalState from "@/lib/store/modalState";
-import { SKILL_ICONS } from "@/lib/skillIcons";
+import { SKILL_ICONS, canonicalSkillIcon } from "@/lib/skillIcons";
 import { useState } from "react";
 
 export default function SkillEditorModal() {
   const data = modalState((state) => state.modalInfo?.data) || {};
   const [label, setLabel] = useState(data.skill?.label || "");
-  const [icon, setIcon] = useState(data.skill?.icon || "");
+  const [icon, setIcon] = useState(canonicalSkillIcon(data.skill?.icon));
+  const [search, setSearch] = useState("");
   const [saving, setSaving] = useState(false);
 
   const close = () => {
@@ -45,8 +46,16 @@ export default function SkillEditorModal() {
 
       <div>
         <div className="mb-2 font-medium">Icon</div>
-        <div className="grid grid-cols-5 gap-3">
-          {Object.entries(SKILL_ICONS).map(([name, Icon]) => (
+        <input
+          value={search}
+          placeholder="Search icons..."
+          onChange={(e) => setSearch(e.target.value)}
+          className="mb-3 w-full rounded-[5px] border border-[oklch(67.22%_0.0355_279.77deg)] p-2 text-sm"
+        />
+        <div className="grid max-h-[260px] grid-cols-6 gap-2 overflow-y-auto pr-1">
+          {Object.entries(SKILL_ICONS)
+            .filter(([name]) => name.includes(search.trim().toLowerCase()))
+            .map(([name, Icon]) => (
             <button
               key={name}
               type="button"

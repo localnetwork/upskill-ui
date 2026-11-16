@@ -3,6 +3,7 @@ import { mediaUrl } from "@/lib/seo";
 import InstructorHero, { getSocialLinks } from "./InstructorHero";
 import UserProfileInstructorCourses from "./UserProfileInstructorCourses";
 import { StorefrontCtas, StorefrontReviews } from "./UserProfileStorefront";
+import { LearnerSections, StaffStats } from "./ProfileRoleSections";
 import { EditableRichText, useProfileEdit } from "./inlineEdit";
 
 export default function InstructorProfileBody({
@@ -15,6 +16,10 @@ export default function InstructorProfileBody({
 }) {
   const storefront = profile?.storefront;
   const { canEdit, saveBasic } = useProfileEdit();
+  const roleNames = (profile?.roles || []).map((role) => role.role_name);
+  const isEducator = roleNames.includes("Instructor");
+  const isLearner = roleNames.includes("Learner");
+  const isStaffOnly = !isEducator && !isLearner;
   const firstName = String(profile?.fullName || profile?.username || "")
     .trim()
     .split(/\s+/)[0];
@@ -24,6 +29,7 @@ export default function InstructorProfileBody({
   return (
     <div>
       <InstructorHero profile={profile} />
+      {isStaffOnly && <StaffStats />}
 
       {((storefront?.ctas || []).length > 0 || canEdit) && (
         <div className="container mt-[50px] px-4 sm:px-8">
@@ -31,8 +37,7 @@ export default function InstructorProfileBody({
         </div>
       )}
 
-      <UserProfileInstructorCourses profile={profile} />
-
+      {isEducator && <UserProfileInstructorCourses profile={profile} />}
       <div className="container px-4 py-[60px] sm:px-8">
         <div className="grid grid-cols-1 items-start gap-10 lg:grid-cols-2">
           <div className="min-w-0">
@@ -101,11 +106,22 @@ export default function InstructorProfileBody({
           )}
         </div>
 
-        <StorefrontReviews
-          storefront={storefront}
-          reviews={profile?.educator_reviews}
-        />
       </div>
+
+      {isEducator &&
+        storefront?.show_reviews !== false &&
+        profile?.educator_reviews?.length > 0 && (
+          <div className="bg-[#f5f6fa] py-[60px]">
+            <div className="container px-4 sm:px-8">
+              <StorefrontReviews
+                storefront={storefront}
+                reviews={profile.educator_reviews}
+              />
+            </div>
+          </div>
+        )}
+
+      {isLearner && <LearnerSections profile={profile} />}
     </div>
   );
 }
