@@ -1,14 +1,28 @@
 import BaseApi from "@/lib/api/_base.api";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import persistentStore from "@/lib/store/persistentStore";
 
+const LEARNER_PERMISSIONS = ["view-own-learnings"];
+const EDUCATOR_PERMISSIONS = [
+  "add-course",
+  "edit-own-courses",
+  "view-own-earnings",
+  "view-own-payment-settings",
+];
+
+// `permissions: null` means every signed-in user can see the group.
 const FILTERS = [
-  { key: "ALL", label: "All" },
-  { key: "AUTH", label: "Auth" },
-  { key: "ACCOUNT", label: "Account" },
-  { key: "INSTRUCTOR", label: "Instructor" },
-  { key: "LEARNING", label: "Learning" },
-  { key: "COMMERCE", label: "Commerce" },
-  { key: "COURSE", label: "Course" },
+  { key: "ALL", label: "All", permissions: null },
+  { key: "AUTH", label: "Auth", permissions: null },
+  { key: "ACCOUNT", label: "Account", permissions: null },
+  { key: "INSTRUCTOR", label: "Instructor", permissions: EDUCATOR_PERMISSIONS },
+  { key: "LEARNING", label: "Learning", permissions: LEARNER_PERMISSIONS },
+  { key: "COMMERCE", label: "Commerce", permissions: LEARNER_PERMISSIONS },
+  {
+    key: "COURSE",
+    label: "Course",
+    permissions: [...LEARNER_PERMISSIONS, ...EDUCATOR_PERMISSIONS],
+  },
 ];
 
 function formatDate(value) {
@@ -34,6 +48,27 @@ export default function SettingsActivityLogPage() {
   const [rows, setRows] = useState([]);
   const [isLoadingActivity, setIsLoadingActivity] = useState(false);
   const [activeFilter, setActiveFilter] = useState("ALL");
+  const profile = persistentStore((state) => state.profile);
+
+  const allowedFilters = useMemo(() => {
+    const granted = Array.isArray(profile?.permissions) ? profile.permissions : [];
+    const isAdmin = granted.includes("admin");
+    return FILTERS.filter(
+      (filter) =>
+        !filter.permissions ||
+        isAdmin ||
+        filter.permissions.some((permission) => granted.includes(permission)),
+    );
+  }, [profile?.permissions]);
+
+  const allowedGroups = useMemo(
+    () => new Set([...allowedFilters.map((filter) => filter.key), "OTHER"]),
+    [allowedFilters],
+  );
+
+  useEffect(() => {
+    if (!allowedFilters.some((filter) => filter.key === activeFilter)) setActiveFilter("ALL");
+  }, [allowedFilters, activeFilter]);
 
   useEffect(() => {
     const fetchActivity = async () => {
@@ -56,10 +91,11 @@ export default function SettingsActivityLogPage() {
     fetchActivity();
   }, []);
 
+  const visibleRows = rows.filter((row) => allowedGroups.has(toFilterGroup(row?.eventType)));
   const filteredRows =
     activeFilter === "ALL"
-      ? rows
-      : rows.filter((row) => toFilterGroup(row?.eventType) === activeFilter);
+      ? visibleRows
+      : visibleRows.filter((row) => toFilterGroup(row?.eventType) === activeFilter);
 
   return (
     <div className="container py-[50px] max-w-3xl">
@@ -69,7 +105,7 @@ export default function SettingsActivityLogPage() {
       </p>
 
       <div className="mb-4 flex flex-wrap gap-2">
-        {FILTERS.map((filter) => (
+        {allowedFilters.map((filter) => (
           <button
             key={filter.key}
             type="button"
