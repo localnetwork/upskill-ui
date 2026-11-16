@@ -62,6 +62,50 @@ function Block({ eyebrow, title, action, tag, children }) {
   );
 }
 
+function TopicsRecommendedBlock({ topics }) {
+  const trackRef = useRef(null);
+  const scrollNext = () => {
+    const track = trackRef.current;
+    if (!track) return;
+    const atEnd = track.scrollLeft + track.clientWidth >= track.scrollWidth - 4;
+    track.scrollTo({
+      left: atEnd ? 0 : track.scrollLeft + track.clientWidth + 8,
+      behavior: "smooth",
+    });
+  };
+
+  return (
+    <Block title="Topics recommended for you">
+      <div className="relative mt-4">
+        <div
+          ref={trackRef}
+          className="grid grid-flow-col grid-rows-2 auto-cols-[calc((100%-0.5rem)/2)] gap-2 overflow-x-auto scroll-smooth pb-1 sm:auto-cols-[calc((100%-1rem)/3)] lg:auto-cols-[calc((100%-2rem)/5)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
+          {topics.map((topic) => (
+            <Link
+              key={topic.id}
+              href={`/courses?topic=${encodeURIComponent(topic.slug)}`}
+              className="flex min-h-[70px] items-center justify-center border border-slate-300 bg-white px-3 py-2 text-center text-sm font-bold text-slate-900 transition-colors hover:bg-slate-50"
+            >
+              {topic.name}
+            </Link>
+          ))}
+        </div>
+        {topics.length > 10 && (
+          <button
+            type="button"
+            aria-label="Next topics"
+            onClick={scrollNext}
+            className="absolute -right-4 top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white shadow-md hover:bg-slate-50 md:flex"
+          >
+            <ChevronRight size={18} />
+          </button>
+        )}
+      </div>
+    </Block>
+  );
+}
+
 function TopicTabsBlock({ tabs }) {
   const [activeId, setActiveId] = useState(tabs[0]?.id);
   const active = tabs.find((tab) => tab.id === activeId) || tabs[0];
@@ -106,7 +150,7 @@ export default function HomeLearnerSections({ trendingOnly = false }) {
 
   if (!data) return null;
 
-  const { learn_next, because_viewed, occupation, trending, top_rated, topic_next } = data;
+  const { learn_next, because_viewed, occupation, trending, top_rated, topic_next, recommended_topics } = data;
 
   if (trendingOnly) {
     return trending?.length > 0 ? (
@@ -140,6 +184,7 @@ export default function HomeLearnerSections({ trendingOnly = false }) {
           <Carousel courses={because_viewed.courses} />
         </Block>
       )}
+      {recommended_topics?.length > 0 && <TopicsRecommendedBlock topics={recommended_topics} />}
       {occupation?.courses?.length > 0 && (
         <Block
           title={`Popular for ${occupation.name}`}
