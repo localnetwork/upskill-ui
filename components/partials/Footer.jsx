@@ -88,35 +88,35 @@ const Footer = () => {
   );
 
   return (
-    <footer className="text-white">
+    <footer className="text-white relative z-[9999]">
       {skillGroups.length > 0 && (
-      <div className="border-t border-white/20 bg-[#F1F5F9]">
-        <div className="container py-12">
-          <h2 className="text-lg font-bold text-[#1f1f1f]">
-            Explore top skills and certifications
-          </h2>
-          <div className="mt-10 grid gap-x-10 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
-            {skillGroups.map((group) => (
-              <div key={group.id}>
-                <h3 className="text-[15px] font-bold text-[#1f1f1f]">
-                  <Link href={group.href} className="hover:underline">
-                    {group.title}
-                  </Link>
-                </h3>
-                <ul className="mt-4 space-y-2.5">
-                  {group.links.map((item) => (
-                    <li key={item.id}>
-                      <Link href={item.href} className={linkClass}>
-                        {item.label}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
+        <div className="border-t border-white/20 bg-[#F1F5F9]">
+          <div className="container py-12">
+            <h2 className="text-lg font-bold text-[#1f1f1f]">
+              Explore top skills and certifications
+            </h2>
+            <div className="mt-10 grid gap-x-10 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
+              {skillGroups.map((group) => (
+                <div key={group.id}>
+                  <h3 className="text-[15px] font-bold text-[#1f1f1f]">
+                    <Link href={group.href} className="hover:underline">
+                      {group.title}
+                    </Link>
+                  </h3>
+                  <ul className="mt-4 space-y-2.5">
+                    {group.links.map((item) => (
+                      <li key={item.id}>
+                        <Link href={item.href} className={linkClass}>
+                          {item.label}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
-      </div>
       )}
 
       <div className="bg-[#1F1F1F] ">
