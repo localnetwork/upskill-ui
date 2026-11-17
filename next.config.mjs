@@ -71,6 +71,10 @@ const nextConfig = {
         protocol: "https",
         hostname: "pub-8c442e392dc54f468c2cd6931d82e4ea.r2.dev",
       },
+      {
+        protocol: "https",
+        hostname: "upskill-assets.diomenike.space",
+      },
     ],
   },
   // ✅ Custom security headers
