@@ -104,9 +104,9 @@ export default function InstructorLayout({ children }) {
       <InstructorSidebar pinned={pinned} onToggle={togglePinned} />
       <main
         style={{
-          marginLeft: pinned ? SIDEBAR_EXPANDED_WIDTH : SIDEBAR_COLLAPSED_WIDTH,
+          "--sidebar-w": `${pinned ? SIDEBAR_EXPANDED_WIDTH : SIDEBAR_COLLAPSED_WIDTH}px`,
         }}
-        className="relative overflow-hidden transition-[margin] duration-200 p-6 sm:p-8 lg:p-[50px]"
+        className="relative overflow-hidden transition-[margin] duration-200 p-4 sm:p-8 md:ml-[var(--sidebar-w)] lg:p-[50px]"
       >
         {children}
       </main>

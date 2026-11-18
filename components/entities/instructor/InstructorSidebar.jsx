@@ -17,6 +17,31 @@ export default function InstructorSidebar({ pinned, onToggle }) {
   const collapsed = !expanded;
 
   return (
+    <>
+    <nav className="sticky top-0 z-40 flex gap-1 overflow-x-auto border-b border-zinc-200 bg-white px-2 py-2 md:hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      {instructorNavLinks.map((item) => {
+        const isActive =
+          pathname === item.link || pathname.startsWith(`${item.link}/`);
+        return (
+          <Link
+            key={item.name}
+            href={item.link}
+            aria-current={isActive ? "page" : undefined}
+            className={[
+              "flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-3 py-2 text-xs font-semibold",
+              isActive
+                ? "bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-100"
+                : "text-zinc-700 hover:bg-zinc-50",
+            ].join(" ")}
+          >
+            <span className="[&>svg]:h-4 [&>svg]:w-4" aria-hidden="true">
+              {item.icon}
+            </span>
+            {item.name}
+          </Link>
+        );
+      })}
+    </nav>
     <aside
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
@@ -24,7 +49,7 @@ export default function InstructorSidebar({ pinned, onToggle }) {
         width: expanded ? SIDEBAR_EXPANDED_WIDTH : SIDEBAR_COLLAPSED_WIDTH,
       }}
       className={[
-        "fixed left-0 top-[100px] z-40 h-[calc(100dvh-100px)] border-r border-zinc-200 bg-white",
+        "fixed left-0 top-[100px] z-40 hidden md:block h-[calc(100dvh-100px)] border-r border-zinc-200 bg-white",
         "transition-[width,box-shadow] duration-200 ease-in-out",
         hovered && !pinned ? "shadow-xl" : "",
       ].join(" ")}
@@ -128,5 +153,6 @@ export default function InstructorSidebar({ pinned, onToggle }) {
         )}
       </nav>
     </aside>
+    </>
   );
 }

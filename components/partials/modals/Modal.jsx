@@ -112,7 +112,7 @@ export default function Modal() {
   }, [modalInfo]);
 
   return (
-    <div className="fixed inset-0 p-[50px] z-[100] flex items-center justify-center p-[50px]">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-[50px]">
       {/* Overlay */}
       <div
         className={`fixed inset-0  cursor-pointer [background:color-mix(in_oklch,oklch(93.86%_0.0108_280.47deg)_80%,transparent)] backdrop-blur-[0.8rem] transition-opacity duration-300 ${
@@ -123,7 +123,7 @@ export default function Modal() {
 
       {/* Modal */}
       <div
-        className={`${sizeClasses[size]} relative max-h-[calc(100vh-50px)] overflow-y-auto z-10 w-full  rounded-[20px] bg-white p-[24px] shadow-lg transform transition-all duration-300 ease-out ${
+        className={`${sizeClasses[size]} relative max-h-[calc(100dvh-24px)] sm:max-h-[calc(100vh-50px)] overflow-y-auto z-10 w-full rounded-[20px] bg-white p-4 pt-10 sm:p-[24px] shadow-lg transform transition-all duration-300 ease-out ${
           visible
             ? "opacity-100 scale-100 translate-y-0"
             : "opacity-0 scale-95 translate-y-4"
