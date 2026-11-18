@@ -12,6 +12,7 @@ import CourseOverview from "@/components/entities/course/learn/CourseOverview";
 import learnTabs from "@/lib/menu/learnNavTabs.json";
 import CourseNotes from "@/components/entities/course/learn/CourseNotes";
 import CourseQA from "@/components/entities/course/learn/CourseQA";
+import CourseAnnouncements from "@/components/entities/course/learn/CourseAnnouncements";
 import CourseReviews from "@/components/entities/course/show/CourseReviews";
 import CourseLearnAIAssistantDrawer from "@/components/entities/course/learn/CourseLearnAIAssistantDrawer";
 import CourseSuspendedNotice from "@/components/entities/course/CourseSuspendedNotice";
@@ -295,11 +296,13 @@ export default function Page({ data }) {
             course={course}
             setCurrentLecture={setCurrentLecture}
             setCourse={setCourse}
+            panelStatus={panelStatus}
+            setPanelStatus={setPanelStatus}
           />
           <div className="p-[15px] bg-[#EDECEC]">
             <div className="bg-white rounded-xl p-6 shadow-sm border border-primary/5">
               <div>
-                <div class="flex border-b border-primary/10 mb-6">
+                <div class="flex overflow-x-auto whitespace-nowrap border-b border-primary/10 mb-6">
                   <button
                     onClick={() => handleTabs("overview")}
                     class={`cursor-pointer px-6 py-3 text-sm text-slate-500 hover:text-primary transition-colors ${currentTab === "overview" ? "text-primary border-b-2 border-primary font-bold" : "font-medium"}`}
@@ -317,6 +320,12 @@ export default function Page({ data }) {
                     class={`cursor-pointer px-6 py-3 text-sm text-slate-500 hover:text-primary transition-colors ${currentTab === "qa" ? "text-primary border-b-2 border-primary font-bold" : "font-medium"}`}
                   >
                     Q&amp;A
+                  </button>
+                  <button
+                    onClick={() => handleTabs("announcements")}
+                    class={`cursor-pointer px-6 py-3 text-sm text-slate-500 hover:text-primary transition-colors ${currentTab === "announcements" ? "text-primary border-b-2 border-primary font-bold" : "font-medium"}`}
+                  >
+                    ANNOUNCEMENTS
                   </button>
                   <button
                     onClick={() => handleTabs("reviews")}
@@ -338,6 +347,10 @@ export default function Page({ data }) {
                   courseSlug={course?.slug}
                   lectureId={currentLecture?.id}
                 />
+              )}
+
+              {currentTab === "announcements" && (
+                <CourseAnnouncements courseId={course?.id} />
               )}
 
               {currentTab === "reviews" && (

@@ -77,6 +77,7 @@ export default function CurriculumItem({
     if (fromResource === "quiz") return "quiz";
     if (fromResource === "coding_exercise") return "coding_exercise";
     if (fromResource === "role_play") return "role_play";
+    if (fromResource === "assignment") return "assignment";
     if (fromResource === "video" || fromResource === "article")
       return "lecture";
     return "";
@@ -86,6 +87,7 @@ export default function CurriculumItem({
   const isQuiz = normalizedCurriculumType === "quiz";
   const isCoding = normalizedCurriculumType === "coding_exercise";
   const isRolePlay = normalizedCurriculumType === "role_play";
+  const isAssignment = normalizedCurriculumType === "assignment";
   const quizQuestions = Array.isArray(currentItem?.asset?.questions)
     ? currentItem.asset.questions
     : [];
@@ -115,7 +117,9 @@ export default function CurriculumItem({
             ? !hasCodingSteps
             : resourceType === "role_play"
               ? !currentItem?.asset?.generated
-              : true;
+              : resourceType === "assignment"
+                ? !(currentItem?.asset?.questions || []).length
+                : true;
   const prerequisiteOptions = Array.isArray(allItems)
     ? allItems.filter(
         (candidate) => candidate?.id && candidate.id !== currentItem?.id,
@@ -227,10 +231,10 @@ export default function CurriculumItem({
       setOpenContentOnSync(shouldOpenContent);
       onSave?.(saved);
 
-      if (isRolePlay) {
+      if (isRolePlay || isAssignment) {
         setMode(null);
         router.push(
-          `/instructor/courses/${router.query.slug}/role-play/${saved.id}`,
+          `/instructor/courses/${router.query.slug}/${isAssignment ? "assignment" : "role-play"}/${saved.id}`,
         );
         return;
       }
@@ -416,6 +420,8 @@ export default function CurriculumItem({
                   <Code size={18} className="inline mr-2" />
                 ) : resourceType === "role_play" ? (
                   <Drama size={18} className="inline mr-2" />
+                ) : resourceType === "assignment" ? (
+                  <NotebookText size={18} className="inline mr-2" />
                 ) : (
                   <OctagonAlert
                     size={18}
@@ -481,6 +487,20 @@ export default function CurriculumItem({
               <span className="text-[12px] px-4 py-2 cursor-pointer flex items-center justify-center font-bold border-[2px] border-[#0056D2] hover:bg-[#0056D2] hover:text-white text-[#0056D2] rounded">
                 <Drama size={16} className="mr-1" />{" "}
                 {currentItem?.asset?.generated ? "Review details" : "Set up"}
+              </span>
+            </button>
+          )}
+          {isAssignment && !currentItem.isNew && (
+            <button
+              onClick={() =>
+                router.push(
+                  `/instructor/courses/${router.query.slug}/assignment/${currentItem.id}`,
+                )
+              }
+            >
+              <span className="text-[12px] px-4 py-2 cursor-pointer flex items-center justify-center font-bold border-[2px] border-[#0056D2] hover:bg-[#0056D2] hover:text-white text-[#0056D2] rounded">
+                <NotebookText size={16} className="mr-1" />{" "}
+                {currentItem?.asset?.questions?.length ? "Edit" : "Set up"}
               </span>
             </button>
           )}

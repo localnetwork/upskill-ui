@@ -493,7 +493,7 @@ export default function RolePlaySession({
                     value={draft}
                     onChange={(event) => setDraft(event.target.value)}
                     placeholder="Type your message"
-                    className="grow rounded-md border border-slate-300 px-3 py-2 text-[14px] outline-none focus:border-[#6d28d2]"
+                    className="grow rounded-md border border-slate-300 px-3 py-2 text-[14px] outline-none focus:border-primary"
                   />
                   <button
                     type="submit"
@@ -608,7 +608,7 @@ export default function RolePlaySession({
                   <button
                     type="button"
                     onClick={onExit}
-                    className="rounded-md border border-[#6d28d2] px-4 py-2 text-[14px] font-bold text-primary"
+                    className="rounded-md border border-primary px-4 py-2 text-[14px] font-bold text-primary"
                   >
                     Close
                   </button>

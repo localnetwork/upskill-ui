@@ -134,12 +134,12 @@ export default function Checkout() {
   const cartNetTotal = Math.max(0, Number(cartTotal || 0) - cartDiscountAmount);
 
   return (
-    <div className="bg-[linear-gradient(90deg,transparent_60%,oklch(97.59%_0.0029_264.54deg)_40%)] min-h-[calc(100vh-70px)] py-[30px]">
-      <div className="max-w-[984px] mx-auto flex justify-between gap-[50px] px-[15px]">
-        <div className="py-[50px] max-w-[calc(100%-320px)] w-full pr-[50px]">
+    <div className="lg:bg-[linear-gradient(90deg,transparent_60%,oklch(97.59%_0.0029_264.54deg)_40%)] min-h-[calc(100vh-70px)] py-4 lg:py-[30px]">
+      <div className="max-w-[984px] mx-auto flex flex-col lg:flex-row justify-between gap-6 lg:gap-[50px] px-[15px]">
+        <div className="py-2 lg:py-[50px] lg:max-w-[calc(100%-320px)] w-full lg:pr-[50px]">
           <Link
             href="/cart"
-            className="flex items-center gap-[5px] mb-5 mt-[-50px]"
+            className="flex items-center gap-[5px] mb-3 lg:mb-5 lg:mt-[-50px]"
           >
             <ChevronLeft size={20} />
           </Link>
@@ -204,20 +204,20 @@ export default function Checkout() {
                   return (
                   <div key={item.id} className={``}>
                     <div className="flex justify-between">
-                      <div className="flex items-center gap-[10px]">
+                      <div className="flex min-w-0 items-center gap-[10px]">
                         <Image
                           src={item?.course?.cover_image?.path}
                           width={50}
                           height={30}
                           alt={item?.course?.title}
-                          className="w-[70px] h-[50px] object-cover rounded-md border-[1px] border-[oklch(86.72%_0.0192_282.72deg)]"
+                          className="w-[70px] h-[50px] shrink-0 object-cover rounded-md border-[1px] border-[oklch(86.72%_0.0192_282.72deg)]"
                         />
-                        <div className="font-semibold">
+                        <div className="min-w-0 font-semibold line-clamp-2">
                           {item?.course?.title}
                         </div>
                       </div>
 
-                      <div className="text-right">
+                      <div className="shrink-0 pl-2 text-right">
                         {hasDiscount ? (
                           <>
                             <div className="text-[12px] text-gray-400 line-through">
@@ -248,7 +248,7 @@ export default function Checkout() {
             )}
           </div>
         </div>
-        <div className="w-[350px] pl-[10px] py-[50px]">
+        <div className="w-full lg:w-[350px] rounded-lg bg-[oklch(97.59%_0.0029_264.54deg)] p-4 lg:bg-transparent lg:rounded-none lg:p-0 lg:pl-[10px] lg:py-[50px]">
           <h2 className="font-semibold text-[25px] mb-2">Order summary</h2>
 
           <div className="flex justify-between">

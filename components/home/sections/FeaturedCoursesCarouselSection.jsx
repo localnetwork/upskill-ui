@@ -113,7 +113,7 @@ export function FeaturedCard({ course }) {
       <div
         ref={cardRef}
         onMouseEnter={() => {
-          if (!learnings.length) return;
+          if (!learnings.length || window.innerWidth < 768) return;
           placeTooltip();
           setShowTooltip(true);
         }}

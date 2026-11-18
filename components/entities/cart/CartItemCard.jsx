@@ -48,9 +48,9 @@ export default function CartItemCard({ item, isLast, appliedCoupon }) {
   return (
     <div
       key={item.course.id}
-      className={`${!isLast ? "pb-[15px] border-bottom mb-[15px]" : ""} flex gap-[15px]`}
+      className={`${!isLast ? "pb-[15px] border-b mb-[15px]" : ""} flex gap-3 sm:gap-[15px]`}
     >
-      <div className="w-[150px] h-[100px] relative flex-shrink-0">
+      <div className="w-[96px] h-[64px] sm:w-[150px] sm:h-[100px] relative flex-shrink-0">
         {item.course.cover_image && (
           <Image
             src={item.course.cover_image.path}
@@ -60,10 +60,12 @@ export default function CartItemCard({ item, isLast, appliedCoupon }) {
           />
         )}
       </div>
-      <div className="w-[calc(100%-150px)] grid grid-cols-6 justify-between">
-        <div className="col-span-4">
-          <h2 className="text-[18px] font-semibold">{item.course.title}</h2>
-          <p className="font-light text-[14px] mt-[5px]">
+      <div className="min-w-0 flex-1 grid grid-cols-2 sm:grid-cols-6 gap-x-2 gap-y-1">
+        <div className="col-span-2 sm:col-span-4 min-w-0">
+          <h2 className="text-[15px] sm:text-[18px] font-semibold line-clamp-2">
+            {item.course.title}
+          </h2>
+          <p className="font-light text-[13px] sm:text-[14px] mt-[5px]">
             by {item.course.author.data.fullName}
           </p>
           {appliedCoupon ? (
@@ -72,10 +74,10 @@ export default function CartItemCard({ item, isLast, appliedCoupon }) {
             </p>
           ) : null}
         </div>
-        <div className="col-span-1 flex font-light justify-end text-[#0056D2]">
+        <div className="order-3 sm:order-none col-span-1 flex font-light justify-end text-[#0056D2]">
           <div>
             <button
-              className={`px-[15px] py-[5px] rounded-md ${
+              className={`px-2 sm:px-[15px] py-[5px] rounded-md ${
                 isRemoving
                   ? "opacity-60 cursor-not-allowed"
                   : "hover:bg-[#F0F6FF] cursor-pointer"
@@ -89,7 +91,7 @@ export default function CartItemCard({ item, isLast, appliedCoupon }) {
             </button>
           </div>
         </div>
-        <div className="col-span-1 flex flex-col items-end">
+        <div className="col-span-1 flex flex-col sm:items-end">
           {hasDiscount ? (
             <>
               <div className="text-[12px] text-gray-400 line-through">

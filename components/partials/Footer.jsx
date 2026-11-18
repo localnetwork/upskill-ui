@@ -88,7 +88,7 @@ const Footer = () => {
   );
 
   return (
-    <footer className="text-white relative z-[9999]">
+    <footer className="text-white relative z-[20]">
       {skillGroups.length > 0 && (
         <div className="border-t border-white/20 bg-[#F1F5F9]">
           <div className="container py-12">

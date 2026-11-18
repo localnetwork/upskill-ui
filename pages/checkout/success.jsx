@@ -238,7 +238,7 @@ export default function Page({ data = null, statusState = "PENDING" }) {
           <AlertCircle className="w-20 h-20 text-[#d97706]" />
         )}
       </div>
-      <h1 className="font-semibold text-[40px]">
+      <h1 className="font-semibold text-2xl sm:text-[40px] text-center">
         {isPaid
           ? "Thank you for your purchase!"
           : isInvalid
@@ -257,7 +257,7 @@ export default function Page({ data = null, statusState = "PENDING" }) {
           : `Your order ID is: #${order?.id || router?.query?.order_id || "processing"}`}
       </p>
 
-      <div className="bg-white shadow-md mt-5 rounded-lg p-[30px] w-full max-w-[600px]">
+      <div className="bg-white shadow-md mt-5 rounded-lg p-4 sm:p-[30px] w-full max-w-[600px]">
         <h2 className="font-semibold text-[24px] mb-4">
           {isPaid ? "Order Summary" : "Order Status"}
         </h2>

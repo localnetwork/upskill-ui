@@ -382,7 +382,7 @@ export default function RolePlayPreview({
                 onClick={() => setMode(id)}
                 className={`flex w-full items-center gap-4 rounded-md text-primary border px-4 py-3 text-left ${
                   mode === id
-                    ? "border-[#6d28d2] ring-1 ring-[#6d28d2]"
+                    ? "border-primary ring-1 ring-[#6d28d2]"
                     : "border-slate-300"
                 }`}
               >

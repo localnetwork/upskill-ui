@@ -3,17 +3,24 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/router";
 import {
+  Bell,
   ChevronRight,
   Compass,
   GraduationCap,
   LogIn,
   LogOut,
+  MessageCircle,
   Presentation,
+  ShoppingCart,
   User,
   UserPlus,
   X,
 } from "lucide-react";
 import persistentStore from "@/lib/store/persistentStore";
+import globalStore from "@/lib/store/globalStore";
+import cartStore from "@/lib/store/cartStore";
+import { filteredLinks } from "@/lib/services/filteredLinks";
+import userNavLinks from "@/lib/menu/userNavLinks";
 import { logout } from "@/lib/services/auth";
 import { getInitials } from "@/lib/services/nameUtils";
 import HeaderSearchAutocomplete from "./HeaderSearchAutocomplete";
@@ -21,6 +28,11 @@ import MobileExploreMenu from "./MobileExploreMenu";
 
 export default function MobileNav({ open, onClose }) {
   const profile = persistentStore((state) => state.profile);
+  const unreadChats = globalStore((state) => state.unreadChats);
+  const unreadNotifications = globalStore(
+    (state) => state.unreadNotifications,
+  );
+  const cartCount = cartStore((state) => state.cartCount);
   const router = useRouter();
   const [exploreOpen, setExploreOpen] = useState(false);
 
@@ -63,6 +75,14 @@ export default function MobileNav({ open, onClose }) {
     : null;
   const initials = getInitials(profile?.fullName) || "?";
   const displayName = profile?.fullName || profile?.username || "Member";
+  const isLearner = Array.isArray(profile?.roles)
+    ? profile.roles.includes("LEARNER")
+    : false;
+  const menuLinks = filteredLinks(
+    userNavLinks,
+    profile?.roles,
+    profile?.permissions,
+  );
 
   return (
     <>
@@ -133,6 +153,63 @@ export default function MobileNav({ open, onClose }) {
           >
             <GraduationCap size={20} className="text-slate-500" /> Courses
           </Link>
+
+          {/* Logged-in shortcuts (header icons are hidden on mobile) */}
+          {profile &&
+            [
+              {
+                name: "Messages",
+                href: "/messages",
+                Icon: MessageCircle,
+                badge: unreadChats,
+              },
+              {
+                name: "Notifications",
+                href: "/notifications",
+                Icon: Bell,
+                badge: unreadNotifications,
+              },
+              ...(isLearner
+                ? [
+                    {
+                      name: "Cart",
+                      href: "/cart",
+                      Icon: ShoppingCart,
+                      badge: cartCount,
+                    },
+                  ]
+                : []),
+            ].map(({ name, href, Icon, badge }) => (
+              <Link
+                key={name}
+                href={href}
+                onClick={onClose}
+                className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-50 transition-colors text-sm font-semibold text-slate-700"
+              >
+                <Icon size={20} className="text-slate-500" />
+                <span className="flex-1">{name}</span>
+                {Number(badge) > 0 ? (
+                  <span className="min-w-[20px] h-[20px] px-1.5 rounded-full bg-red-600 text-white text-[11px] font-bold flex items-center justify-center">
+                    {Number(badge) > 99 ? "99+" : badge}
+                  </span>
+                ) : null}
+              </Link>
+            ))}
+
+          {profile && menuLinks.length > 0 && (
+            <div className="mt-2 border-t border-gray-100 pt-2">
+              {menuLinks.map((link) => (
+                <Link
+                  key={link.name}
+                  href={link.link || "#"}
+                  onClick={onClose}
+                  className="block px-4 py-3 rounded-lg hover:bg-gray-50 transition-colors text-sm font-semibold text-slate-700"
+                >
+                  {link.name}
+                </Link>
+              ))}
+            </div>
+          )}
 
           {/* Become an Instructor - logged out only */}
           {!profile && (

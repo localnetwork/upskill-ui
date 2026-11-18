@@ -44,7 +44,7 @@ export default function Page({ cancelled, orderId }) {
       <div>
         <CircleX className="w-20 h-20 text-red-400" />
       </div>
-      <h1 className="font-semibold text-[40px]">
+      <h1 className="font-semibold text-2xl sm:text-[40px] text-center">
         {cancelled ? "Your payment was cancelled." : "Unable to cancel this checkout."}
       </h1>
       <p className="text-[18px] mt-2 text-gray-600">

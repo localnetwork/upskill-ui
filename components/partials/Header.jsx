@@ -53,7 +53,9 @@ export default function Header() {
   const [chatUnreadCount, setChatUnreadCount] = useState(0);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
-  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+  const isMobileNavOpen = globalStore((state) => state.mobileNavOpen);
+  const setIsMobileNavOpen = (val) =>
+    globalStore.setState({ mobileNavOpen: val });
   const burgerRef = useRef(null);
   const [incomingCall, setIncomingCall] = useState(null);
 
@@ -194,6 +196,13 @@ export default function Header() {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [cartDrawerOpen]);
+
+  useEffect(() => {
+    globalStore.setState({
+      unreadNotifications: unreadCount,
+      unreadChats: chatUnreadCount,
+    });
+  }, [unreadCount, chatUnreadCount]);
 
   // Notification pages announce reads so the bell count stays in sync.
   useEffect(() => {
@@ -361,7 +370,7 @@ export default function Header() {
 
   // Restore focus to the burger button after the mobile nav closes
   useEffect(() => {
-    if (!isMobileNavOpen && burgerRef.current) {
+    if (!isMobileNavOpen && burgerRef.current?.offsetParent) {
       burgerRef.current.focus();
     }
   }, [isMobileNavOpen]);
@@ -404,7 +413,7 @@ export default function Header() {
   return (
     <>
       {profile && profile.verified === 0 && <UserResendNotif />}
-      <header className="bg-white shadow-lg sticky top-0 z-50">
+      <header className="hidden md:block bg-white shadow-lg sticky top-0 z-50">
         <div className="container">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center text-2xl font-bold">

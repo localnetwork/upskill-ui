@@ -98,6 +98,7 @@ export default function CourseCard({ course }) {
 
   const handleMouseEnter = () => {
     if (!learnings.length) return;
+    if (window.innerWidth < 768) return;
     updateTooltipPosition();
     setShowTooltip(true);
   };

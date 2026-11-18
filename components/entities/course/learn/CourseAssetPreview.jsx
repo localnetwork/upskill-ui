@@ -6,6 +6,7 @@ import ArticlePreview from "./components/ArticlePreview";
 import QuizPreview from "./components/QuizPreview";
 import CodingExercisePreview from "./components/CodingExercisePreview";
 import RolePlayLearn from "./components/RolePlayLearn";
+import AssignmentLearn from "./components/AssignmentLearn";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import "react-tooltip/dist/react-tooltip.css";
 import { Tooltip } from "react-tooltip";
@@ -15,6 +16,8 @@ export default function CourseAssetPreview({
   course,
   setCurrentLecture,
   setCourse,
+  panelStatus,
+  setPanelStatus,
 }) {
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
@@ -52,6 +55,8 @@ export default function CourseAssetPreview({
   const isCodingLecture =
     lecture?.curriculum_resource_type === "coding_exercise" &&
     !lecture?.is_locked;
+  const isAssignmentLecture =
+    lecture?.curriculum_resource_type === "assignment" && !lecture?.is_locked;
 
   const goToLecture = (target) => {
     if (!target || target?.is_locked) return;
@@ -104,6 +109,19 @@ export default function CourseAssetPreview({
       case "role_play":
         component = <RolePlayLearn lecture={lecture} setCourse={setCourse} />;
         break;
+      case "assignment":
+        component = (
+          <AssignmentLearn
+            lecture={lecture}
+            course={course}
+            setCourse={setCourse}
+            nextLecture={nextLecture}
+            onNavigate={goToLecture}
+            panelStatus={panelStatus}
+            setPanelStatus={setPanelStatus}
+          />
+        );
+        break;
       case "coding_exercise":
         component = (
           <CodingExercisePreview
@@ -145,12 +163,16 @@ export default function CourseAssetPreview({
 
   return (
     <div
-      className={`w-full bg-[#16161D] relative ${
+      className={`w-full relative ${
+        isAssignmentLecture ? "bg-white" : "bg-[#16161D]"
+      } ${
         isCodingLecture
           ? "h-[calc(100vh-60px)] min-h-[640px]"
-          : lecture?.curriculum_resource_type === "quiz"
-            ? "h-[600px]"
-            : "h-[500px]"
+          : isAssignmentLecture
+            ? "h-[calc(100vh-60px)] min-h-[600px]"
+            : lecture?.curriculum_resource_type === "quiz"
+              ? "h-[600px]"
+              : "h-[500px]"
       }`}
     >
       {isLoading ? (
@@ -161,7 +183,7 @@ export default function CourseAssetPreview({
         <>
           {/* PREV LECTURE */}
 
-          {prevLecture && !isCodingLecture && (
+          {prevLecture && !isCodingLecture && !isAssignmentLecture && (
             <button
               disabled={!prevLecture || Boolean(prevLecture?.is_locked)}
               onClick={() => {
@@ -186,7 +208,7 @@ export default function CourseAssetPreview({
           )}
           <Tooltip id="prev-tooltip" />
 
-          {nextLecture && !isCodingLecture && (
+          {nextLecture && !isCodingLecture && !isAssignmentLecture && (
             <button
               disabled={!nextLecture || Boolean(nextLecture?.is_locked)}
               onClick={() => {

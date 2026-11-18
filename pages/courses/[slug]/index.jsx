@@ -186,7 +186,9 @@ export async function getServerSideProps(context) {
         getAuthTokenFromCookieMap(parseCookies(context)) ||
           getRefreshTokenFromCookieMap(parseCookies(context)),
       );
-      return hasSession ? { props: { initialCourse: null } } : { notFound: true };
+      return hasSession
+        ? { props: { initialCourse: null } }
+        : { notFound: true };
     }
     return { props: { initialCourse: null } };
   }
@@ -462,7 +464,10 @@ export default function Course({ initialCourse = null }) {
     const isLogged = await isLoggedIn();
     if (!isLogged) {
       modalState.setState({
-        modalInfo: { type: "LOGIN", message: "Please log in to report this course." },
+        modalInfo: {
+          type: "LOGIN",
+          message: "Please log in to report this course.",
+        },
       });
       return;
     }
@@ -525,7 +530,9 @@ export default function Course({ initialCourse = null }) {
         .then((res) => setSubPlans(res?.data?.data || []))
         .catch(() => setSubPlans([])),
       BaseApi.get(`${api}/subscription/catalog-summary`)
-        .then((res) => setCatalogCount(Number(res?.data?.data?.courseCount || 0)))
+        .then((res) =>
+          setCatalogCount(Number(res?.data?.data?.courseCount || 0)),
+        )
         .catch(() => {}),
     ];
     if (isLoggedIn()) {
@@ -706,6 +713,16 @@ export default function Course({ initialCourse = null }) {
     });
   }, [course?.id, course?.slug]);
 
+  // Reserve space under the footer for the fixed mobile purchase bar.
+  const hasPurchaseBar =
+    !isCourseLoading &&
+    !notFound &&
+    Boolean(profile?.permissions?.includes("view-own-learnings"));
+  useEffect(() => {
+    globalStore.setState({ mobileActionBar: hasPurchaseBar });
+    return () => globalStore.setState({ mobileActionBar: false });
+  }, [hasPurchaseBar]);
+
   if (isCourseLoading) {
     return <CoursePageSkeleton />;
   }
@@ -748,15 +765,19 @@ export default function Course({ initialCourse = null }) {
     accessLoading;
 
   return (
-    <div className="pb-28 lg:pb-[50px]">
+    <div className="pb-8 lg:pb-[50px]">
       <Seo
         title={course?.title}
         description={course?.subtitle || stripHtml(course?.description)}
-        image={course?.cover_image?.path ? mediaUrl(course.cover_image) : undefined}
+        image={
+          course?.cover_image?.path ? mediaUrl(course.cover_image) : undefined
+        }
         path={course?.slug ? `/courses/${course.slug}` : undefined}
         type="article"
         noindex={
-          course?.workflow_status ? course.workflow_status !== "PUBLISHED" : false
+          course?.workflow_status
+            ? course.workflow_status !== "PUBLISHED"
+            : false
         }
         jsonLd={[
           buildCourseJsonLd(course),
@@ -872,7 +893,9 @@ export default function Course({ initialCourse = null }) {
               <div className="space-y-3 text-sm text-slate-700">
                 <div className="flex items-center gap-3">
                   <History className="text-slate-600" size={18} />
-                  <span>Last updated {formatMonthYear(course?.updated_at)}</span>
+                  <span>
+                    Last updated {formatMonthYear(course?.updated_at)}
+                  </span>
                 </div>
                 <div className="flex items-center gap-3">
                   <Globe className="text-slate-600" size={18} />
@@ -1054,7 +1077,9 @@ export default function Course({ initialCourse = null }) {
               </div>
 
               <div className="p-4 lg:p-8">
-                <div className={`${showSubscribeOption ? "hidden lg:flex" : "flex"} items-baseline gap-3 mb-6`}>
+                <div
+                  className={`${showSubscribeOption ? "hidden lg:flex" : "flex"} items-baseline gap-3 mb-6`}
+                >
                   {isFreeCourse ? (
                     <span className="text-4xl font-black">Free</span>
                   ) : (
@@ -1084,199 +1109,201 @@ export default function Course({ initialCourse = null }) {
 
                 {profile?.permissions?.includes("view-own-learnings") &&
                   !isAccessLoading && (
-                  <div className="space-y-3 mb-8">
-                    {course?.is_enrolled ? (
-                      <Link
-                        href={`/courses/${course.slug}/learn`}
-                        className="block px-4 text-center w-full py-4 bg-primary text-white font-black text-lg rounded-xl hover:brightness-110 active:scale-95 transition-all"
-                      >
-                        Continue Learning
-                      </Link>
-                    ) : canStartWithPlan || canStartWithTrial ? (
-                      <button
-                        type="button"
-                        onClick={startWithPlan}
-                        disabled={startingWithPlan}
-                        className="block px-4 text-center w-full py-4 bg-primary text-white font-black text-lg rounded-xl hover:brightness-110 active:scale-95 transition-all disabled:opacity-60"
-                      >
-                        {startingWithPlan
-                          ? "Opening..."
-                          : canStartWithTrial
-                            ? "Enroll"
-                            : "Start Learning"}
-                      </button>
-                    ) : showSubscribeOption ? (
-                      <div className="rounded-xl border border-slate-200 divide-y divide-slate-200 overflow-hidden">
-                        <label className="block cursor-pointer p-4">
-                          <div className="flex items-start gap-3">
-                            <input
-                              type="radio"
-                              className="mt-1.5 h-4 w-4 accent-primary"
-                              checked={purchaseMode === "subscribe"}
-                              onChange={() => setPurchaseMode("subscribe")}
-                            />
-                            <div>
-                              <p className="text-slate-700">
-                                Subscribe and save
-                              </p>
-                              <p className="font-bold text-xl">
-                                From{" "}
-                                {formatPhpPrice(
-                                  Math.round(subscriptionOffer.perMonth),
-                                )}
-                                {subscriptionOffer.regular >
-                                  subscriptionOffer.perMonth && (
-                                  <span className="ml-2 text-base font-normal text-slate-500 line-through">
-                                    {formatPhpPrice(
-                                      Math.round(subscriptionOffer.regular),
-                                    )}
+                    <div className="space-y-3 mb-8">
+                      {course?.is_enrolled ? (
+                        <Link
+                          href={`/courses/${course.slug}/learn`}
+                          className="block px-4 text-center w-full py-4 bg-primary text-white font-black text-lg rounded-xl hover:brightness-110 active:scale-95 transition-all"
+                        >
+                          Continue Learning
+                        </Link>
+                      ) : canStartWithPlan || canStartWithTrial ? (
+                        <button
+                          type="button"
+                          onClick={startWithPlan}
+                          disabled={startingWithPlan}
+                          className="block px-4 text-center w-full py-4 bg-primary text-white font-black text-lg rounded-xl hover:brightness-110 active:scale-95 transition-all disabled:opacity-60"
+                        >
+                          {startingWithPlan
+                            ? "Opening..."
+                            : canStartWithTrial
+                              ? "Enroll"
+                              : "Start Learning"}
+                        </button>
+                      ) : showSubscribeOption ? (
+                        <div className="rounded-xl border border-slate-200 divide-y divide-slate-200 overflow-hidden">
+                          <label className="block cursor-pointer p-4">
+                            <div className="flex items-start gap-3">
+                              <input
+                                type="radio"
+                                className="mt-1.5 h-4 w-4 accent-primary"
+                                checked={purchaseMode === "subscribe"}
+                                onChange={() => setPurchaseMode("subscribe")}
+                              />
+                              <div>
+                                <p className="text-slate-700">
+                                  Subscribe and save
+                                </p>
+                                <p className="font-bold text-xl">
+                                  From{" "}
+                                  {formatPhpPrice(
+                                    Math.round(subscriptionOffer.perMonth),
+                                  )}
+                                  {subscriptionOffer.regular >
+                                    subscriptionOffer.perMonth && (
+                                    <span className="ml-2 text-base font-normal text-slate-500 line-through">
+                                      {formatPhpPrice(
+                                        Math.round(subscriptionOffer.regular),
+                                      )}
+                                    </span>
+                                  )}
+                                  <span className="ml-1 text-sm font-normal text-slate-600">
+                                    /month
                                   </span>
-                                )}
-                                <span className="ml-1 text-sm font-normal text-slate-600">
-                                  /month
-                                </span>
-                              </p>
+                                </p>
+                              </div>
                             </div>
-                          </div>
-                          {purchaseMode === "subscribe" && (
-                            <div className="mt-4 space-y-2 pl-7 text-sm text-slate-700">
-                              <p>
-                                {catalogCount > 0
-                                  ? `Access to ${catalogCount}+ top-rated courses`
-                                  : "Access to our top-rated courses"}
-                              </p>
-                              <p>Cancel anytime</p>
-                              <button
-                                type="button"
-                                onClick={handleStartSubscription}
-                                className="mt-3 block w-full rounded-lg bg-primary py-3.5 text-center font-bold text-white hover:brightness-110"
-                              >
-                                Start subscription
-                              </button>
-                            </div>
-                          )}
-                        </label>
-                        <label className="block cursor-pointer p-4">
-                          <div className="flex items-start gap-3">
-                            <input
-                              type="radio"
-                              className="mt-1.5 h-4 w-4 accent-primary"
-                              checked={purchaseMode === "buy"}
-                              onChange={() => setPurchaseMode("buy")}
-                            />
-                            <div>
-                              <p className="text-slate-700">
-                                Buy individual course
-                              </p>
-                              <p className="font-bold text-xl">
-                                {formatPhpPrice(effectiveCoursePrice)}
-                                {hasDiscountedPrice && (
-                                  <span className="ml-2 text-base font-normal text-slate-500 line-through">
-                                    {formatPhpPrice(baseCoursePrice)}
-                                  </span>
-                                )}
-                              </p>
-                            </div>
-                          </div>
-                          {purchaseMode === "buy" && (
-                            <div className="mt-4 space-y-3 pl-7">
-                              {course?.is_in_cart ? (
-                                <Link
-                                  href="/cart"
-                                  className="block w-full rounded-lg bg-primary py-3.5 text-center font-bold text-white hover:brightness-110"
-                                >
-                                  Go to Cart
-                                </Link>
-                              ) : (
+                            {purchaseMode === "subscribe" && (
+                              <div className="mt-4 space-y-2 pl-7 text-sm text-slate-700">
+                                <p>
+                                  {catalogCount > 0
+                                    ? `Access to ${catalogCount}+ top-rated courses`
+                                    : "Access to our top-rated courses"}
+                                </p>
+                                <p>Cancel anytime</p>
                                 <button
                                   type="button"
-                                  onClick={(e) => handleCart(e)}
-                                  className="block w-full rounded-lg bg-primary py-3.5 text-center font-bold text-white hover:brightness-110"
+                                  onClick={handleStartSubscription}
+                                  className="mt-3 block w-full rounded-lg bg-primary py-3.5 text-center font-bold text-white hover:brightness-110"
                                 >
-                                  Add to Cart
+                                  Start subscription
                                 </button>
-                              )}
-                              <button
-                                type="button"
-                                onClick={handleBuyNow}
-                                className="block w-full rounded-lg border border-slate-900 py-3 font-bold text-slate-900 hover:bg-slate-50"
-                              >
-                                Buy Now
-                              </button>
+                              </div>
+                            )}
+                          </label>
+                          <label className="block cursor-pointer p-4">
+                            <div className="flex items-start gap-3">
+                              <input
+                                type="radio"
+                                className="mt-1.5 h-4 w-4 accent-primary"
+                                checked={purchaseMode === "buy"}
+                                onChange={() => setPurchaseMode("buy")}
+                              />
+                              <div>
+                                <p className="text-slate-700">
+                                  Buy individual course
+                                </p>
+                                <p className="font-bold text-xl">
+                                  {formatPhpPrice(effectiveCoursePrice)}
+                                  {hasDiscountedPrice && (
+                                    <span className="ml-2 text-base font-normal text-slate-500 line-through">
+                                      {formatPhpPrice(baseCoursePrice)}
+                                    </span>
+                                  )}
+                                </p>
+                              </div>
                             </div>
+                            {purchaseMode === "buy" && (
+                              <div className="mt-4 space-y-3 pl-7">
+                                {course?.is_in_cart ? (
+                                  <Link
+                                    href="/cart"
+                                    className="block w-full rounded-lg bg-primary py-3.5 text-center font-bold text-white hover:brightness-110"
+                                  >
+                                    Go to Cart
+                                  </Link>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => handleCart(e)}
+                                    className="block w-full rounded-lg bg-primary py-3.5 text-center font-bold text-white hover:brightness-110"
+                                  >
+                                    Add to Cart
+                                  </button>
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={handleBuyNow}
+                                  className="block w-full rounded-lg border border-slate-900 py-3 font-bold text-slate-900 hover:bg-slate-50"
+                                >
+                                  Buy Now
+                                </button>
+                              </div>
+                            )}
+                          </label>
+                          <div className="flex justify-end bg-slate-50 px-4 py-3">
+                            <button
+                              type="button"
+                              onClick={handleWishlist}
+                              disabled={isWishlistSubmitting}
+                              className={`flex h-9 w-9 items-center justify-center rounded-lg border ${course?.is_in_wishlist ? "border-red-200 bg-red-50 text-red-500" : "border-slate-200 bg-white text-slate-600 hover:text-red-500"}`}
+                            >
+                              <Heart
+                                size={18}
+                                fill={
+                                  course?.is_in_wishlist
+                                    ? "currentColor"
+                                    : "none"
+                                }
+                              />
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          {course?.is_in_cart ? (
+                            <Link
+                              href="/cart"
+                              className="block px-4 text-center w-full py-4 bg-primary text-white font-black text-lg rounded-xl hover:brightness-110 active:scale-95 transition-all"
+                            >
+                              Go to Cart
+                            </Link>
+                          ) : (
+                            <button
+                              onClick={(e) => handleCart(e)}
+                              className="block px-4 text-center w-full py-4 bg-primary text-white font-black text-lg rounded-xl hover:brightness-110 active:scale-95 transition-all"
+                            >
+                              Add to Cart
+                            </button>
                           )}
-                        </label>
-                        <div className="flex justify-end bg-slate-50 px-4 py-3">
+                        </>
+                      )}
+
+                      <CourseAccessButton
+                        course={course}
+                        enabled={!canStartWithPlan && !canStartWithTrial}
+                      />
+
+                      {!course?.is_enrolled && !showSubscribeOption && (
+                        <div className="flex gap-2">
+                          {!canStartWithTrial && (
+                            <button
+                              onClick={handleBuyNow}
+                              className="flex-1 py-3 border border-slate-900 text-slate-900 font-bold rounded-xl hover:bg-slate-50 transition-colors"
+                            >
+                              Buy Now
+                            </button>
+                          )}
                           <button
-                            type="button"
                             onClick={handleWishlist}
                             disabled={isWishlistSubmitting}
-                            className={`flex h-9 w-9 items-center justify-center rounded-lg border ${course?.is_in_wishlist ? "border-red-200 bg-red-50 text-red-500" : "border-slate-200 bg-white text-slate-600 hover:text-red-500"}`}
+                            className={`w-12 h-12 flex items-center justify-center border rounded-xl transition-all ${
+                              course?.is_in_wishlist
+                                ? "border-red-200 bg-red-50 text-red-500"
+                                : "border-slate-200 hover:bg-red-50 hover:border-red-200 hover:text-red-500"
+                            } ${isWishlistSubmitting ? "opacity-70 cursor-not-allowed" : ""}`}
                           >
                             <Heart
-                              size={18}
+                              size={20}
                               fill={
                                 course?.is_in_wishlist ? "currentColor" : "none"
                               }
                             />
                           </button>
                         </div>
-                      </div>
-                    ) : (
-                      <>
-                        {course?.is_in_cart ? (
-                          <Link
-                            href="/cart"
-                            className="block px-4 text-center w-full py-4 bg-primary text-white font-black text-lg rounded-xl hover:brightness-110 active:scale-95 transition-all"
-                          >
-                            Go to Cart
-                          </Link>
-                        ) : (
-                          <button
-                            onClick={(e) => handleCart(e)}
-                            className="block px-4 text-center w-full py-4 bg-primary text-white font-black text-lg rounded-xl hover:brightness-110 active:scale-95 transition-all"
-                          >
-                            Add to Cart
-                          </button>
-                        )}
-                      </>
-                    )}
-
-                    <CourseAccessButton
-                      course={course}
-                      enabled={!canStartWithPlan && !canStartWithTrial}
-                    />
-
-                    {!course?.is_enrolled && !showSubscribeOption && (
-                      <div className="flex gap-2">
-                        {!canStartWithTrial && (
-                          <button
-                            onClick={handleBuyNow}
-                            className="flex-1 py-3 border border-slate-900 text-slate-900 font-bold rounded-xl hover:bg-slate-50 transition-colors"
-                          >
-                            Buy Now
-                          </button>
-                        )}
-                        <button
-                          onClick={handleWishlist}
-                          disabled={isWishlistSubmitting}
-                          className={`w-12 h-12 flex items-center justify-center border rounded-xl transition-all ${
-                            course?.is_in_wishlist
-                              ? "border-red-200 bg-red-50 text-red-500"
-                              : "border-slate-200 hover:bg-red-50 hover:border-red-200 hover:text-red-500"
-                          } ${isWishlistSubmitting ? "opacity-70 cursor-not-allowed" : ""}`}
-                        >
-                          <Heart
-                            size={20}
-                            fill={
-                              course?.is_in_wishlist ? "currentColor" : "none"
-                            }
-                          />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )}
+                      )}
+                    </div>
+                  )}
 
                 {!profile && (
                   <div className="mb-8">
@@ -1356,7 +1383,8 @@ export default function Course({ initialCourse = null }) {
                   >
                     {isShareSubmitting ? "Sharing..." : "Share"}
                   </button>
-                  {String(profile?.id || "") !== String(course?.author?.data?.id || "__") && (
+                  {String(profile?.id || "") !==
+                    String(course?.author?.data?.id || "__") && (
                     <button
                       type="button"
                       onClick={handleReportCourse}
@@ -1383,7 +1411,7 @@ export default function Course({ initialCourse = null }) {
           <Spinner className="h-6 w-6 animate-spin text-primary opacity-60" />
         </div>
       ) : canShowPurchaseActions ? (
-        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white px-4 pb-4 pt-3 shadow-[0_-4px_12px_rgba(0,0,0,0.08)] lg:hidden">
+        <div className="fixed inset-x-0 bottom-[58px] z-40 border-t border-slate-200 bg-white px-4 pb-4 pt-3 shadow-[0_-4px_12px_rgba(0,0,0,0.08)] lg:hidden">
           {course?.is_enrolled ? (
             <Link
               href={`/courses/${course.slug}/learn`}

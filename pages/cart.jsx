@@ -140,12 +140,12 @@ export default function Cart() {
   return (
     <div className="py-[30px]">
       <div className="max-w-[1244px] mx-auto px-[15px] w-full">
-        <h1 className="text-[40px] font-semibold mb-5">Shopping Cart</h1>
+        <h1 className="text-2xl sm:text-[40px] font-semibold mb-5">Shopping Cart</h1>
 
         {isCartLoading && (!Array.isArray(cart) || cart.length === 0) ? (
           <>
-            <div className="flex gap-[50px] animate-pulse">
-              <div className="flex w-[calc(100%-300px)] flex-col gap-[20px]">
+            <div className="flex flex-col lg:flex-row gap-8 lg:gap-[50px] animate-pulse">
+              <div className="flex w-full lg:w-[calc(100%-300px)] flex-col gap-[20px]">
                 <div className="pb-[10px] border-b mb-[15px]">
                   <div className="h-6 w-48 rounded-md bg-gray-200 relative overflow-hidden">
                     <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/60 to-transparent animate-[shimmer_2s_infinite]" />
@@ -157,7 +157,7 @@ export default function Cart() {
                     key={i}
                     className="flex gap-4 border-b pb-6 relative overflow-hidden"
                   >
-                    <div className="h-28 w-40 rounded-xl bg-gray-200 shrink-0" />
+                    <div className="h-28 w-28 sm:w-40 rounded-xl bg-gray-200 shrink-0" />
                     <div className="flex-1 space-y-3">
                       <div className="h-5 w-3/4 rounded bg-gray-200" />
                       <div className="h-4 w-1/2 rounded bg-gray-200" />
@@ -172,7 +172,7 @@ export default function Cart() {
                 ))}
               </div>
 
-              <div className="w-[350px]">
+              <div className="w-full lg:w-[350px]">
                 <div className="h-5 w-20 rounded bg-gray-200 mb-3 relative overflow-hidden">
                   <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/60 to-transparent animate-[shimmer_2s_infinite]" />
                 </div>
@@ -191,8 +191,8 @@ export default function Cart() {
         ) : (
           <>
             {cart && cart.length > 0 ? (
-              <div className="flex gap-[50px]">
-                <div className="flex w-[calc(100%-300px)] flex-col gap-[15px]">
+              <div className="flex flex-col lg:flex-row gap-8 lg:gap-[50px]">
+                <div className="flex w-full lg:w-[calc(100%-300px)] flex-col gap-[15px]">
                   <div className="pb-[10px] border-bottom mb-[15px] flex gap-[15px] text-[18px] font-semibold">
                     {cart.length} Courses in Cart
                   </div>
@@ -212,7 +212,7 @@ export default function Cart() {
                   })}
                 </div>
 
-                <div className="w-[350px]">
+                <div className="w-full lg:w-[350px] border-t pt-6 lg:border-t-0 lg:pt-0">
                   <div className="text-[14px] text-gray-600 space-y-1">
                     <div className="flex items-center justify-between">
                       <span>Subtotal:</span>
@@ -330,14 +330,15 @@ export default function Cart() {
                 </div>
               </div>
             ) : (
-              <div className="[box-shadow:0_0_2px_oklch(86.72%_.0192_282.72deg)] flex flex-col justify-center items-center w-full p-[50px]">
+              <div className="[box-shadow:0_0_2px_oklch(86.72%_.0192_282.72deg)] flex flex-col justify-center items-center w-full p-6 sm:p-[50px] text-center">
                 <Image
                   src="/cart-placeholder.webp"
                   width={300}
                   height={200}
                   alt="Course Cover"
+                  className="max-w-full h-auto"
                 />
-                <p className="font-light text-[24px]">
+                <p className="font-light text-lg sm:text-[24px]">
                   Your cart is empty. Keep shopping to find a course!
                 </p>
 

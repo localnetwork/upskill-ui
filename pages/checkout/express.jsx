@@ -303,12 +303,12 @@ export default function ExpressCheckout() {
   const price = course?.price_tier?.title?.toLowerCase() === "free" ? "Free" : `₱${course?.price_tier?.price || 0}`;
 
   return (
-    <div className="bg-[linear-gradient(90deg,transparent_60%,oklch(97.59%_0.0029_264.54deg)_40%)] min-h-[calc(100vh-70px)] py-[30px]">
-      <div className="max-w-[984px] mx-auto flex justify-between gap-[50px] px-[15px]">
-        <div className="py-[50px] max-w-[calc(100%-320px)] w-full pr-[50px]">
+    <div className="lg:bg-[linear-gradient(90deg,transparent_60%,oklch(97.59%_0.0029_264.54deg)_40%)] min-h-[calc(100vh-70px)] py-4 lg:py-[30px]">
+      <div className="max-w-[984px] mx-auto flex flex-col lg:flex-row justify-between gap-6 lg:gap-[50px] px-[15px]">
+        <div className="py-2 lg:py-[50px] lg:max-w-[calc(100%-320px)] w-full lg:pr-[50px]">
           <Link
             href={course?.slug ? `/courses/${course.slug}` : "/courses"}
-            className="flex items-center gap-[5px] mb-5 mt-[-50px]"
+            className="flex items-center gap-[5px] mb-3 lg:mb-5 lg:mt-[-50px]"
           >
             <ChevronLeft size={20} />
           </Link>
@@ -323,17 +323,17 @@ export default function ExpressCheckout() {
             <div>
               <h2 className="text-[18px] font-semibold mb-2">Order details (1 course)</h2>
               <div className="flex justify-between">
-                <div className="flex items-center gap-[10px]">
+                <div className="flex min-w-0 items-center gap-[10px]">
                   <Image
                     src={course?.cover_image?.path || "/placeholder-cover.webp"}
                     width={70}
                     height={50}
                     alt={course?.title || "Course"}
-                    className="w-[70px] h-[50px] object-cover rounded-md border-[1px] border-[oklch(86.72%_0.0192_282.72deg)]"
+                    className="w-[70px] h-[50px] shrink-0 object-cover rounded-md border-[1px] border-[oklch(86.72%_0.0192_282.72deg)]"
                   />
-                  <div className="font-semibold">{course?.title}</div>
+                  <div className="min-w-0 font-semibold line-clamp-2">{course?.title}</div>
                 </div>
-                <div className="font-light">{price}</div>
+                <div className="shrink-0 pl-2 font-light">{price}</div>
               </div>
             </div>
           ) : null}
@@ -380,7 +380,7 @@ export default function ExpressCheckout() {
           {course && mode === "buy" && paymentMethodList}
         </div>
 
-        <div className="w-[350px] pl-[10px] py-[50px]">
+        <div className="w-full lg:w-[350px] rounded-lg bg-[oklch(97.59%_0.0029_264.54deg)] p-4 lg:bg-transparent lg:rounded-none lg:p-0 lg:pl-[10px] lg:py-[50px]">
           <h2 className="font-semibold text-[25px] mb-2">Order summary</h2>
           {mode === "subscribe" && selectedPlan ? (
             <div>
