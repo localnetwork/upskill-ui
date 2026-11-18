@@ -12,6 +12,7 @@ import {
   Star,
   Users,
   X,
+  Check,
 } from "lucide-react";
 import { FeaturedCard } from "@/components/home/sections/FeaturedCoursesCarouselSection";
 import Select from "@/components/forms/Select";
@@ -72,7 +73,9 @@ function AiOverview({ data }) {
       <div className="mt-5 grid gap-4 lg:grid-cols-3">
         {data.picks.map(({ course, reason }, index) => {
           const lectures = Number(
-            course?.stats?.total_lectures ?? course?.resources_count?.curriculum_count ?? 0,
+            course?.stats?.total_lectures ??
+              course?.resources_count?.curriculum_count ??
+              0,
           );
           const reviews = Number(course?.stats?.total_reviews || 0);
           const rating = Number(course?.stats?.average_rating || 0);
@@ -96,15 +99,24 @@ function AiOverview({ data }) {
                   <h3 className="line-clamp-2 font-bold leading-snug text-slate-900">
                     {course.title}
                   </h3>
-                  {reason && <p className="mt-1 line-clamp-3 text-sm text-slate-600">{reason}</p>}
+                  {reason && (
+                    <p className="mt-1 line-clamp-3 text-sm text-slate-600">
+                      {reason}
+                    </p>
+                  )}
                   <p className="mt-2 flex flex-wrap items-center gap-x-2 text-xs text-slate-500">
                     {reviews > 0 && (
                       <span className="flex items-center gap-1">
-                        <Star size={12} className="fill-amber-500 text-amber-500" />
+                        <Star
+                          size={12}
+                          className="fill-amber-500 text-amber-500"
+                        />
                         {rating.toFixed(1)} ({reviews.toLocaleString("en-PH")})
                       </span>
                     )}
-                    {lectures > 0 && <span>{lectures.toLocaleString("en-PH")} lectures</span>}
+                    {lectures > 0 && (
+                      <span>{lectures.toLocaleString("en-PH")} lectures</span>
+                    )}
                     {course?.instructional_level?.title && (
                       <span>{course.instructional_level.title}</span>
                     )}
@@ -168,8 +180,8 @@ function AiOverviewSkeleton() {
 const pillClass = (active) =>
   `flex items-center gap-2 whitespace-nowrap rounded-full border px-4 py-2.5 text-sm transition-colors ${
     active
-      ? "border-slate-900 bg-slate-900 text-white"
-      : "border-slate-900/70 bg-white text-slate-900 hover:bg-slate-50"
+      ? "border-slate-200 bg-primary text-white"
+      : "border-slate-200 bg-white text-slate-900 hover:bg-slate-50"
   }`;
 
 function FilterDropdown({ label, active, children }) {
@@ -187,13 +199,19 @@ function FilterDropdown({ label, active, children }) {
 
   return (
     <div className="relative" ref={ref}>
-      <button type="button" className={pillClass(active)} onClick={() => setOpen((v) => !v)}>
+      <button
+        type="button"
+        className={pillClass(active)}
+        onClick={() => setOpen((v) => !v)}
+      >
         {label}
         <ChevronDown size={14} />
       </button>
       {open && (
         <div className="absolute left-0 top-full z-30 mt-2 max-h-72 min-w-[220px] overflow-y-auto rounded-xl border border-slate-200 bg-white p-2 shadow-xl">
-          {typeof children === "function" ? children(() => setOpen(false)) : children}
+          {typeof children === "function"
+            ? children(() => setOpen(false))
+            : children}
         </div>
       )}
     </div>
@@ -210,7 +228,7 @@ function DropdownOption({ selected, onClick, children }) {
       }`}
     >
       {children}
-      {selected && <span aria-hidden>?</span>}
+      {selected && <Check size={14} />}
     </button>
   );
 }
@@ -244,7 +262,10 @@ export default function CoursesPage() {
 
   useEffect(() => {
     setDraftFilters({
-      levelId: toSingle(router.query.levelId || router.query.instructional_level, ""),
+      levelId: toSingle(
+        router.query.levelId || router.query.instructional_level,
+        "",
+      ),
       rating: toSingle(router.query.rating, ""),
       topics: asList(router.query.topic || router.query.topic_slug),
       price: asList(router.query.price),
@@ -358,20 +379,29 @@ export default function CoursesPage() {
     const fetchCourses = async () => {
       try {
         setIsLoading(true);
-        const response = await BaseApi.get(`${process.env.NEXT_PUBLIC_API_URL}/courses`, {
-          params: {
-            ...(router.query.search ? { search: router.query.search } : {}),
-            ...(router.query.topic ? { topic: router.query.topic } : {}),
-            ...(router.query.levelId ? { levelId: router.query.levelId } : {}),
-            ...(router.query.rating ? { rating: router.query.rating } : {}),
-            ...(router.query.price ? { price: router.query.price } : {}),
-            ...(router.query.language ? { language: router.query.language } : {}),
-            ...(router.query.handsOn ? { handsOn: router.query.handsOn } : {}),
-            sortBy,
-            limit: 100,
-            nocache: true,
+        const response = await BaseApi.get(
+          `${process.env.NEXT_PUBLIC_API_URL}/courses`,
+          {
+            params: {
+              ...(router.query.search ? { search: router.query.search } : {}),
+              ...(router.query.topic ? { topic: router.query.topic } : {}),
+              ...(router.query.levelId
+                ? { levelId: router.query.levelId }
+                : {}),
+              ...(router.query.rating ? { rating: router.query.rating } : {}),
+              ...(router.query.price ? { price: router.query.price } : {}),
+              ...(router.query.language
+                ? { language: router.query.language }
+                : {}),
+              ...(router.query.handsOn
+                ? { handsOn: router.query.handsOn }
+                : {}),
+              sortBy,
+              limit: 100,
+              nocache: true,
+            },
           },
-        });
+        );
 
         const rows = asArray(response?.data?.data);
         setCourses(rows);
@@ -427,10 +457,14 @@ export default function CoursesPage() {
 
     if (draftFilters.levelId) nextQuery.levelId = draftFilters.levelId;
     if (draftFilters.rating) nextQuery.rating = draftFilters.rating;
-    if (draftFilters.topics.length) nextQuery.topic = draftFilters.topics.join(",");
-    if (draftFilters.price.length) nextQuery.price = draftFilters.price.join(",");
-    if (draftFilters.language.length) nextQuery.language = draftFilters.language.join(",");
-    if (draftFilters.handsOn.length) nextQuery.handsOn = draftFilters.handsOn.join(",");
+    if (draftFilters.topics.length)
+      nextQuery.topic = draftFilters.topics.join(",");
+    if (draftFilters.price.length)
+      nextQuery.price = draftFilters.price.join(",");
+    if (draftFilters.language.length)
+      nextQuery.language = draftFilters.language.join(",");
+    if (draftFilters.handsOn.length)
+      nextQuery.handsOn = draftFilters.handsOn.join(",");
 
     router.push({ pathname: "/courses", query: nextQuery });
     setIsFilterDrawerOpen(false);
@@ -446,21 +480,31 @@ export default function CoursesPage() {
       handsOn: [],
     });
     const trimmedSearch = query.trim();
-    router.push(trimmedSearch ? `/courses?search=${encodeURIComponent(trimmedSearch)}` : "/courses");
+    router.push(
+      trimmedSearch
+        ? `/courses?search=${encodeURIComponent(trimmedSearch)}`
+        : "/courses",
+    );
     setIsFilterDrawerOpen(false);
   };
 
   const pushQuery = (patch) => {
     const next = { ...router.query, ...patch };
     Object.keys(next).forEach((key) => {
-      if (next[key] === "" || next[key] === undefined || next[key] === null) delete next[key];
+      if (next[key] === "" || next[key] === undefined || next[key] === null)
+        delete next[key];
     });
-    router.push({ pathname: "/courses", query: next }, undefined, { shallow: true });
+    router.push({ pathname: "/courses", query: next }, undefined, {
+      shallow: true,
+    });
   };
 
   const activeHandsOn = asList(router.query.handsOn || router.query.hands_on);
   const activeLanguages = asList(router.query.language);
-  const activeLevel = toSingle(router.query.levelId || router.query.instructional_level, "");
+  const activeLevel = toSingle(
+    router.query.levelId || router.query.instructional_level,
+    "",
+  );
   const activeRating = toSingle(router.query.rating, "");
 
   const toggleHandsOn = (value) => {
@@ -483,7 +527,9 @@ export default function CoursesPage() {
       const has = existing.includes(value);
       return {
         ...prev,
-        [key]: has ? existing.filter((item) => item !== value) : [...existing, value],
+        [key]: has
+          ? existing.filter((item) => item !== value)
+          : [...existing, value],
       };
     });
   };
@@ -518,11 +564,12 @@ export default function CoursesPage() {
               Search
             </button>
           </div>
-
         </div>
 
         {isAiLoading && <AiOverviewSkeleton />}
-        {!isAiLoading && aiOverview?.picks?.length > 0 && <AiOverview data={aiOverview} />}
+        {!isAiLoading && aiOverview?.picks?.length > 0 && (
+          <AiOverview data={aiOverview} />
+        )}
 
         <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
           <div className="flex flex-wrap items-center gap-2">
@@ -545,7 +592,10 @@ export default function CoursesPage() {
                 {label}
               </button>
             ))}
-            <FilterDropdown label="Language" active={activeLanguages.length > 0}>
+            <FilterDropdown
+              label="Language"
+              active={activeLanguages.length > 0}
+            >
               {languageOptions.map((language) => (
                 <DropdownOption
                   key={language.key}
@@ -643,7 +693,9 @@ export default function CoursesPage() {
           <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-5 py-4">
             <div>
               <h3 className="text-lg font-bold text-slate-900">Filters</h3>
-              <p className="text-xs text-slate-500">Refine your course results</p>
+              <p className="text-xs text-slate-500">
+                Refine your course results
+              </p>
             </div>
             <button
               type="button"
@@ -656,7 +708,9 @@ export default function CoursesPage() {
 
           <div className="h-[calc(100%-136px)] overflow-y-auto px-5 py-4 space-y-4">
             <section className="rounded-2xl border border-slate-200 bg-white p-4">
-              <h4 className="text-sm font-bold text-slate-900 mb-3">Difficulty level</h4>
+              <h4 className="text-sm font-bold text-slate-900 mb-3">
+                Difficulty level
+              </h4>
               <div className="space-y-2.5">
                 {difficultyOptions.map((level) => (
                   <Radio
@@ -665,7 +719,10 @@ export default function CoursesPage() {
                     value={level.value}
                     checked={draftFilters.levelId === level.value}
                     onChange={() =>
-                      setDraftFilters((prev) => ({ ...prev, levelId: level.value }))
+                      setDraftFilters((prev) => ({
+                        ...prev,
+                        levelId: level.value,
+                      }))
                     }
                     label={level.label}
                   />
@@ -687,7 +744,10 @@ export default function CoursesPage() {
                     value={item.value}
                     checked={draftFilters.rating === item.value}
                     onChange={() =>
-                      setDraftFilters((prev) => ({ ...prev, rating: item.value }))
+                      setDraftFilters((prev) => ({
+                        ...prev,
+                        rating: item.value,
+                      }))
                     }
                     label={item.label}
                     rightContent={
@@ -760,7 +820,9 @@ export default function CoursesPage() {
             </section>
 
             <section className="rounded-2xl border border-slate-200 bg-white p-4">
-              <h4 className="text-sm font-bold text-slate-900 mb-3">Language</h4>
+              <h4 className="text-sm font-bold text-slate-900 mb-3">
+                Language
+              </h4>
               <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
                 {languageOptions.map((language) => (
                   <Checkbox
@@ -775,7 +837,9 @@ export default function CoursesPage() {
             </section>
 
             <section className="rounded-2xl border border-slate-200 bg-white p-4">
-              <h4 className="text-sm font-bold text-slate-900 mb-3">Hands-on practice</h4>
+              <h4 className="text-sm font-bold text-slate-900 mb-3">
+                Hands-on practice
+              </h4>
               <div className="space-y-2">
                 {[
                   { label: "Quizzes", value: "quizzes" },

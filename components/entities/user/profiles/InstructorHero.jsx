@@ -220,22 +220,17 @@ export default function InstructorHero({ profile }) {
 
       {showSkills && (
         <div className="container relative z-10 -mt-[60px] px-4 sm:px-8">
-          <div className="bg-white/70 backdrop-blur-xl rounded-3xl flex flex-col items-center gap-6 max-w-[70.375rem] mx-auto py-6 px-10 shadow-[0_14px_17px_#2f38491a]">
-            <div className="mb-3 text-center text-[20px] font-semibold text-[#2a2b3f]">
+          <div className="bg-white/70 backdrop-blur-xl rounded-3xl flex flex-col items-center gap-4 sm:gap-6 max-w-[70.375rem] mx-auto py-5 px-4 sm:py-6 sm:px-10 shadow-[0_14px_17px_#2f38491a]">
+            <div className="mb-1 sm:mb-3 text-center text-[18px] sm:text-[20px] font-semibold text-[#2a2b3f]">
               {isEducator ? "Skills I teach" : "Skills"}
             </div>
-            <div
-              className="flex flex-nowrap justify-between self-stretch gap-6 w-full max-w-none m-0 p-0 list-none"
-              style={{
-                gridTemplateColumns: `repeat(${Math.min(Math.max(skills.length, 1), 4)}, minmax(0, 1fr))`,
-              }}
-            >
+            <div className="grid w-full grid-cols-2 justify-between gap-x-4 gap-y-5 self-stretch sm:flex sm:flex-wrap sm:gap-6 sm:[&>*]:flex-1 m-0 p-0 list-none">
               {skills.map((skill, index) => {
                 const Icon = getSkillIcon(skill.icon);
                 return (
                   <div
                     key={`${skill.label}-${index}`}
-                    className="group relative flex flex-col items-center text-[clamp(1.0625rem,0.0925926vi+1.04167rem,1.125rem)] font-light text-[var(--applied-text-default)] text-center leading-[1.5]"
+                    className="group relative flex min-w-0 flex-col items-center break-words text-[15px] sm:text-[clamp(1.0625rem,0.0925926vi+1.04167rem,1.125rem)] font-light text-[var(--applied-text-default)] text-center leading-[1.5]"
                   >
                     {canEdit ? (
                       <button

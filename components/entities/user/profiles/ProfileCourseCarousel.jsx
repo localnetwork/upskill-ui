@@ -79,7 +79,7 @@ export function ScrollCarousel({
   };
 
   const arrowClass =
-    "flex h-10 w-10 items-center justify-center rounded-full border border-[#8b7cf6] text-primary transition hover:bg-[#f1eefe] disabled:cursor-default disabled:opacity-40 disabled:hover:bg-transparent";
+    "flex h-10 w-10 items-center justify-center rounded-full border border-primary text-primary transition hover:bg-[#f1eefe] disabled:cursor-default disabled:opacity-40 disabled:hover:bg-transparent";
 
   return (
     <section className={className}>
