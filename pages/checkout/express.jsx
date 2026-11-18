@@ -10,7 +10,12 @@ import Spinner from "@/components/icons/Spinner";
 
 export default function ExpressCheckout() {
   const router = useRouter();
-  const { slug: rawSlug, coupon: rawCoupon, subscription_id: subscriptionId, status: returnStatus } = router.query;
+  const {
+    slug: rawSlug,
+    coupon: rawCoupon,
+    subscription_id: subscriptionId,
+    status: returnStatus,
+  } = router.query;
   const slug = Array.isArray(rawSlug) ? rawSlug[0] : rawSlug;
   const couponCode = String(
     Array.isArray(rawCoupon) ? rawCoupon[0] : rawCoupon || "",
@@ -21,7 +26,9 @@ export default function ExpressCheckout() {
   const [loadingCourse, setLoadingCourse] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const lockedSubscribe = router.query.mode === "subscribe";
-  const [mode, setMode] = useState(router.query.mode === "buy" ? "buy" : "subscribe");
+  const [mode, setMode] = useState(
+    router.query.mode === "buy" ? "buy" : "subscribe",
+  );
   const [plans, setPlans] = useState([]);
   const [planId, setPlanId] = useState("");
   const [catalogCount, setCatalogCount] = useState(0);
@@ -40,12 +47,14 @@ export default function ExpressCheckout() {
     {
       id: "gcash",
       name: "GCash",
+      icon: "/gcash.png",
       description:
         "You will be redirected to a secure Xendit page to pay with your GCash wallet.",
     },
     {
       id: "paymaya",
       name: "Maya (PayMaya)",
+      icon: "/paymaya.png",
       description:
         "You will be redirected to a secure Xendit page to pay with your Maya wallet.",
     },
@@ -101,7 +110,10 @@ export default function ExpressCheckout() {
     let cancelled = false;
     const confirm = async (attempt) => {
       try {
-        await BaseApi.post(`${process.env.NEXT_PUBLIC_API_URL}/subscription/confirm`, { subscriptionId });
+        await BaseApi.post(
+          `${process.env.NEXT_PUBLIC_API_URL}/subscription/confirm`,
+          { subscriptionId },
+        );
         toast.success("Subscription activated. Enjoy learning!");
       } catch (error) {
         if (!cancelled && error?.status === 409 && attempt < 8) {
@@ -117,10 +129,13 @@ export default function ExpressCheckout() {
         const api = process.env.NEXT_PUBLIC_API_URL;
         const courseRes = await BaseApi.get(`${api}/courses/route/${slug}`);
         const courseId = courseRes?.data?.id;
-        if (courseId) await BaseApi.post(`${api}/subscription/course/${courseId}/access`);
+        if (courseId)
+          await BaseApi.post(`${api}/subscription/course/${courseId}/access`);
         router.replace(`/courses/${slug}/learn`);
       } catch (error) {
-        toast.error(error?.data?.message || "Could not open this course with your plan.");
+        toast.error(
+          error?.data?.message || "Could not open this course with your plan.",
+        );
         router.replace(`/courses/${slug}`);
       }
     };
@@ -140,7 +155,8 @@ export default function ExpressCheckout() {
       .then(([plansRes, catalogRes, meRes]) => {
         const list = plansRes?.data?.data || [];
         setPlans(list);
-        const preferred = list.find((plan) => plan.interval === "YEAR") || list[0];
+        const preferred =
+          list.find((plan) => plan.interval === "YEAR") || list[0];
         setPlanId(preferred?.id || "");
         setCatalogCount(Number(catalogRes?.data?.data?.courseCount || 0));
         const subscribed = Boolean(meRes?.data?.data?.hasSubscription);
@@ -156,11 +172,16 @@ export default function ExpressCheckout() {
     plan.interval === "YEAR" ? Number(plan.price) / 12 : Number(plan.price);
   const savingsPct = (plan) => {
     const monthly = plans.find((item) => item.interval === "MONTH");
-    if (!monthly || plan.interval !== "YEAR" || plan.firstCyclePrice == null) return 0;
-    return Math.round((1 - plan.firstCyclePrice / (Number(monthly.price) * 12)) * 100);
+    if (!monthly || plan.interval !== "YEAR" || plan.firstCyclePrice == null)
+      return 0;
+    return Math.round(
+      (1 - plan.firstCyclePrice / (Number(monthly.price) * 12)) * 100,
+    );
   };
   const dueToday = (plan) =>
-    plan.firstCyclePrice != null ? Number(plan.firstCyclePrice) : Number(plan.price);
+    plan.firstCyclePrice != null
+      ? Number(plan.firstCyclePrice)
+      : Number(plan.price);
 
   const handleSubscribe = async () => {
     if (!selectedPlan || !course) return;
@@ -168,14 +189,19 @@ export default function ExpressCheckout() {
       setIsLoading(true);
       const response = await BaseApi.post(
         `${process.env.NEXT_PUBLIC_API_URL}/subscription/subscribe`,
-        { planId: selectedPlan.id, next: `/checkout/express?slug=${encodeURIComponent(course.slug)}` },
+        {
+          planId: selectedPlan.id,
+          next: `/checkout/express?slug=${encodeURIComponent(course.slug)}`,
+        },
       );
       const approveUrl = response?.data?.data?.approveUrl;
       if (!approveUrl) throw new Error("missing approve url");
       window.location.href = approveUrl;
     } catch (error) {
       setIsLoading(false);
-      toast.error(error?.data?.message || "Unable to start subscription checkout.");
+      toast.error(
+        error?.data?.message || "Unable to start subscription checkout.",
+      );
     }
   };
 
@@ -196,7 +222,9 @@ export default function ExpressCheckout() {
       );
 
       if (response?.data?.data?.reusedCheckout) {
-        toast("You already have a checkout in progress. Opening transaction...");
+        toast(
+          "You already have a checkout in progress. Opening transaction...",
+        );
         const providerOrderId = response?.data?.data?.providerOrderId;
         if (providerOrderId) {
           router.push(
@@ -215,50 +243,75 @@ export default function ExpressCheckout() {
       toast.error("Unable to start express checkout. Please try again.");
     } catch (error) {
       setIsLoading(false);
-      toast.error(error?.data?.message || "Unable to process express checkout.");
+      toast.error(
+        error?.data?.message || "Unable to process express checkout.",
+      );
     }
   };
 
-
   const subscribeDetails = (
     <div className="space-y-3">
-                    {plans.map((plan) => (
-                      <label key={plan.id} className={`flex cursor-pointer items-center justify-between rounded-md border p-3 ${planId === plan.id ? "border-[#0056D2]" : "border-slate-300"} ${plan.available ? "" : "opacity-50"}`}>
-                        <span>
-                          <input type="radio" className="mr-2" disabled={!plan.available} checked={planId === plan.id} onChange={() => setPlanId(plan.id)} />
-                          <span className="font-semibold">{plan.interval === "YEAR" ? "Yearly" : "Monthly"}</span>
-                          {savingsPct(plan) > 0 && (
-                            <span className="ml-2 text-sm font-semibold text-emerald-700">Save {savingsPct(plan)}% the first year</span>
-                          )}
-                          {!plan.available && <span className="ml-2 text-xs text-slate-500">(coming soon)</span>}
-                        </span>
-                        <span className="text-right">
-                          {plan.interval === "YEAR" && plan.firstCyclePrice != null ? (
-                            <>
-                              <span className="font-semibold">?{plan.firstCyclePrice.toLocaleString()}/yr</span>
-                              <span className="block text-xs text-slate-500 line-through">{planPrice(plan)}/yr</span>
-                            </>
-                          ) : (
-                            <span className="font-semibold">{planPrice(plan)}/{plan.interval === "YEAR" ? "yr" : "mo"}</span>
-                          )}
-                        </span>
-                      </label>
-                    ))}
-                    <div>
-                      <p className="mb-2 text-sm font-semibold">What&apos;s included</p>
-                      <ul className="space-y-1 text-sm text-slate-700">
-                        {[
-                          catalogCount > 0
-                            ? `Access to over ${catalogCount} of our top courses in tech, business, and more`
-                            : "Access to our top courses in tech, business, and more",
-                          "Hands-on learning experiences to build your skills",
-                          "Course recommendations to help you start learning faster",
-                        ].map((item) => (
-                          <li key={item} className="flex gap-2"><Check size={16} className="mt-0.5 text-emerald-600" />{item}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
+      {plans.map((plan) => (
+        <label
+          key={plan.id}
+          className={`flex cursor-pointer items-center justify-between rounded-md border p-3 ${planId === plan.id ? "border-[#0056D2]" : "border-slate-300"} ${plan.available ? "" : "opacity-50"}`}
+        >
+          <span>
+            <input
+              type="radio"
+              className="mr-2"
+              disabled={!plan.available}
+              checked={planId === plan.id}
+              onChange={() => setPlanId(plan.id)}
+            />
+            <span className="font-semibold">
+              {plan.interval === "YEAR" ? "Yearly" : "Monthly"}
+            </span>
+            {savingsPct(plan) > 0 && (
+              <span className="ml-2 text-sm font-semibold text-emerald-700">
+                Save {savingsPct(plan)}% the first year
+              </span>
+            )}
+            {!plan.available && (
+              <span className="ml-2 text-xs text-slate-500">(coming soon)</span>
+            )}
+          </span>
+          <span className="text-right">
+            {plan.interval === "YEAR" && plan.firstCyclePrice != null ? (
+              <>
+                <span className="font-semibold">
+                  ?{plan.firstCyclePrice.toLocaleString()}/yr
+                </span>
+                <span className="block text-xs text-slate-500 line-through">
+                  {planPrice(plan)}/yr
+                </span>
+              </>
+            ) : (
+              <span className="font-semibold">
+                {planPrice(plan)}/{plan.interval === "YEAR" ? "yr" : "mo"}
+              </span>
+            )}
+          </span>
+        </label>
+      ))}
+      <div>
+        <p className="mb-2 text-sm font-semibold">What&apos;s included</p>
+        <ul className="space-y-1 text-sm text-slate-700">
+          {[
+            catalogCount > 0
+              ? `Access to over ${catalogCount} of our top courses in tech, business, and more`
+              : "Access to our top courses in tech, business, and more",
+            "Hands-on learning experiences to build your skills",
+            "Course recommendations to help you start learning faster",
+          ].map((item) => (
+            <li key={item} className="flex gap-2">
+              <Check size={16} className="mt-0.5 text-emerald-600" />
+              {item}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
   );
 
   const paymentMethodList = (
@@ -300,7 +353,10 @@ export default function ExpressCheckout() {
     </div>
   );
 
-  const price = course?.price_tier?.title?.toLowerCase() === "free" ? "Free" : `₱${course?.price_tier?.price || 0}`;
+  const price =
+    course?.price_tier?.title?.toLowerCase() === "free"
+      ? "Free"
+      : `₱${course?.price_tier?.price || 0}`;
 
   return (
     <div className="lg:bg-[linear-gradient(90deg,transparent_60%,oklch(97.59%_0.0029_264.54deg)_40%)] min-h-[calc(100vh-70px)] py-4 lg:py-[30px]">
@@ -321,7 +377,9 @@ export default function ExpressCheckout() {
             </div>
           ) : course ? (
             <div>
-              <h2 className="text-[18px] font-semibold mb-2">Order details (1 course)</h2>
+              <h2 className="text-[18px] font-semibold mb-2">
+                Order details (1 course)
+              </h2>
               <div className="flex justify-between">
                 <div className="flex min-w-0 items-center gap-[10px]">
                   <Image
@@ -331,51 +389,84 @@ export default function ExpressCheckout() {
                     alt={course?.title || "Course"}
                     className="w-[70px] h-[50px] shrink-0 object-cover rounded-md border-[1px] border-[oklch(86.72%_0.0192_282.72deg)]"
                   />
-                  <div className="min-w-0 font-semibold line-clamp-2">{course?.title}</div>
+                  <div className="min-w-0 font-semibold line-clamp-2">
+                    {course?.title}
+                  </div>
                 </div>
                 <div className="shrink-0 pl-2 font-light">{price}</div>
               </div>
             </div>
           ) : null}
 
-          {course && plans.length > 0 && !hasSubscription && lockedSubscribe && (
-            <div className="mt-8 space-y-5">
-              <div>
-                <h2 className="mb-3 text-[18px] font-semibold">Choose your billing</h2>
-                {subscribeDetails}
-              </div>
-              <div>
-                <h2 className="mb-3 text-[18px] font-semibold">Payment method</h2>
-                <div className="flex items-start gap-3 rounded-lg border border-[#0056D2] bg-blue-50 p-4">
-                  <CreditCard size={20} className="mt-0.5 text-[#0056D2]" />
-                  <div>
-                    <p className="font-semibold">Credit or debit card</p>
-                    <p className="mt-1 text-sm text-slate-600">
-                      You&apos;ll enter your card details on Xendit&apos;s secure payment page. The card is saved to your
-                      account and charged automatically each billing period.
-                    </p>
+          {course &&
+            plans.length > 0 &&
+            !hasSubscription &&
+            lockedSubscribe && (
+              <div className="mt-8 space-y-5">
+                <div>
+                  <h2 className="mb-3 text-[18px] font-semibold">
+                    Choose your billing
+                  </h2>
+                  {subscribeDetails}
+                </div>
+                <div>
+                  <h2 className="mb-3 text-[18px] font-semibold">
+                    Payment method
+                  </h2>
+                  <div className="flex items-start gap-3 rounded-lg border border-[#0056D2] bg-blue-50 p-4">
+                    <CreditCard size={20} className="mt-0.5 text-[#0056D2]" />
+                    <div>
+                      <p className="font-semibold">Credit or debit card</p>
+                      <p className="mt-1 text-sm text-slate-600">
+                        You&apos;ll enter your card details on Xendit&apos;s
+                        secure payment page. The card is saved to your account
+                        and charged automatically each billing period.
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {course && plans.length > 0 && !hasSubscription && !lockedSubscribe && (
-            <div className="mt-8 space-y-3">
-              <h2 className="text-[18px] font-semibold">Choose how to learn</h2>
-              <label className={`block cursor-pointer rounded-lg border p-4 ${mode === "subscribe" ? "border-[#0056D2] bg-blue-50" : "border-slate-300"}`}>
-                <input type="radio" className="mr-2" checked={mode === "subscribe"} onChange={() => setMode("subscribe")} />
-                <span className="font-semibold">Subscribe &amp; Save</span>
-                <span className="ml-2 rounded bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-800">Best value</span>
-                {mode === "subscribe" && subscribeDetails}
-              </label>
-              <label className={`block cursor-pointer rounded-lg border p-4 ${mode === "buy" ? "border-[#0056D2] bg-blue-50" : "border-slate-300"}`}>
-                <input type="radio" className="mr-2" checked={mode === "buy"} onChange={() => setMode("buy")} />
-                <span className="font-semibold">Buy this course</span>
-                <span className="ml-2 text-sm text-slate-600">{price} one-time, yours forever</span>
-              </label>
-            </div>
-          )}
+          {course &&
+            plans.length > 0 &&
+            !hasSubscription &&
+            !lockedSubscribe && (
+              <div className="mt-8 space-y-3">
+                <h2 className="text-[18px] font-semibold">
+                  Choose how to learn
+                </h2>
+                <label
+                  className={`block cursor-pointer rounded-lg border p-4 ${mode === "subscribe" ? "border-[#0056D2] bg-blue-50" : "border-slate-300"}`}
+                >
+                  <input
+                    type="radio"
+                    className="mr-2"
+                    checked={mode === "subscribe"}
+                    onChange={() => setMode("subscribe")}
+                  />
+                  <span className="font-semibold">Subscribe &amp; Save</span>
+                  <span className="ml-2 rounded bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-800">
+                    Best value
+                  </span>
+                  {mode === "subscribe" && subscribeDetails}
+                </label>
+                <label
+                  className={`block cursor-pointer rounded-lg border p-4 ${mode === "buy" ? "border-[#0056D2] bg-blue-50" : "border-slate-300"}`}
+                >
+                  <input
+                    type="radio"
+                    className="mr-2"
+                    checked={mode === "buy"}
+                    onChange={() => setMode("buy")}
+                  />
+                  <span className="font-semibold">Buy this course</span>
+                  <span className="ml-2 text-sm text-slate-600">
+                    {price} one-time, yours forever
+                  </span>
+                </label>
+              </div>
+            )}
 
           {course && mode === "buy" && paymentMethodList}
         </div>
@@ -385,18 +476,27 @@ export default function ExpressCheckout() {
           {mode === "subscribe" && selectedPlan ? (
             <div>
               <div className="flex justify-between text-[15px]">
-                <div>{selectedPlan.interval === "YEAR" ? "Yearly" : "Monthly"} plan</div>
+                <div>
+                  {selectedPlan.interval === "YEAR" ? "Yearly" : "Monthly"} plan
+                </div>
                 <div>{planPrice(selectedPlan)}</div>
               </div>
               {selectedPlan.firstCyclePrice != null && (
                 <div className="flex justify-between text-[15px] text-emerald-700">
                   <div>First-year discount</div>
-                  <div>-?{(Number(selectedPlan.price) - selectedPlan.firstCyclePrice).toLocaleString()}</div>
+                  <div>
+                    -?
+                    {(
+                      Number(selectedPlan.price) - selectedPlan.firstCyclePrice
+                    ).toLocaleString()}
+                  </div>
                 </div>
               )}
               <div className="mt-2 flex justify-between">
                 <div className="font-semibold text-[18px]">Total today:</div>
-                <div className="font-semibold text-[18px]">?{dueToday(selectedPlan).toLocaleString()}</div>
+                <div className="font-semibold text-[18px]">
+                  ?{dueToday(selectedPlan).toLocaleString()}
+                </div>
               </div>
               <p className="mt-2 text-xs text-gray-500">
                 {selectedPlan.interval === "YEAR"
@@ -404,8 +504,12 @@ export default function ExpressCheckout() {
                   : `Renews monthly at ${planPrice(selectedPlan)}. Cancel anytime.`}
               </p>
               <div className="mt-4 rounded-md border border-slate-200 p-3 text-xs text-gray-600">
-                <div className="mb-1 flex items-center gap-2 font-semibold text-slate-800"><CreditCard size={16} />Payment method</div>
-                Credit or debit card, entered on Xendit's secure page. Saved to your account and charged automatically each billing period.
+                <div className="mb-1 flex items-center gap-2 font-semibold text-slate-800">
+                  <CreditCard size={16} />
+                  Payment method
+                </div>
+                Credit or debit card, entered on Xendit's secure page. Saved to
+                your account and charged automatically each billing period.
               </div>
             </div>
           ) : (
@@ -418,15 +522,24 @@ export default function ExpressCheckout() {
           <div className="border-t border-[#ddd] mt-[30px] pt-[30px]">
             <p className="text-[14px] text-gray-500">
               By completing your purchase, you agree to these{" "}
-              <Link href="/terms-of-use" target="_blank" className="text-[#0056D2]">
-                Terms of Use
+              <Link
+                href="/terms-conditions"
+                target="_blank"
+                className="text-[#0056D2]"
+              >
+                Terms & Conditions
               </Link>
               .
             </p>
 
             <button
               onClick={mode === "subscribe" ? handleSubscribe : handleCheckout}
-              disabled={isLoading || loadingCourse || !course || (mode === "subscribe" && !selectedPlan?.available)}
+              disabled={
+                isLoading ||
+                loadingCourse ||
+                !course ||
+                (mode === "subscribe" && !selectedPlan?.available)
+              }
               className={`${isLoading || loadingCourse || !course || (mode === "subscribe" && !selectedPlan?.available) ? "opacity-50 cursor-not-allowed" : "cursor-pointer"} bg-[#0056D2] gap-[5px] flex items-center justify-center w-full mt-[30px] min-w-[150px] font-semibold text-white px-[30px] py-[12px] rounded-[5px] hover:bg-[#1d6de0]`}
             >
               {isLoading ? (

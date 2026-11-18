@@ -16,6 +16,7 @@ import RevenueRangeFilter, {
   buildRevenueSeries,
 } from "@/components/entities/instructor/performance/RevenueRangeFilter";
 import EngagementReport from "@/components/entities/instructor/performance/EngagementReport";
+import ReviewsReport from "@/components/entities/instructor/performance/ReviewsReport";
 import OverviewDashboard from "@/components/entities/instructor/performance/OverviewDashboard";
 import {
   Area,
@@ -331,6 +332,16 @@ export default function PerformancePage() {
     [courseStats],
   );
 
+  const reviewsCourses = useMemo(
+    () =>
+      courseStats.map((row) => ({
+        id: row.courseId,
+        title: row?.title || "Course",
+        daily: asArray(row?.trends?.daily_reviews),
+      })),
+    [courseStats],
+  );
+
   const trafficCourses = useMemo(
     () =>
       courseStats.map((row) => {
@@ -576,23 +587,7 @@ export default function PerformancePage() {
             ) : null}
 
             {!isLoading && activeTab === "reviews" ? (
-              <Section title="Rating distribution" description="Number of reviews per star rating across all your courses.">
-                {reviewDistribution.every((row) => row.count === 0) ? (
-                  <Empty>No reviews yet.</Empty>
-                ) : (
-                  <div className="h-80">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={reviewDistribution}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                        <XAxis dataKey="rating" />
-                        <YAxis allowDecimals={false} />
-                        <Tooltip />
-                        <Bar dataKey="count" name="Reviews" fill="#f59e0b" radius={[3, 3, 0, 0]} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                )}
-              </Section>
+              <ReviewsReport courses={reviewsCourses} />
             ) : null}
 
             {!isLoading && activeTab === "engagement" ? (

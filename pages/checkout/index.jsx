@@ -16,7 +16,9 @@ function asCurrency(value) {
 export default function Checkout() {
   const cart = cartStore((state) => state.cart);
   const cartTotal = cartStore((state) => state.cartTotal);
-  const appliedCourseCoupons = cartStore((state) => state.appliedCourseCoupons || {});
+  const appliedCourseCoupons = cartStore(
+    (state) => state.appliedCourseCoupons || {},
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [selectedMethod, setSelectedMethod] = useState("paypal");
   const router = useRouter();
@@ -34,12 +36,14 @@ export default function Checkout() {
     {
       id: "gcash",
       name: "GCash",
+      icon: "/gcash.png",
       description:
         "You will be redirected to a secure Xendit page to pay with your GCash wallet.",
     },
     {
       id: "paymaya",
       name: "Maya (PayMaya)",
+      icon: "/paymaya.png",
       description:
         "You will be redirected to a secure Xendit page to pay with your Maya wallet.",
     },
@@ -73,13 +77,18 @@ export default function Checkout() {
       .map((item) => item.trim().toUpperCase())
       .filter(Boolean);
     const couponCodesFromStore = Object.values(appliedCourseCoupons || {})
-      .map((entry) => String(entry?.code || "").trim().toUpperCase())
+      .map((entry) =>
+        String(entry?.code || "")
+          .trim()
+          .toUpperCase(),
+      )
       .filter(Boolean);
     const couponCodes = Array.from(
       new Set(
-        (couponsFromQuery.length > 0 ? couponsFromQuery : couponCodesFromStore).filter(
-          Boolean,
-        ),
+        (couponsFromQuery.length > 0
+          ? couponsFromQuery
+          : couponCodesFromStore
+        ).filter(Boolean),
       ),
     );
 
@@ -95,7 +104,9 @@ export default function Checkout() {
       );
 
       if (response?.data?.data?.reusedCheckout) {
-        toast("You already have a checkout in progress. Opening transaction...");
+        toast(
+          "You already have a checkout in progress. Opening transaction...",
+        );
         const providerOrderId = response?.data?.data?.providerOrderId;
         if (providerOrderId) {
           router.push(
@@ -125,7 +136,11 @@ export default function Checkout() {
   };
 
   const couponCodesLabel = Object.values(appliedCourseCoupons || {})
-    .map((entry) => String(entry?.code || "").trim().toUpperCase())
+    .map((entry) =>
+      String(entry?.code || "")
+        .trim()
+        .toUpperCase(),
+    )
     .filter(Boolean);
   const cartDiscountAmount = Object.values(appliedCourseCoupons || {}).reduce(
     (sum, entry) => sum + Number(entry?.discountAmount || 0),
@@ -195,53 +210,65 @@ export default function Checkout() {
               <div className="flex flex-col space-y-[15px]">
                 {cart.map((item) => {
                   const courseId = String(item?.course?.id || "");
-                  const appliedCoupon = appliedCourseCoupons?.[courseId] || null;
-                  const originalPrice = Number(item?.course?.price_tier?.price || 0);
-                  const discountAmount = Number(appliedCoupon?.discountAmount || 0);
-                  const discountedPrice = Math.max(0, originalPrice - discountAmount);
+                  const appliedCoupon =
+                    appliedCourseCoupons?.[courseId] || null;
+                  const originalPrice = Number(
+                    item?.course?.price_tier?.price || 0,
+                  );
+                  const discountAmount = Number(
+                    appliedCoupon?.discountAmount || 0,
+                  );
+                  const discountedPrice = Math.max(
+                    0,
+                    originalPrice - discountAmount,
+                  );
                   const hasDiscount = discountAmount > 0;
 
                   return (
-                  <div key={item.id} className={``}>
-                    <div className="flex justify-between">
-                      <div className="flex min-w-0 items-center gap-[10px]">
-                        <Image
-                          src={item?.course?.cover_image?.path}
-                          width={50}
-                          height={30}
-                          alt={item?.course?.title}
-                          className="w-[70px] h-[50px] shrink-0 object-cover rounded-md border-[1px] border-[oklch(86.72%_0.0192_282.72deg)]"
-                        />
-                        <div className="min-w-0 font-semibold line-clamp-2">
-                          {item?.course?.title}
+                    <div key={item.id} className={``}>
+                      <div className="flex justify-between">
+                        <div className="flex min-w-0 items-center gap-[10px]">
+                          <Image
+                            src={item?.course?.cover_image?.path}
+                            width={50}
+                            height={30}
+                            alt={item?.course?.title}
+                            className="w-[70px] h-[50px] shrink-0 object-cover rounded-md border-[1px] border-[oklch(86.72%_0.0192_282.72deg)]"
+                          />
+                          <div className="min-w-0 font-semibold line-clamp-2">
+                            {item?.course?.title}
+                          </div>
                         </div>
-                      </div>
 
-                      <div className="shrink-0 pl-2 text-right">
-                        {hasDiscount ? (
-                          <>
-                            <div className="text-[12px] text-gray-400 line-through">
+                        <div className="shrink-0 pl-2 text-right">
+                          {hasDiscount ? (
+                            <>
+                              <div className="text-[12px] text-gray-400 line-through">
+                                ₱{asCurrency(originalPrice)}
+                              </div>
+                              <div className="font-semibold text-emerald-700">
+                                ₱{asCurrency(discountedPrice)}
+                              </div>
+                              <div className="text-[12px] text-emerald-700">
+                                -₱{asCurrency(discountAmount)}
+                              </div>
+                            </>
+                          ) : (
+                            <div className="font-light">
                               ₱{asCurrency(originalPrice)}
                             </div>
-                            <div className="font-semibold text-emerald-700">
-                              ₱{asCurrency(discountedPrice)}
-                            </div>
-                            <div className="text-[12px] text-emerald-700">
-                              -₱{asCurrency(discountAmount)}
-                            </div>
-                          </>
-                        ) : (
-                          <div className="font-light">₱{asCurrency(originalPrice)}</div>
-                        )}
+                          )}
+                        </div>
                       </div>
+                      {appliedCoupon ? (
+                        <div className="mt-1 text-[12px] text-emerald-700">
+                          Coupon applied:{" "}
+                          {String(appliedCoupon?.code || "")
+                            .trim()
+                            .toUpperCase()}
+                        </div>
+                      ) : null}
                     </div>
-                    {appliedCoupon ? (
-                      <div className="mt-1 text-[12px] text-emerald-700">
-                        Coupon applied:{" "}
-                        {String(appliedCoupon?.code || "").trim().toUpperCase()}
-                      </div>
-                    ) : null}
-                  </div>
                   );
                 })}
               </div>
@@ -256,7 +283,9 @@ export default function Checkout() {
               Total ({cart?.length}) course:
             </div>
           </div>
-          <p className="font-semibold text-[35px]">₱{asCurrency(cartNetTotal)}</p>
+          <p className="font-semibold text-[35px]">
+            ₱{asCurrency(cartNetTotal)}
+          </p>
           {Number(cartDiscountAmount || 0) > 0 ? (
             <p className="text-[14px] text-emerald-700 mt-1">
               Discounts applied: ₱{asCurrency(cartDiscountAmount)}
@@ -269,27 +298,30 @@ export default function Checkout() {
           ) : null}
           {Object.keys(appliedCourseCoupons || {}).length > 0 ? (
             <div className="mt-3 space-y-2">
-              {Object.entries(appliedCourseCoupons).map(([courseId, coupon]) => {
-                const course = Array.isArray(cart)
-                  ? cart.find(
-                      (row) => String(row?.course?.id || "") === String(courseId),
-                    )?.course
-                  : null;
-                return (
-                  <div
-                    key={courseId}
-                    className="rounded-md border border-[#e2e8f0] px-3 py-2 text-[12px]"
-                  >
-                    <div className="font-semibold text-gray-700">
-                      {course?.title || "Course"}
+              {Object.entries(appliedCourseCoupons).map(
+                ([courseId, coupon]) => {
+                  const course = Array.isArray(cart)
+                    ? cart.find(
+                        (row) =>
+                          String(row?.course?.id || "") === String(courseId),
+                      )?.course
+                    : null;
+                  return (
+                    <div
+                      key={courseId}
+                      className="rounded-md border border-[#e2e8f0] px-3 py-2 text-[12px]"
+                    >
+                      <div className="font-semibold text-gray-700">
+                        {course?.title || "Course"}
+                      </div>
+                      <div className="mt-1 text-emerald-700 font-semibold">
+                        {String(coupon?.code || "").toUpperCase()} (-₱
+                        {asCurrency(coupon?.discountAmount || 0)})
+                      </div>
                     </div>
-                    <div className="mt-1 text-emerald-700 font-semibold">
-                      {String(coupon?.code || "").toUpperCase()} (-₱
-                      {asCurrency(coupon?.discountAmount || 0)})
-                    </div>
-                  </div>
-                );
-              })}
+                  );
+                },
+              )}
             </div>
           ) : null}
 
@@ -297,11 +329,11 @@ export default function Checkout() {
             <p className="text-[14px] text-gray-500">
               By completing your purchase, you agree to these{" "}
               <Link
-                href="/terms-of-use"
+                href="/terms-conditions"
                 target="_blank"
                 className="text-[#0056D2]"
               >
-                Terms of Use
+                Terms & Conditions
               </Link>
               .
             </p>

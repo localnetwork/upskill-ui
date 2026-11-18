@@ -17,7 +17,10 @@ export default function CartItemCard({ item, isLast, appliedCoupon }) {
   const hasDiscount = discountAmount > 0;
 
   const couponLabel = useMemo(
-    () => String(appliedCoupon?.code || "").trim().toUpperCase(),
+    () =>
+      String(appliedCoupon?.code || "")
+        .trim()
+        .toUpperCase(),
     [appliedCoupon?.code],
   );
 
@@ -48,7 +51,7 @@ export default function CartItemCard({ item, isLast, appliedCoupon }) {
   return (
     <div
       key={item.course.id}
-      className={`${!isLast ? "pb-[15px] border-b mb-[15px]" : ""} flex gap-3 sm:gap-[15px]`}
+      className={`${!isLast ? "pb-[15px] border-b border-[#ddd] mb-[15px]" : ""} flex gap-3 sm:gap-[15px]`}
     >
       <div className="w-[96px] h-[64px] sm:w-[150px] sm:h-[100px] relative flex-shrink-0">
         {item.course.cover_image && (
@@ -114,4 +117,3 @@ export default function CartItemCard({ item, isLast, appliedCoupon }) {
     </div>
   );
 }
-

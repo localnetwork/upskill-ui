@@ -303,8 +303,11 @@ export default function Register({ googleClientId }) {
 
                 <p className="text-[14px] text-center">
                   By signing up, you agree to our{" "}
-                  <Link href="/terms" className="text-[#0056D2] underline">
-                    Terms of Use
+                  <Link
+                    href="/terms-conditions"
+                    className="text-[#0056D2] underline"
+                  >
+                    Terms & Conditions
                   </Link>{" "}
                   and{" "}
                   <Link href="/privacy" className="text-[#0056D2] underline">
