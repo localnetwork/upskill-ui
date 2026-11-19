@@ -221,14 +221,14 @@ export default function AIDraftCoursePage() {
           onClose={() => setShowTour(false)}
         />
       ) : null}
-      <div className="max-w-4xl">
+      <div className="container">
         <h1 className="text-[40px] font-semibold mb-3">Draft Course with AI</h1>
         <p className="text-[17px] text-slate-600 mb-6">
           Describe the course you want to build. AI will generate a draft title,
           subtitle, description, learning goals, sections, and lessons.
         </p>
 
-        <section className="w-full max-w-4xl bg-surface border border-outline rounded-lg shadow-sm p-8 md:p-12 relative overflow-hidden">
+        <section className="w-full bg-surface border border-outline rounded-lg shadow-sm p-8 md:p-12 relative overflow-hidden">
           {/* Background Decorative Element */}
           <div className="absolute -top-24 -right-24 w-64 h-64 bg-primary-container/30 rounded-full blur-3xl pointer-events-none"></div>
 

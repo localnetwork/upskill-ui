@@ -137,7 +137,7 @@ export default function Page() {
           onClose={() => setShowTour(false)}
         />
       ) : null}
-      <div className="max-w-3xl">
+      <div className="container">
         <Link
           href="/instructor/courses"
           className="text-sm text-[#0056D2] hover:underline"
@@ -148,9 +148,9 @@ export default function Page() {
           Bulk draft courses with AI
         </h1>
         <p className="text-sm text-slate-500 mb-6">
-          Add one course topic or brief per field (up to {MAX_COURSES}). A
-          draft course with sections and lessons is created for each one.
-          Drafts are unpublished and can be edited afterwards.
+          Add one course topic or brief per field (up to {MAX_COURSES}). A draft
+          course with sections and lessons is created for each one. Drafts are
+          unpublished and can be edited afterwards.
         </p>
 
         <div className="mb-4">

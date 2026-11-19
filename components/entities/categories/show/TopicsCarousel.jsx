@@ -70,7 +70,7 @@ export default function TopicsCarousel({ title, topics = [] }) {
                     key={topic.id}
                     href={`/topics/${topic.slug}`}
                     tabIndex={pageIndex === page ? 0 : -1}
-                    className="group flex flex-col justify-center min-h-[84px] px-5 py-4 rounded-xl border border-outline-variant/60 bg-white hover:border-primary hover:shadow-md transition"
+                    className="group flex flex-col justify-center min-h-[84px] px-5 py-4 rounded-xl border border-[#ddd] border-outline-variant/60 bg-white hover:border-primary hover:shadow-md transition"
                   >
                     <span className="font-bold text-on-surface group-hover:text-primary line-clamp-2">
                       {topic.title || topic.name}
