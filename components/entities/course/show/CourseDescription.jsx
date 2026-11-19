@@ -12,7 +12,7 @@ export default function CourseDescription({ description }) {
   const previewHtml = paragraphs?.slice(0, 4).join("</p>") + "</p>";
 
   return (
-    <div className="text-lg leading-relaxed text-slate-600 mb-6">
+    <div className="text-md md:text-lg leading-relaxed text-slate-600 mb-6">
       <div
         dangerouslySetInnerHTML={{
           __html: expanded || !shouldTruncate ? description : previewHtml,

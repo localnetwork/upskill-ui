@@ -149,11 +149,17 @@ export default function Page({ data }) {
   const [currentLecture, setCurrentLecture] = useState(null);
   const [panelStatus, setPanelStatus] = useState("open");
 
+  const [sheetReady, setSheetReady] = useState(false);
+
   // On mobile the course content is a floating sheet, so start it closed
   useEffect(() => {
     if (window.matchMedia("(max-width: 1023px)").matches) {
       setPanelStatus("closed");
     }
+    const frame = requestAnimationFrame(() =>
+      requestAnimationFrame(() => setSheetReady(true)),
+    );
+    return () => cancelAnimationFrame(frame);
   }, []);
   const [course, setCourse] = useState(data.course);
   const profile = persistentStore((state) => state.profile);
@@ -368,15 +374,20 @@ export default function Page({ data }) {
           </div>
         </div>
 
-        {panelStatus !== "closed" && (
-          <div
-            aria-hidden="true"
-            onClick={() => setPanelStatus("closed")}
-            className="lg:hidden fixed inset-0 z-[74] bg-slate-900/40"
-          />
-        )}
         <div
-          className={`${panelStatus === "expanded" ? "lg:max-w-[900px]" : ""} ${panelStatus === "open" ? "lg:max-w-[400px]" : ""} ${panelStatus === "closed" ? "!hidden" : ""} fixed inset-x-0 bottom-0 z-[75] h-[75vh] w-full overflow-hidden rounded-t-2xl shadow-2xl lg:static lg:z-auto lg:h-full lg:overflow-visible lg:rounded-none lg:shadow-none lg:sticky lg:top-[95px]`}
+          aria-hidden="true"
+          onClick={() => setPanelStatus("closed")}
+          className={`lg:hidden fixed inset-0 z-[74] bg-slate-900/40 transition-opacity duration-300 motion-reduce:transition-none ${
+            sheetReady ? "" : "invisible"
+          } ${
+            panelStatus === "closed"
+              ? "opacity-0 pointer-events-none"
+              : "opacity-100"
+          }`}
+        />
+        <div
+          inert={panelStatus === "closed"}
+          className={`${sheetReady ? "" : "max-lg:invisible max-lg:!transition-none"} ${panelStatus === "expanded" ? "lg:max-w-[900px]" : ""} ${panelStatus === "open" ? "lg:max-w-[400px]" : ""} ${panelStatus === "closed" ? "translate-y-full lg:hidden lg:translate-y-0" : "translate-y-0"} fixed inset-x-0 bottom-0 z-[75] h-[75vh] w-full overflow-hidden rounded-t-2xl shadow-2xl transition-transform duration-300 ease-in-out motion-reduce:transition-none lg:transition-none lg:static lg:z-auto lg:h-full lg:overflow-visible lg:rounded-none lg:shadow-none lg:sticky lg:top-[95px]`}
         >
           <CourseLearnSidebar
             panelStatus={panelStatus}

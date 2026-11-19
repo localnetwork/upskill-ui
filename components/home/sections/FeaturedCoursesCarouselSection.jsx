@@ -8,6 +8,7 @@ import toast from "react-hot-toast";
 import BaseApi from "@/lib/api/_base.api";
 import modalState from "@/lib/store/modalState";
 import persistentStore from "@/lib/store/persistentStore";
+import useSubscriptionAccess from "@/lib/hooks/useSubscriptionAccess";
 
 const toBool = (value) => value === true || value === "true" || value === 1 || value === "1";
 
@@ -20,6 +21,8 @@ export function FeaturedCard({ course }) {
   const [isAdding, setIsAdding] = useState(false);
   const profile = persistentStore((state) => state.profile);
   const isEnrolled = toBool(course?.is_enrolled);
+  const { accessLoading, canStartWithPlan, canStartWithTrial, startWithPlan, starting } =
+    useSubscriptionAccess(course, isEnrolled);
   const canPurchase =
     !profile || Boolean(profile?.permissions?.includes("view-own-learnings"));
 
@@ -160,6 +163,17 @@ export function FeaturedCard({ course }) {
             >
               Continue
             </Link>
+          ) : accessLoading ? (
+            <span className="h-[38px] w-[110px] rounded-lg bg-slate-100 animate-pulse" />
+          ) : canStartWithPlan || canStartWithTrial ? (
+            <button
+              type="button"
+              onClick={startWithPlan}
+              disabled={starting}
+              className="rounded-lg border border-primary px-4 py-2 text-sm font-bold text-primary hover:bg-blue-50 disabled:opacity-50"
+            >
+              {starting ? "Opening..." : "Start learning"}
+            </button>
           ) : isInCart ? (
             <Link
               href="/cart"
