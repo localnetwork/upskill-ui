@@ -149,6 +149,12 @@ export default function Page({ data }) {
   const [currentLecture, setCurrentLecture] = useState(null);
   const [panelStatus, setPanelStatus] = useState("open");
 
+  // On mobile the course content is a floating sheet, so start it closed
+  useEffect(() => {
+    if (window.matchMedia("(max-width: 1023px)").matches) {
+      setPanelStatus("closed");
+    }
+  }, []);
   const [course, setCourse] = useState(data.course);
   const profile = persistentStore((state) => state.profile);
   const isCourseAuthor =
@@ -231,42 +237,44 @@ export default function Page({ data }) {
     if (isCodingLecture && !wasCodingRef.current) {
       setPanelStatus("closed");
     } else if (!isCodingLecture && wasCodingRef.current) {
-      setPanelStatus("open");
+      if (!window.matchMedia("(max-width: 1023px)").matches) {
+        setPanelStatus("open");
+      }
     }
     wasCodingRef.current = isCodingLecture;
   }, [isCodingLecture]);
 
   return (
     <div>
-      <div className="stripbar bg-[#16161D] px-[30px] h-[60px] flex items-center text-white border-b border-[#ddd]">
-        <div className="container flex justify-between items-center h-full">
-          <div className="flex items-center">
+      <div className="stripbar bg-[#16161D] px-3 sm:px-[30px] h-[60px] flex items-center text-white border-b border-[#ddd]">
+        <div className="container flex justify-between items-center h-full gap-2">
+          <div className="flex items-center min-w-0">
             <Link
               href={`/courses/${data?.course?.slug}`}
-              className="flex gap-[5px] hover:bg-[#3588FC] px-[10px] py-[5px] rounded-[5px] items-center mr-4"
+              className="flex gap-[5px] hover:bg-[#3588FC] px-[10px] py-[5px] rounded-[5px] items-center mr-2 sm:mr-4 shrink-0"
             >
               <ChevronLeft size={20} />
             </Link>
-            <h2 className="font-semibold text-[20px]">
+            <h2 className="font-semibold text-[15px] sm:text-[20px] truncate">
               {data?.course?.title || "Course Title"}
             </h2>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             <Link
               href={`/courses/${data?.course?.slug}/community`}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-white/30 text-sm hover:bg-white/10"
+              className="flex items-center gap-2 px-2 sm:px-3 py-1.5 rounded-md border border-white/30 text-sm hover:bg-white/10"
             >
               <Users size={16} />
-              Community
+              <span className="hidden sm:inline">Community</span>
             </Link>
             {!isCourseAuthor && (
               <button
                 type="button"
                 onClick={handleReportCourse}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-white/30 text-sm hover:bg-white/10"
+                className="flex items-center gap-2 px-2 sm:px-3 py-1.5 rounded-md border border-white/30 text-sm hover:bg-white/10"
               >
                 <Flag size={16} />
-                Report
+                <span className="hidden sm:inline">Report</span>
               </button>
             )}
             <button
@@ -274,10 +282,10 @@ export default function Page({ data }) {
               onClick={() =>
                 setPanelStatus((status) => (status === "closed" ? "open" : "closed"))
               }
-              className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-white/30 text-sm hover:bg-white/10"
+              className="flex items-center gap-2 px-2 sm:px-3 py-1.5 rounded-md border border-white/30 text-sm hover:bg-white/10"
             >
               <ListIcon size={16} />
-              {panelStatus === "closed" ? "Show course content" : "Hide course content"}
+              <span className="hidden sm:inline">{panelStatus === "closed" ? "Show course content" : "Hide course content"}</span>
             </button>
           </div>
         </div>
@@ -289,7 +297,7 @@ export default function Page({ data }) {
       ) : null}
       <div className="flex flex-wrap">
         <div
-          className={`w-full ${panelStatus === "expanded" ? "max-w-[calc(100%-900px)]" : ""} ${panelStatus === "open" ? "max-w-[calc(100%-400px)]" : ""} ${panelStatus === "closed" ? "max-w-full" : ""}`}
+          className={`w-full min-w-0 ${panelStatus === "expanded" ? "lg:max-w-[calc(100%-900px)]" : ""} ${panelStatus === "open" ? "lg:max-w-[calc(100%-400px)]" : ""} ${panelStatus === "closed" ? "max-w-full" : ""}`}
         >
           <CourseAssetPreview
             lecture={currentLecture}
@@ -299,37 +307,37 @@ export default function Page({ data }) {
             panelStatus={panelStatus}
             setPanelStatus={setPanelStatus}
           />
-          <div className="p-[15px] bg-[#EDECEC]">
-            <div className="bg-white rounded-xl p-6 shadow-sm border border-primary/5">
+          <div className="p-[10px] sm:p-[15px] bg-[#EDECEC]">
+            <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-primary/5">
               <div>
                 <div class="flex overflow-x-auto whitespace-nowrap border-b border-primary/10 mb-6">
                   <button
                     onClick={() => handleTabs("overview")}
-                    class={`cursor-pointer px-6 py-3 text-sm text-slate-500 hover:text-primary transition-colors ${currentTab === "overview" ? "text-primary border-b-2 border-primary font-bold" : "font-medium"}`}
+                    class={`cursor-pointer px-4 sm:px-6 py-3 text-sm text-slate-500 hover:text-primary transition-colors ${currentTab === "overview" ? "text-primary border-b-2 border-primary font-bold" : "font-medium"}`}
                   >
                     OVERVIEW
                   </button>
                   <button
                     onClick={() => handleTabs("notes")}
-                    class={`cursor-pointer px-6 py-3 text-sm text-slate-500 hover:text-primary transition-colors ${currentTab === "notes" ? "text-primary border-b-2 border-primary font-bold" : "font-medium"}`}
+                    class={`cursor-pointer px-4 sm:px-6 py-3 text-sm text-slate-500 hover:text-primary transition-colors ${currentTab === "notes" ? "text-primary border-b-2 border-primary font-bold" : "font-medium"}`}
                   >
                     NOTES
                   </button>
                   <button
                     onClick={() => handleTabs("qa")}
-                    class={`cursor-pointer px-6 py-3 text-sm text-slate-500 hover:text-primary transition-colors ${currentTab === "qa" ? "text-primary border-b-2 border-primary font-bold" : "font-medium"}`}
+                    class={`cursor-pointer px-4 sm:px-6 py-3 text-sm text-slate-500 hover:text-primary transition-colors ${currentTab === "qa" ? "text-primary border-b-2 border-primary font-bold" : "font-medium"}`}
                   >
                     Q&amp;A
                   </button>
                   <button
                     onClick={() => handleTabs("announcements")}
-                    class={`cursor-pointer px-6 py-3 text-sm text-slate-500 hover:text-primary transition-colors ${currentTab === "announcements" ? "text-primary border-b-2 border-primary font-bold" : "font-medium"}`}
+                    class={`cursor-pointer px-4 sm:px-6 py-3 text-sm text-slate-500 hover:text-primary transition-colors ${currentTab === "announcements" ? "text-primary border-b-2 border-primary font-bold" : "font-medium"}`}
                   >
                     ANNOUNCEMENTS
                   </button>
                   <button
                     onClick={() => handleTabs("reviews")}
-                    class={`cursor-pointer px-6 py-3 text-sm text-slate-500 hover:text-primary transition-colors uppercase ${currentTab === "reviews" ? "text-primary border-b-2 border-primary font-bold" : "font-medium"}`}
+                    class={`cursor-pointer px-4 sm:px-6 py-3 text-sm text-slate-500 hover:text-primary transition-colors uppercase ${currentTab === "reviews" ? "text-primary border-b-2 border-primary font-bold" : "font-medium"}`}
                   >
                     REVIEWS
                   </button>
@@ -360,8 +368,15 @@ export default function Page({ data }) {
           </div>
         </div>
 
+        {panelStatus !== "closed" && (
+          <div
+            aria-hidden="true"
+            onClick={() => setPanelStatus("closed")}
+            className="lg:hidden fixed inset-0 z-[74] bg-slate-900/40"
+          />
+        )}
         <div
-          className={`w-full ${panelStatus === "expanded" && "max-w-[900px]"} ${panelStatus === "open" && "max-w-[400px]"} ${panelStatus === "closed" && "!hidden"}  sticky top-[95px] right-0 h-full`}
+          className={`${panelStatus === "expanded" ? "lg:max-w-[900px]" : ""} ${panelStatus === "open" ? "lg:max-w-[400px]" : ""} ${panelStatus === "closed" ? "!hidden" : ""} fixed inset-x-0 bottom-0 z-[75] h-[75vh] w-full overflow-hidden rounded-t-2xl shadow-2xl lg:static lg:z-auto lg:h-full lg:overflow-visible lg:rounded-none lg:shadow-none lg:sticky lg:top-[95px]`}
         >
           <CourseLearnSidebar
             panelStatus={panelStatus}

@@ -88,7 +88,7 @@ export default function Page() {
               key={filter.key}
               type="button"
               onClick={() => setSource(filter.key)}
-              className={`rounded-full border px-4 py-1.5 text-sm font-medium ${source === filter.key ? "border-[#0056d2] bg-[#0056d2] text-white" : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"}`}
+              className={`rounded-full border px-3 py-1.5 text-xs sm:px-4 sm:text-sm font-medium ${source === filter.key ? "border-[#0056d2] bg-[#0056d2] text-white" : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"}`}
             >
               {filter.label} ({counts[filter.key]})
             </button>
@@ -97,7 +97,7 @@ export default function Page() {
         <select
           value={progressFilter}
           onChange={(event) => setProgressFilter(event.target.value)}
-          className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm"
+          className="w-full rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm sm:w-auto"
         >
           {PROGRESS_FILTERS.map((filter) => (
             <option key={filter.key} value={filter.key}>
@@ -105,17 +105,17 @@ export default function Page() {
             </option>
           ))}
         </select>
-        <div className="relative ml-auto">
+        <div className="relative w-full sm:ml-auto sm:w-auto">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <input
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Search my courses"
-            className="rounded-md border border-slate-300 py-1.5 pl-9 pr-3 text-sm"
+            className="w-full rounded-md border border-slate-300 py-1.5 pl-9 pr-3 text-sm sm:w-auto"
           />
         </div>
       </div>
-      <div className="grid grid-cols-4 gap-[20px]">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-[20px]">
         {filtered.length > 0 ? (
           filtered.map((item) => (
             <div

@@ -7,13 +7,47 @@ import {
   CircleCheck,
   Medal,
 } from "lucide-react";
-import { useState, useRef } from "react";
+import { useState, useRef, useLayoutEffect } from "react";
 import UserAvatar from "../../user/UserAvatar";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import BaseApi from "@/lib/api/_base.api";
 import toast from "react-hot-toast";
 import OfflineDownloadButton from "./OfflineDownloadButton";
+
+function ExpandableHtml({ html, className = "", collapsedHeight = 120 }) {
+  const ref = useRef(null);
+  const [expanded, setExpanded] = useState(false);
+  const [overflowing, setOverflowing] = useState(false);
+
+  useLayoutEffect(() => {
+    if (ref.current) {
+      setOverflowing(ref.current.scrollHeight > collapsedHeight + 8);
+    }
+  }, [html, collapsedHeight]);
+
+  const collapsed = overflowing && !expanded;
+
+  return (
+    <div>
+      <div
+        ref={ref}
+        className={`${className} ${collapsed ? "overflow-hidden" : ""}`}
+        style={collapsed ? { maxHeight: collapsedHeight } : undefined}
+        dangerouslySetInnerHTML={{ __html: html }}
+      />
+      {overflowing && (
+        <button
+          type="button"
+          onClick={() => setExpanded((value) => !value)}
+          className="mt-2 text-sm font-semibold text-primary hover:underline cursor-pointer"
+        >
+          {expanded ? "Show less" : "Show more"}
+        </button>
+      )}
+    </div>
+  );
+}
 
 export default function CourseOverview({ lecture, course }) {
   const { subtitle, instructional_level, description, author } = course;
@@ -295,10 +329,12 @@ export default function CourseOverview({ lecture, course }) {
 
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 text-sm">
             <div className="font-semibold text-slate-900">Description</div>
-            <div
-              className={`sm:col-span-3 text-slate-600 space-y-3 leading-relaxed `}
-              dangerouslySetInnerHTML={{ __html: course?.description }}
-            ></div>
+            <div className="sm:col-span-3">
+              <ExpandableHtml
+                html={course?.description || ""}
+                className="text-slate-600 space-y-3 leading-relaxed"
+              />
+            </div>
           </div>
 
           <hr className="border-slate-100" />
@@ -331,9 +367,9 @@ export default function CourseOverview({ lecture, course }) {
                     About the instructor
                   </p>
                   {instructor.biography ? (
-                    <div
+                    <ExpandableHtml
+                      html={instructor.biography}
                       className="text-slate-600 text-sm leading-relaxed whitespace-pre-line"
-                      dangerouslySetInnerHTML={{ __html: instructor.biography }}
                     />
                   ) : (
                     <p className="text-sm text-slate-400">

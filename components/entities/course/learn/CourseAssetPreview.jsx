@@ -167,12 +167,12 @@ export default function CourseAssetPreview({
         isAssignmentLecture ? "bg-white" : "bg-[#16161D]"
       } ${
         isCodingLecture
-          ? "h-[calc(100vh-60px)] min-h-[640px]"
+          ? "h-[calc(100vh-60px)] min-h-[480px] md:min-h-[640px]"
           : isAssignmentLecture
-            ? "h-[calc(100vh-60px)] min-h-[600px]"
+            ? "h-[calc(100vh-60px)] min-h-[480px] md:min-h-[600px]"
             : lecture?.curriculum_resource_type === "quiz"
-              ? "h-[600px]"
-              : "h-[500px]"
+              ? "h-[500px] md:h-[600px]"
+              : "h-[240px] sm:h-[340px] md:h-[500px]"
       }`}
     >
       {isLoading ? (

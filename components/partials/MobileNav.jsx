@@ -4,15 +4,25 @@ import Image from "next/image";
 import { useRouter } from "next/router";
 import {
   Bell,
+  BookOpen,
+  Briefcase,
   ChevronRight,
+  Circle,
   Compass,
+  CreditCard,
   GraduationCap,
+  HelpCircle,
+  LayoutDashboard,
   LogIn,
   LogOut,
   MessageCircle,
   Presentation,
+  Receipt,
+  Settings,
+  ShieldCheck,
   ShoppingCart,
   User,
+  UserPen,
   UserPlus,
   X,
 } from "lucide-react";
@@ -26,12 +36,22 @@ import { getInitials } from "@/lib/services/nameUtils";
 import HeaderSearchAutocomplete from "./HeaderSearchAutocomplete";
 import MobileExploreMenu from "./MobileExploreMenu";
 
+const LINK_ICONS = {
+  "My Learning": BookOpen,
+  "My Orders": Receipt,
+  "My Subscriptions": CreditCard,
+  "Edit Profile": UserPen,
+  "Admin Dashboard": ShieldCheck,
+  "Employee Dashboard": Briefcase,
+  "Instructor Dashboard": LayoutDashboard,
+  Settings: Settings,
+  "Help and Support": HelpCircle,
+};
+
 export default function MobileNav({ open, onClose }) {
   const profile = persistentStore((state) => state.profile);
   const unreadChats = globalStore((state) => state.unreadChats);
-  const unreadNotifications = globalStore(
-    (state) => state.unreadNotifications,
-  );
+  const unreadNotifications = globalStore((state) => state.unreadNotifications);
   const cartCount = cartStore((state) => state.cartCount);
   const router = useRouter();
   const [exploreOpen, setExploreOpen] = useState(false);
@@ -145,14 +165,16 @@ export default function MobileNav({ open, onClose }) {
             <ChevronRight size={18} className="text-slate-400" />
           </button>
 
-          {/* Courses link */}
-          <Link
-            href="/courses"
-            onClick={onClose}
-            className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-50 transition-colors text-sm font-semibold text-slate-700"
-          >
-            <GraduationCap size={20} className="text-slate-500" /> Courses
-          </Link>
+          {/* Courses link (learners get My Learning instead) */}
+          {!isLearner && (
+            <Link
+              href="/courses"
+              onClick={onClose}
+              className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-50 transition-colors text-sm font-semibold text-slate-700"
+            >
+              <GraduationCap size={20} className="text-slate-500" /> Courses
+            </Link>
+          )}
 
           {/* Logged-in shortcuts (header icons are hidden on mobile) */}
           {profile &&
@@ -203,8 +225,12 @@ export default function MobileNav({ open, onClose }) {
                   key={link.name}
                   href={link.link || "#"}
                   onClick={onClose}
-                  className="block px-4 py-3 rounded-lg hover:bg-gray-50 transition-colors text-sm font-semibold text-slate-700"
+                  className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-50 transition-colors text-sm font-semibold text-slate-700"
                 >
+                  {(() => {
+                    const LinkIcon = LINK_ICONS[link.name] || Circle;
+                    return <LinkIcon size={20} className="text-slate-500" />;
+                  })()}
                   {link.name}
                 </Link>
               ))}
@@ -240,7 +266,7 @@ export default function MobileNav({ open, onClose }) {
                 onClick={onClose}
                 className="flex items-center justify-center gap-2 bg-[#0056D2] text-white text-sm font-bold px-6 py-2.5 rounded-full hover:bg-slate-800 transition-all"
               >
-                <UserPlus size={18} /> Join for Free
+                <UserPlus size={18} /> Register
               </Link>
             </div>
           ) : (

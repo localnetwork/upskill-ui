@@ -73,10 +73,10 @@ export default function CourseLearnSidebar({
   };
 
   return (
-    <div className="sidebar h-screen flex flex-col relative border-l border-[#d1d2e0] bg-white">
+    <div className="sidebar h-full lg:h-screen flex flex-col relative border-t lg:border-t-0 lg:border-l border-[#d1d2e0] bg-white">
       {/* Header */}
       <div className="nav-tabs flex sticky w-full top-0 left-0 border-b border-[#d1d2e0] px-[15px] shadow-[inset_0_-1px_0_0_#d1d2e0] bg-white z-10">
-        <div className="nav-item py-[15px] font-bold text-[20px] relative">
+        <div className="nav-item py-[15px] font-bold text-[18px] sm:text-[20px] relative">
           Course content
           <span className="bg-[#2a2b3f] absolute bottom-0 left-0 h-[2px] inline-block w-full" />
         </div>
@@ -98,14 +98,14 @@ export default function CourseLearnSidebar({
           {panelStatus !== "expanded" ? (
             <div
               onClick={() => setPanelStatus("expanded")}
-              className="inline-block cursor-pointer"
+              className="hidden lg:inline-block cursor-pointer"
             >
               <PanelRightOpen size={20} />
             </div>
           ) : (
             <div
               onClick={() => setPanelStatus("open")}
-              className="inline-block cursor-pointer"
+              className="hidden lg:inline-block cursor-pointer"
             >
               <PanelLeftOpen size={20} />
             </div>
@@ -119,7 +119,7 @@ export default function CourseLearnSidebar({
       </div>
 
       {/* Content */}
-      <div className="overflow-y-auto">
+      <div className="overflow-y-auto flex-1 min-h-0">
         {sections.map((section) => {
           const isOpen = openSection === section.id;
           const sectionCurriculums = Array.isArray(section?.curriculums)
@@ -213,6 +213,9 @@ export default function CourseLearnSidebar({
                               lecture: curriculum.uuid,
                             },
                           });
+                          if (window.matchMedia("(max-width: 1023px)").matches) {
+                            setPanelStatus("closed");
+                          }
                         }}
                         className={`flex relative pl-[50px] group cursor-pointer items-center py-[15px] font-light px-[30px] text-[15px] transition
                           ${

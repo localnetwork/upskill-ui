@@ -1,4 +1,12 @@
-import { Shield, User, Bell, Lock, ChevronRight, History, Laptop } from "lucide-react";
+import {
+  Shield,
+  User,
+  Bell,
+  Lock,
+  ChevronRight,
+  History,
+  Laptop,
+} from "lucide-react";
 
 export default function Page() {
   const links = [
@@ -16,7 +24,7 @@ export default function Page() {
     },
     {
       name: "Notifications",
-      href: "/settings/notifications",
+      href: "/notifications",
       icon: Bell,
       description: "Alerts, emails, push notifications",
     },
