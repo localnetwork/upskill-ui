@@ -29,7 +29,9 @@ import toast from "react-hot-toast";
 import Spinner from "@/components/icons/Spinner";
 import { extractErrors } from "@/lib/services/errorsExtractor";
 import { useRouter } from "next/router";
-import CategoryPicker, { getMergedCategoryIds } from "@/components/forms/CategoryPicker";
+import CategoryPicker, {
+  getMergedCategoryIds,
+} from "@/components/forms/CategoryPicker";
 export default function Page() {
   const maxLength = 60;
   const router = useRouter();
@@ -45,7 +47,9 @@ export default function Page() {
 
   useEffect(() => {
     let cancelled = false;
-    BaseApi.get(`${process.env.NEXT_PUBLIC_API_URL}/courses/authored?title=&page=1`)
+    BaseApi.get(
+      `${process.env.NEXT_PUBLIC_API_URL}/courses/authored?title=&page=1`,
+    )
       .then((res) => {
         const rows = res?.data?.data;
         if (!cancelled && Array.isArray(rows) && rows.length === 0) {
@@ -71,7 +75,8 @@ export default function Page() {
   };
 
   const isTitleStepValid = String(payload.title || "").trim().length >= 3;
-  const isCategoryStepValid = getMergedCategoryIds(payload.category_ids).length > 0;
+  const isCategoryStepValid =
+    getMergedCategoryIds(payload.category_ids).length > 0;
 
   const handleNextStep = () => {
     if (!isTitleStepValid) {
@@ -126,24 +131,22 @@ export default function Page() {
           onClose={() => setShowTour(false)}
         />
       ) : null}
-      <div className="text-center h-full">
-        <h1 className="text-[40px] mb-[10px] text-center font-semibold">
+      <div className="text-center h-full pb-24 md:pb-20">
+        <h1 className="text-[26px] sm:text-[32px] md:text-[40px] mb-[10px] text-center font-semibold leading-tight">
           {step === 1 ? "How about a working title?" : "Choose your category"}
         </h1>
 
-        <p className="text-[20px] mb-[30px]">
+        <p className="text-[16px] md:text-[20px] mb-[20px] md:mb-[30px]">
           {step === 1
             ? "It's ok if you can't think of a good title now. You can change it later."
             : "Pick the category that best fits your course, then choose the most relevant child category."}
         </p>
-        <p className="text-[14px] text-[#64748b] mb-[25px]">
-          Step {step} of 2
-        </p>
+        <p className="text-[14px] text-[#64748b] mb-[25px]">Step {step} of 2</p>
 
         <div className="relative mt-5 h-full">
           <form onSubmit={handleSubmit}>
             {step === 1 ? (
-              <div className="inline-block relative min-w-[50%]">
+              <div className="inline-block relative w-full sm:w-auto sm:min-w-[50%]">
                 <input
                   id="tour-course-title"
                   type="text"
@@ -190,12 +193,12 @@ export default function Page() {
               </div>
             )}
 
-            <div className="fixed bottom-0 right-0 w-[calc(100%-325px)] p-4 bg-white divider-top flex justify-start">
+            <div className="fixed right-0 left-0 md:left-[var(--sidebar-live-w,88px)] bottom-[calc(60px+env(safe-area-inset-bottom))] md:bottom-0 z-10 p-3 sm:p-4 bg-white divider-top border-t border-slate-200 flex justify-center sm:justify-start transition-[left] duration-200 ease-in-out">
               {step === 2 && (
                 <button
                   type="button"
                   onClick={handlePrevStep}
-                  className="max-w-[180px] mr-3 border border-[#cbd5e1] bg-white w-full text-[#334155] font-semibold px-[30px] py-[10px] rounded-[50px] inline-flex justify-center items-center gap-[10px] text-[16px] text-center min-w-[120px] hover:bg-[#f8fafc]"
+                  className="flex-1 sm:flex-none max-w-[180px] mr-3 border border-[#cbd5e1] bg-white w-full text-[#334155] font-semibold px-[20px] sm:px-[30px] py-[10px] rounded-[50px] inline-flex justify-center items-center gap-[10px] text-[16px] text-center min-w-[100px] sm:min-w-[120px] hover:bg-[#f8fafc]"
                 >
                   Back
                 </button>
@@ -210,7 +213,7 @@ export default function Page() {
                     !isTitleStepValid
                       ? "!opacity-50 cursor-not-allowed hover:bg-[#0056D2]"
                       : ""
-                  } max-w-[230px] shadow-md bg-[#0056D2] w-full text-white font-semibold px-[30px] py-[10px] rounded-[50px] inline-flex justify-center items-center gap-[10px] text-[18px] text-center min-w-[150px] hover:opacity-90`}
+                  } flex-1 sm:flex-none max-w-[230px] shadow-md bg-[#0056D2] w-full text-white font-semibold px-[20px] sm:px-[30px] py-[10px] rounded-[50px] inline-flex justify-center items-center gap-[10px] text-[16px] sm:text-[18px] text-center min-w-[120px] sm:min-w-[150px] hover:opacity-90`}
                   disabled={!isTitleStepValid}
                 >
                   Next
@@ -222,7 +225,7 @@ export default function Page() {
                     isLoading || !isCategoryStepValid
                       ? "!opacity-50 hover:bg-[#0056D2] cursor-not-allowed"
                       : ""
-                  } max-w-[230px] shadow-md bg-[#0056D2] w-full text-white font-semibold px-[30px] py-[10px] rounded-[50px] inline-flex justify-center items-center gap-[10px] text-[18px] text-center min-w-[150px] hover:opacity-90 cursor-pointer`}
+                  } flex-1 sm:flex-none max-w-[230px] shadow-md bg-[#0056D2] w-full text-white font-semibold px-[20px] sm:px-[30px] py-[10px] rounded-[50px] inline-flex justify-center items-center gap-[10px] text-[16px] sm:text-[18px] text-center min-w-[120px] sm:min-w-[150px] hover:opacity-90 cursor-pointer`}
                   disabled={isLoading || !isCategoryStepValid}
                 >
                   {isLoading && (

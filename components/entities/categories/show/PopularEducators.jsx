@@ -29,7 +29,7 @@ export default function PopularEducators({ category }) {
   return (
     <section className="mb-32 py-12">
       <div className="container">
-        <div className="bg-surface-container-lowest rounded-3xl p-10 md:p-16 border border-outline-variant/30 shadow-sm relative overflow-hidden">
+        <div className="bg-surface-container-lowest rounded-3xl p-10 md:p-16 border border-[#ddd] shadow-sm relative overflow-hidden">
           <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between mb-16">
             <div className="max-w-xl">
               <span className="text-primary font-extrabold tracking-[0.2em] text-[10px] uppercase mb-4 block">

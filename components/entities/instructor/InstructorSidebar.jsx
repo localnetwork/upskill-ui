@@ -10,9 +10,13 @@ export const SIDEBAR_COLLAPSED_WIDTH = 88;
 export const SIDEBAR_EXPANDED_WIDTH = 280;
 
 // Fixed sidebar. `pinned` keeps it open; otherwise it expands on hover and hides when the pointer leaves.
-export default function InstructorSidebar({ pinned, onToggle }) {
+export default function InstructorSidebar({ pinned, onToggle, onHoverChange }) {
   const pathname = usePathname();
-  const [hovered, setHovered] = useState(false);
+  const [hovered, setHoveredState] = useState(false);
+  const setHovered = (value) => {
+    setHoveredState(value);
+    onHoverChange?.(value);
+  };
   const expanded = pinned || hovered;
   const collapsed = !expanded;
 

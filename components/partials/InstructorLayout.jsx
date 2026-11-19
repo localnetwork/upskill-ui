@@ -15,6 +15,7 @@ const STORAGE_KEY = "instructor_sidebar_pinned";
 
 export default function InstructorLayout({ children }) {
   const [pinned, setPinned] = useState(false);
+  const [hovered, setHovered] = useState(false);
   const [canAccess, setCanAccess] = useState(false);
   const [accessResolved, setAccessResolved] = useState(false);
   const profile = persistentStore((state) => state.profile);
@@ -101,10 +102,15 @@ export default function InstructorLayout({ children }) {
 
   return (
     <div className="min-h-screen">
-      <InstructorSidebar pinned={pinned} onToggle={togglePinned} />
+      <InstructorSidebar
+        pinned={pinned}
+        onToggle={togglePinned}
+        onHoverChange={setHovered}
+      />
       <main
         style={{
           "--sidebar-w": `${pinned ? SIDEBAR_EXPANDED_WIDTH : SIDEBAR_COLLAPSED_WIDTH}px`,
+          "--sidebar-live-w": `${pinned || hovered ? SIDEBAR_EXPANDED_WIDTH : SIDEBAR_COLLAPSED_WIDTH}px`,
         }}
         className="relative overflow-hidden transition-[margin] duration-200 p-4 sm:p-8 md:ml-[var(--sidebar-w)] lg:p-[50px]"
       >
