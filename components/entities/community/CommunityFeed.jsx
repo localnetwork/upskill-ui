@@ -527,20 +527,61 @@ function PostCard({
     articleRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
   }, [deepLink, images]);
 
-  const like = async () => {
-    onChange({
-      ...post,
-      likedByMe: !post.likedByMe,
-      likeCount: post.likeCount + (post.likedByMe ? -1 : 1),
-    });
+  const likeState = useRef({ server: post.likedByMe, timer: null, inflight: false });
+  const postRef = useRef(post);
+  postRef.current = post;
+
+  useEffect(() => {
+    const state = likeState.current;
+    return () => clearTimeout(state.timer);
+  }, []);
+
+  // The endpoint toggles, so rapid clicks are batched and only one request is
+  // sent when the final state differs from what the server has.
+  const flushLike = async () => {
+    const state = likeState.current;
+    state.timer = null;
+    if (state.inflight) return;
+    const current = postRef.current;
+    if (current.likedByMe === state.server) return;
+    state.inflight = true;
     try {
-      const res = await COMMUNITYAPI.like(post.id);
+      const res = await COMMUNITYAPI.like(current.id);
       const d = res?.data?.data;
-      if (d) onChange({ ...post, likedByMe: d.liked, likeCount: d.likeCount });
+      if (d) {
+        state.server = d.liked;
+        const latest = postRef.current;
+        onChange({
+          ...latest,
+          likedByMe: latest.likedByMe === current.likedByMe ? d.liked : latest.likedByMe,
+          likeCount: d.likeCount,
+        });
+      }
     } catch (e) {
-      onChange(post);
+      onChange({ ...postRef.current, likedByMe: state.server });
       toast.error(errorMessage(e, "Failed to react"));
+    } finally {
+      state.inflight = false;
+      if (postRef.current.likedByMe !== state.server) {
+        clearTimeout(state.timer);
+        state.timer = setTimeout(flushLike, 400);
+      }
     }
+  };
+
+  const like = () => {
+    const state = likeState.current;
+    if (!state.timer && !state.inflight) state.server = postRef.current.likedByMe;
+    const next = !postRef.current.likedByMe;
+    const updated = {
+      ...postRef.current,
+      likedByMe: next,
+      likeCount: Math.max(0, postRef.current.likeCount + (next ? 1 : -1)),
+    };
+    postRef.current = updated;
+    onChange(updated);
+    clearTimeout(state.timer);
+    state.timer = setTimeout(flushLike, 400);
   };
 
   const togglePin = async () => {

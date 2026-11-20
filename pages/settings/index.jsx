@@ -18,7 +18,7 @@ export default function Page() {
     },
     {
       name: "Account",
-      href: "/settings/account",
+      href: "/profile/basic-information",
       icon: User,
       description: "Profile info, email, username",
     },

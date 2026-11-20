@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight, Search } from "lucide-react";
+import { ChevronLeft, ChevronRight, Eye, Search, X } from "lucide-react";
 import toast from "react-hot-toast";
 import BaseApi from "@/lib/api/_base.api";
 
@@ -53,6 +53,7 @@ export default function AdminOrdersManagement() {
   const [status, setStatus] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
+  const [selectedId, setSelectedId] = useState(null);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -65,7 +66,10 @@ export default function AdminOrdersManagement() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const query = new URLSearchParams({ page: String(page), limit: String(PAGE_SIZE) });
+      const query = new URLSearchParams({
+        page: String(page),
+        limit: String(PAGE_SIZE),
+      });
       if (status) query.set("status", status);
       if (search) query.set("search", search);
       const res = await BaseApi.get(`${API}/admin/orders?${query.toString()}`);
@@ -126,18 +130,19 @@ export default function AdminOrdersManagement() {
                 <th className="px-5 py-3">Total</th>
                 <th className="px-5 py-3">Status</th>
                 <th className="px-5 py-3">Date</th>
+                <th className="px-5 py-3">Action</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="px-5 py-8 text-sm text-slate-500">
+                  <td colSpan={7} className="px-5 py-8 text-sm text-slate-500">
                     Loading orders...
                   </td>
                 </tr>
               ) : rows.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-5 py-8 text-sm text-slate-500">
+                  <td colSpan={7} className="px-5 py-8 text-sm text-slate-500">
                     No orders found.
                   </td>
                 </tr>
@@ -147,7 +152,10 @@ export default function AdminOrdersManagement() {
                   const first = order.items?.[0]?.course?.title;
                   const extra = (order.items?.length || 0) - 1;
                   return (
-                    <tr key={order.id} className="border-t border-slate-100 text-sm">
+                    <tr
+                      key={order.id}
+                      className="border-t border-slate-100 text-sm"
+                    >
                       <td className="px-5 py-4 font-mono text-xs text-slate-600">
                         #{String(order.id).slice(-8).toUpperCase()}
                       </td>
@@ -155,12 +163,16 @@ export default function AdminOrdersManagement() {
                         <p className="font-semibold text-slate-900">
                           {customerName(order.user)}
                         </p>
-                        <p className="text-xs text-slate-500">{order.user?.email}</p>
+                        <p className="text-xs text-slate-500">
+                          {order.user?.email}
+                        </p>
                       </td>
                       <td className="max-w-[260px] px-5 py-4 text-slate-700">
                         <p className="truncate">{first || "-"}</p>
                         {extra > 0 && (
-                          <p className="text-xs text-slate-500">+{extra} more</p>
+                          <p className="text-xs text-slate-500">
+                            +{extra} more
+                          </p>
                         )}
                       </td>
                       <td className="px-5 py-4 font-semibold text-slate-900">
@@ -175,6 +187,15 @@ export default function AdminOrdersManagement() {
                       </td>
                       <td className="px-5 py-4 text-slate-600">
                         {formatDate(order.createdAt)}
+                      </td>
+                      <td className="px-5 py-4">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedId(order.id)}
+                          className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-[#0056d2] hover:bg-[#f4f8fd]"
+                        >
+                          <Eye className="h-3.5 w-3.5" /> View order details
+                        </button>
                       </td>
                     </tr>
                   );
@@ -209,6 +230,210 @@ export default function AdminOrdersManagement() {
             </button>
           </div>
         </div>
+      </div>
+      {selectedId && (
+        <OrderDetailsModal
+          orderId={selectedId}
+          onClose={() => setSelectedId(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+function Row({ label, value, strong }) {
+  return (
+    <div className="flex items-center justify-between gap-4 py-1.5 text-sm">
+      <span className="text-slate-500">{label}</span>
+      <span
+        className={strong ? "font-semibold text-slate-900" : "text-slate-700"}
+      >
+        {value}
+      </span>
+    </div>
+  );
+}
+
+function OrderDetailsModal({ orderId, onClose }) {
+  const [order, setOrder] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let live = true;
+    BaseApi.get(`${API}/admin/orders/${orderId}`)
+      .then((res) => live && setOrder(res?.data?.data || null))
+      .catch((error) =>
+        toast.error(error?.data?.message || "Failed to load order details."),
+      )
+      .finally(() => live && setLoading(false));
+    return () => {
+      live = false;
+    };
+  }, [orderId]);
+
+  const currency = order?.currency || "PHP";
+  const orderStatus = String(order?.status || "").toUpperCase();
+  const money = (value) => formatMoney(value, currency);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4"
+      onClick={onClose}
+    >
+      <div
+        className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="mb-4 flex items-start justify-between">
+          <div>
+            <h3 className="text-lg font-bold text-slate-900">Order details</h3>
+            {order && (
+              <p className="font-mono text-xs text-slate-500">
+                #{String(order.id).slice(-8).toUpperCase()} · {order.id}
+              </p>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            className="rounded-lg p-1.5 hover:bg-slate-100"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        {loading ? (
+          <p className="py-8 text-sm text-slate-500">Loading order...</p>
+        ) : !order ? (
+          <p className="py-8 text-sm text-slate-500">Order not found.</p>
+        ) : (
+          <div className="space-y-5">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="rounded-xl border border-slate-200 p-4">
+                <p className="mb-1 text-xs font-semibold uppercase text-slate-500">
+                  Customer
+                </p>
+                <p className="font-semibold text-slate-900">
+                  {customerName(order.user)}
+                </p>
+                <p className="text-sm text-slate-500">{order.user?.email}</p>
+              </div>
+              <div className="rounded-xl border border-slate-200 p-4">
+                <p className="mb-1 text-xs font-semibold uppercase text-slate-500">
+                  Status
+                </p>
+                <span
+                  className={`rounded-full px-3 py-1 text-xs font-semibold ${STATUS_STYLES[orderStatus] || STATUS_STYLES.CANCELLED}`}
+                >
+                  {orderStatus === "CREATED" ? "PENDING" : orderStatus}
+                </span>
+                <p className="mt-2 text-sm text-slate-500">
+                  Placed {formatDate(order.createdAt)}
+                </p>
+              </div>
+            </div>
+
+            <div>
+              <p className="mb-2 text-sm font-semibold text-slate-900">
+                Items ({order.items?.length || 0})
+              </p>
+              <div className="divide-y divide-slate-100 rounded-xl border border-slate-200">
+                {(order.items || []).map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex items-start justify-between gap-4 p-4 text-sm"
+                  >
+                    <div className="min-w-0">
+                      <p className="font-semibold text-slate-900">
+                        {item.course?.title || "Course"}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        Instructor:{" "}
+                        {item.educator?.fullName ||
+                          item.educator?.username ||
+                          "-"}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        Platform fee {money(item.platformFeeAmount)} · Educator
+                        earning {money(item.educatorEarning)}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-semibold text-slate-900">
+                        {money(item.totalAmount)}
+                      </p>
+                      {Number(item.discountAmount) > 0 && (
+                        <p className="text-xs text-slate-500">
+                          -{money(item.discountAmount)} discount
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="rounded-xl border border-slate-200 p-4">
+                <p className="mb-1 text-xs font-semibold uppercase text-slate-500">
+                  Summary
+                </p>
+                <Row label="Subtotal" value={money(order.subtotalAmount)} />
+                <Row
+                  label={
+                    order.coupon?.code
+                      ? `Discount (${order.coupon.code})`
+                      : "Discount"
+                  }
+                  value={`-${money(order.discountAmount)}`}
+                />
+                <Row label="Tax" value={money(order.taxAmount)} />
+                <Row
+                  label="Platform fee"
+                  value={money(order.platformFeeAmount)}
+                />
+                <Row
+                  label="Educator earnings"
+                  value={money(order.educatorEarnings)}
+                />
+                <div className="mt-1 border-t border-slate-100 pt-1">
+                  <Row label="Total" value={money(order.totalAmount)} strong />
+                </div>
+              </div>
+              <div className="rounded-xl border border-slate-200 p-4">
+                <p className="mb-1 text-xs font-semibold uppercase text-slate-500">
+                  Payment
+                </p>
+                {order.payment ? (
+                  <>
+                    <Row label="Payment method" value={order.paymentMethod || "-"} strong />
+                    <Row label="Provider" value={order.payment.provider} />
+                    <Row label="Status" value={order.payment.status} />
+                    <Row
+                      label="Payer email"
+                      value={order.payment.payerEmail || "-"}
+                    />
+                    <Row
+                      label="Provider order"
+                      value={order.payment.providerOrderId || "-"}
+                    />
+                    <Row
+                      label="Capture ID"
+                      value={order.payment.providerCaptureId || "-"}
+                    />
+                    <Row
+                      label="Captured"
+                      value={formatDate(order.payment.capturedAt)}
+                    />
+                  </>
+                ) : (
+                  <p className="text-sm text-slate-500">No payment recorded.</p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -496,3 +496,7 @@ input {
 .plyr__control--overlaid svg {
   filter: drop-shadow(0 2px 8px rgba(0, 86, 210, 0.3));
 }
+
+:where(.divide-y > :not(:last-child)) {
+  border-color: #ddd !important;
+}
