@@ -228,7 +228,7 @@ export default function OverviewDashboard({
 
   const exportCsv = () => {
     downloadCsv("performance-overview.csv", [
-      ["Month", "Revenue", "Enrollments"],
+      ["Month", "Income", "Enrollments"],
       ...monthly.map((row) => [
         row.label,
         row.revenue.toFixed(2),
@@ -239,7 +239,7 @@ export default function OverviewDashboard({
 
   const chartTitle =
     metric === "revenue"
-      ? "Revenue over time"
+      ? "Income over time"
       : metric === "enrollments"
         ? "Enrollments over time"
         : "Rating distribution";
@@ -324,9 +324,9 @@ export default function OverviewDashboard({
 
       <div className="mt-5 grid gap-5 md:grid-cols-3">
         <StatCard
-          title="Revenue"
+          title="Income"
           value={formatCurrency(rangeRevenue)}
-          caption={`${formatCurrency(totals.totalRevenue)} total revenue`}
+          caption={`${formatCurrency(totals.totalRevenue)} total income`}
           active={metric === "revenue"}
           onClick={() => setMetric("revenue")}
         />
@@ -418,7 +418,7 @@ export default function OverviewDashboard({
                     <Area
                       type="monotone"
                       dataKey={metric === "revenue" ? "revenue" : "enrollments"}
-                      name={metric === "revenue" ? "Revenue" : "Enrollments"}
+                      name={metric === "revenue" ? "Income" : "Enrollments"}
                       stroke={ACCENT}
                       strokeWidth={2}
                       fill="url(#overviewFill)"
@@ -436,7 +436,7 @@ export default function OverviewDashboard({
               onClick={onViewRevenue}
               className="inline-flex items-center gap-2 rounded-md border border-primary px-4 py-2.5 text-sm font-bold text-primary hover:bg-violet-50"
             >
-              View revenue report
+              View income report
               <ChevronRight className="h-4 w-4" />
             </button>
           </div>

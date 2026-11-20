@@ -23,7 +23,15 @@ import AdminOrdersManagement from "@/components/entities/admin/AdminOrdersManage
 import AdminCategoriesManagement from "@/components/entities/admin/AdminCategoriesManagement";
 import AdminTagsManagement from "@/components/entities/admin/AdminTagsManagement";
 
-const ADMIN_TABS = ["overview", "users", "courses", "orders", "categories", "tags", "payouts"];
+const ADMIN_TABS = [
+  "overview",
+  "users",
+  "courses",
+  "orders",
+  "categories",
+  "tags",
+  "payouts",
+];
 const DEFAULT_PLATFORM_CURRENCY = "PHP";
 
 const normalizeRoleNames = (roles) => {
@@ -78,7 +86,8 @@ function getTrend(trends, key) {
   if (current === previous) return { direction: "balanced", label: "Balanced" };
   if (previous === 0) return { direction: "up", label: "New" };
   const percent = ((current - previous) / previous) * 100;
-  if (Math.abs(percent) < 0.5) return { direction: "balanced", label: "Balanced" };
+  if (Math.abs(percent) < 0.5)
+    return { direction: "balanced", label: "Balanced" };
   return {
     direction: percent > 0 ? "up" : "down",
     label: `${percent > 0 ? "+" : ""}${percent.toFixed(Math.abs(percent) < 10 ? 1 : 0)}%`,
@@ -126,7 +135,9 @@ export async function getServerSideProps(context) {
       };
     }
     const incomingTab = String(context.query?.tab || "overview");
-    const initialTab = ADMIN_TABS.includes(incomingTab) ? incomingTab : "overview";
+    const initialTab = ADMIN_TABS.includes(incomingTab)
+      ? incomingTab
+      : "overview";
     return { props: { initialTab } };
   } catch (_error) {
     return {
@@ -153,7 +164,11 @@ export default function AdminDashboard({ initialTab }) {
 
   const [trends, setTrends] = useState(null);
   const [payoutRows, setPayoutRows] = useState([]);
-  const [payoutMeta, setPayoutMeta] = useState({ page: 1, totalPages: 1, total: 0 });
+  const [payoutMeta, setPayoutMeta] = useState({
+    page: 1,
+    totalPages: 1,
+    total: 0,
+  });
   const [payoutStatus, setPayoutStatus] = useState("");
   const [payoutPage, setPayoutPage] = useState(1);
   const [payoutLoading, setPayoutLoading] = useState(false);
@@ -169,22 +184,31 @@ export default function AdminDashboard({ initialTab }) {
 
   const loadOverview = async () => {
     setOverviewLoading(true);
-    BaseApi.get(`${process.env.NEXT_PUBLIC_API_URL}/admin/reports/overview-trends`)
+    BaseApi.get(
+      `${process.env.NEXT_PUBLIC_API_URL}/admin/reports/overview-trends`,
+    )
       .then((res) => setTrends(res?.data?.data || null))
       .catch(() => setTrends(null));
     try {
-      const [usersRes, coursesRes, revenueRes, pendingPayoutsRes, totalPayoutsRes] =
-        await Promise.all([
-          BaseApi.get(`${process.env.NEXT_PUBLIC_API_URL}/users?page=1&limit=1`),
-          BaseApi.get(
-            `${process.env.NEXT_PUBLIC_API_URL}/admin/courses?page=1&limit=1`,
-          ),
-          BaseApi.get(`${process.env.NEXT_PUBLIC_API_URL}/admin/reports/revenue`),
-          BaseApi.get(
-            `${process.env.NEXT_PUBLIC_API_URL}/payouts/admin?page=1&limit=1&status=REQUESTED`,
-          ),
-          BaseApi.get(`${process.env.NEXT_PUBLIC_API_URL}/payouts/admin?page=1&limit=1`),
-        ]);
+      const [
+        usersRes,
+        coursesRes,
+        revenueRes,
+        pendingPayoutsRes,
+        totalPayoutsRes,
+      ] = await Promise.all([
+        BaseApi.get(`${process.env.NEXT_PUBLIC_API_URL}/users?page=1&limit=1`),
+        BaseApi.get(
+          `${process.env.NEXT_PUBLIC_API_URL}/admin/courses?page=1&limit=1`,
+        ),
+        BaseApi.get(`${process.env.NEXT_PUBLIC_API_URL}/admin/reports/revenue`),
+        BaseApi.get(
+          `${process.env.NEXT_PUBLIC_API_URL}/payouts/admin?page=1&limit=1&status=REQUESTED`,
+        ),
+        BaseApi.get(
+          `${process.env.NEXT_PUBLIC_API_URL}/payouts/admin?page=1&limit=1`,
+        ),
+      ]);
 
       setOverviewData({
         usersCount: Number(usersRes?.data?.meta?.total || 0),
@@ -272,7 +296,9 @@ export default function AdminDashboard({ initialTab }) {
       const payload = {
         platformFeePercent: Number(platformSettings.platformFeePercent || 0),
         taxPercent: Number(platformSettings.taxPercent || 0),
-        payoutCycle: String(platformSettings.payoutCycle || "ANYTIME").toUpperCase(),
+        payoutCycle: String(
+          platformSettings.payoutCycle || "ANYTIME",
+        ).toUpperCase(),
         defaultCurrency: DEFAULT_PLATFORM_CURRENCY,
       };
       await BaseApi.put(
@@ -280,9 +306,15 @@ export default function AdminDashboard({ initialTab }) {
         payload,
       );
       toast.success("Platform settings updated.");
-      await Promise.all([loadPlatformSettings(), loadOverview(), loadPayoutRequests()]);
+      await Promise.all([
+        loadPlatformSettings(),
+        loadOverview(),
+        loadPayoutRequests(),
+      ]);
     } catch (error) {
-      toast.error(error?.data?.message || "Failed to update platform settings.");
+      toast.error(
+        error?.data?.message || "Failed to update platform settings.",
+      );
     } finally {
       setSettingsSaving(false);
     }
@@ -316,7 +348,9 @@ export default function AdminDashboard({ initialTab }) {
       toast.success(`Payout ${normalizedAction}d.`);
       await Promise.all([loadOverview(), loadPayoutRequests()]);
     } catch (error) {
-      toast.error(error?.data?.message || `Failed to ${normalizedAction} payout.`);
+      toast.error(
+        error?.data?.message || `Failed to ${normalizedAction} payout.`,
+      );
     }
   };
 
@@ -338,7 +372,7 @@ export default function AdminDashboard({ initialTab }) {
   const overviewCards = useMemo(
     () => [
       {
-        label: "Total revenue",
+        label: "Total Income",
         value: formatCurrency(overviewData.totalRevenue),
         hint: `${overviewData.paidOrders} paid orders`,
         icon: Banknote,
@@ -388,7 +422,11 @@ export default function AdminDashboard({ initialTab }) {
   );
 
   const quickActions = [
-    { label: "Review courses", href: "/admin?tab=courses", icon: GraduationCap },
+    {
+      label: "Review courses",
+      href: "/admin?tab=courses",
+      icon: GraduationCap,
+    },
     { label: "Manage users", href: "/admin?tab=users", icon: User },
     { label: "Process payouts", href: "/admin?tab=payouts", icon: Wallet },
     { label: "Roles & permissions", href: "/admin/roles", icon: ShieldCheck },
@@ -413,7 +451,8 @@ export default function AdminDashboard({ initialTab }) {
               <span className="flex items-center gap-3 font-semibold text-amber-800">
                 <Clock className="h-5 w-5" />
                 {overviewData.pendingPayouts} payout request
-                {overviewData.pendingPayouts === 1 ? "" : "s"} waiting for review
+                {overviewData.pendingPayouts === 1 ? "" : "s"} waiting for
+                review
               </span>
               <span className="flex items-center gap-1 font-semibold text-amber-800">
                 Review <ArrowUpRight className="h-4 w-4" />
@@ -470,7 +509,9 @@ export default function AdminDashboard({ initialTab }) {
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-white p-5">
-            <h2 className="text-base font-semibold text-slate-900">Quick actions</h2>
+            <h2 className="text-base font-semibold text-slate-900">
+              Quick actions
+            </h2>
             <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
               {quickActions.map((action) => {
                 const Icon = action.icon;
@@ -632,7 +673,9 @@ export default function AdminDashboard({ initialTab }) {
               disabled={isRunningAutoProcess}
               className="rounded-full bg-[#0056d2] px-5 py-2 text-sm font-semibold text-white disabled:opacity-60"
             >
-              {isRunningAutoProcess ? "Processing..." : "Run auto payout process"}
+              {isRunningAutoProcess
+                ? "Processing..."
+                : "Run auto payout process"}
             </button>
           </div>
 
@@ -665,13 +708,19 @@ export default function AdminDashboard({ initialTab }) {
                 <tbody>
                   {payoutLoading ? (
                     <tr>
-                      <td colSpan={6} className="px-5 py-8 text-sm text-slate-500">
+                      <td
+                        colSpan={6}
+                        className="px-5 py-8 text-sm text-slate-500"
+                      >
                         Loading payout requests...
                       </td>
                     </tr>
                   ) : payoutRows.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="px-5 py-8 text-sm text-slate-500">
+                      <td
+                        colSpan={6}
+                        className="px-5 py-8 text-sm text-slate-500"
+                      >
                         No payout requests found.
                       </td>
                     </tr>
@@ -684,7 +733,9 @@ export default function AdminDashboard({ initialTab }) {
                             <p className="font-semibold text-slate-900">
                               {row?.educator?.username || "Unknown"}
                             </p>
-                            <p className="text-slate-500">{row?.educator?.email || "-"}</p>
+                            <p className="text-slate-500">
+                              {row?.educator?.email || "-"}
+                            </p>
                           </td>
                           <td className="px-5 py-4 text-sm font-semibold text-[#0056d2]">
                             {formatCurrency(row?.amount)}
@@ -708,14 +759,18 @@ export default function AdminDashboard({ initialTab }) {
                                 <>
                                   <button
                                     type="button"
-                                    onClick={() => handlePayoutAction("approve", row.id)}
+                                    onClick={() =>
+                                      handlePayoutAction("approve", row.id)
+                                    }
                                     className="rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white"
                                   >
                                     Approve
                                   </button>
                                   <button
                                     type="button"
-                                    onClick={() => handlePayoutAction("reject", row.id)}
+                                    onClick={() =>
+                                      handlePayoutAction("reject", row.id)
+                                    }
                                     className="rounded-md bg-rose-600 px-3 py-1.5 text-xs font-semibold text-white"
                                   >
                                     Reject
@@ -725,7 +780,9 @@ export default function AdminDashboard({ initialTab }) {
                               {["APPROVED", "FAILED"].includes(status) && (
                                 <button
                                   type="button"
-                                  onClick={() => handlePayoutAction("execute", row.id)}
+                                  onClick={() =>
+                                    handlePayoutAction("execute", row.id)
+                                  }
                                   className="rounded-md bg-[#0056d2] px-3 py-1.5 text-xs font-semibold text-white"
                                 >
                                   Execute
@@ -761,7 +818,10 @@ export default function AdminDashboard({ initialTab }) {
               </span>
               <button
                 type="button"
-                disabled={Number(payoutMeta?.page || 1) >= Number(payoutMeta?.totalPages || 1)}
+                disabled={
+                  Number(payoutMeta?.page || 1) >=
+                  Number(payoutMeta?.totalPages || 1)
+                }
                 onClick={() =>
                   setPayoutPage((prev) =>
                     Math.min(Number(payoutMeta?.totalPages || 1), prev + 1),

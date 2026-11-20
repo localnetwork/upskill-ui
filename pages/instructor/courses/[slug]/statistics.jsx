@@ -81,27 +81,29 @@ export default function CourseStatisticsManagement({ course }) {
         const response = await BaseApi.get(
           `${process.env.NEXT_PUBLIC_API_URL}/courses/${course.slug}/statistics`,
         );
-        setStats(response?.data?.data || {
-          overview: {
-            total_students: 0,
-            enrollments_this_month: 0,
-            completed_students: 0,
-            completion_rate_pct: 0,
-            average_progress_pct: 0,
-            average_rating: 0,
-            total_reviews: 0,
-            total_revenue: 0,
-            revenue_this_month: 0,
-            total_impressions: 0,
-            unique_impression_visitors: 0,
+        setStats(
+          response?.data?.data || {
+            overview: {
+              total_students: 0,
+              enrollments_this_month: 0,
+              completed_students: 0,
+              completion_rate_pct: 0,
+              average_progress_pct: 0,
+              average_rating: 0,
+              total_reviews: 0,
+              total_revenue: 0,
+              revenue_this_month: 0,
+              total_impressions: 0,
+              unique_impression_visitors: 0,
+            },
+            distribution: {
+              rating_distribution: [],
+            },
+            trends: {
+              monthly_enrollments: [],
+            },
           },
-          distribution: {
-            rating_distribution: [],
-          },
-          trends: {
-            monthly_enrollments: [],
-          },
-        });
+        );
       } catch (_error) {
         setStats((prev) => prev);
       } finally {
@@ -115,43 +117,53 @@ export default function CourseStatisticsManagement({ course }) {
   const cards = useMemo(
     () => [
       {
-        group: "enrollments", label: "Total students",
+        group: "enrollments",
+        label: "Total students",
         value: Number(stats?.overview?.total_students || 0),
       },
       {
-        group: "enrollments", label: "New enrollments this month",
+        group: "enrollments",
+        label: "New enrollments this month",
         value: Number(stats?.overview?.enrollments_this_month || 0),
       },
       {
-        group: "enrollments", label: "Course completion rate",
+        group: "enrollments",
+        label: "Course completion rate",
         value: `${Math.round(Number(stats?.overview?.completion_rate_pct || 0))}%`,
       },
       {
-        group: "enrollments", label: "Average learner progress",
+        group: "enrollments",
+        label: "Average learner progress",
         value: `${Math.round(Number(stats?.overview?.average_progress_pct || 0))}%`,
       },
       {
-        group: "ratings", label: "Average rating",
+        group: "ratings",
+        label: "Average rating",
         value: Number(stats?.overview?.average_rating || 0).toFixed(2),
       },
       {
-        group: "ratings", label: "Total reviews",
+        group: "ratings",
+        label: "Total reviews",
         value: Number(stats?.overview?.total_reviews || 0),
       },
       {
-        group: "revenue", label: "Total revenue",
+        group: "revenue",
+        label: "Total Income",
         value: formatCurrency(stats?.overview?.total_revenue || 0),
       },
       {
-        group: "revenue", label: "Revenue this month",
+        group: "revenue",
+        label: "Income this month",
         value: formatCurrency(stats?.overview?.revenue_this_month || 0),
       },
       {
-        group: "engagement", label: "Course impression",
+        group: "engagement",
+        label: "Course impression",
         value: Number(stats?.overview?.total_impressions || 0),
       },
       {
-        group: "engagement", label: "Unique impression visitors",
+        group: "engagement",
+        label: "Unique impression visitors",
         value: Number(stats?.overview?.unique_impression_visitors || 0),
       },
     ],
@@ -174,7 +186,9 @@ export default function CourseStatisticsManagement({ course }) {
     const merge = (a, b) => {
       const byDate = new Map();
       arr(a).forEach((row) => byDate.set(row.date, { ...row }));
-      arr(b).forEach((row) => byDate.set(row.date, { ...(byDate.get(row.date) || {}), ...row }));
+      arr(b).forEach((row) =>
+        byDate.set(row.date, { ...(byDate.get(row.date) || {}), ...row }),
+      );
       return Array.from(byDate.values());
     };
     const id = course?.id || "course";
@@ -196,18 +210,26 @@ export default function CourseStatisticsManagement({ course }) {
       },
       revenue: {
         metrics: [
-          { key: "revenue", label: "Revenue", currency: true },
+          { key: "revenue", label: "Income", currency: true },
           { key: "enrollments", label: "New enrollments" },
         ],
         courses: [
-          { id, title, daily: merge(trends.daily_revenue, trends.daily_students) },
+          {
+            id,
+            title,
+            daily: merge(trends.daily_revenue, trends.daily_students),
+          },
         ],
       },
     };
   }, [stats, course]);
 
   return (
-    <CourseManagementLayout course={course} activeTab="statistics" title="Statistics">
+    <CourseManagementLayout
+      course={course}
+      activeTab="statistics"
+      title="Statistics"
+    >
       <nav
         aria-label="Statistics sections"
         className="mb-6 flex gap-1 overflow-x-auto border-b border-slate-200"

@@ -33,7 +33,7 @@ import {
 
 const NAV_ITEMS = [
   { id: "overview", label: "Overview", icon: LayoutDashboard },
-  { id: "revenue", label: "Revenue", icon: Banknote },
+  { id: "revenue", label: "Income", icon: Banknote },
   { id: "students", label: "Students", icon: Users },
   { id: "reviews", label: "Reviews", icon: Star },
   { id: "engagement", label: "Course engagement", icon: Eye },
@@ -476,7 +476,7 @@ export default function PerformancePage() {
       <div className="p-6 lg:p-8">
         <h1 className="text-3xl font-black text-slate-900 mb-2">Performance</h1>
         <p className="text-sm text-slate-500 mb-6">
-          Unified analytics across revenue, learners, reviews, and course health.
+          Unified analytics across income, learners, reviews, and course health.
         </p>
 
         <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
@@ -534,7 +534,7 @@ export default function PerformancePage() {
                   <Card label="Recent income" value={formatCurrency(payoutSummary?.thisMonthEarnings)} />
                   <Card label="Payout cycle" value={String(payoutSummary?.payoutCycle || "ANYTIME")} />
                 </div>
-                <Section title="Revenue over time" description="Net revenue per month from your course sales.">
+                <Section title="Income over time" description="Net income per month from your course sales.">
                   <div className="mb-4 flex flex-wrap items-end gap-3">
                     <RevenueRangeFilter
                       range={revenueRange}
@@ -566,7 +566,7 @@ export default function PerformancePage() {
                           <XAxis dataKey="label" tickLine={false} tick={{ fill: "#0052cc", fontSize: 12 }} />
                           <YAxis tickFormatter={(value) => formatCurrency(value)} tickLine={false} axisLine={false} width={90} tick={{ fill: "#0052cc", fontSize: 12 }} />
                           <Tooltip formatter={(value) => formatCurrency(value)} />
-                          <Area type="monotone" dataKey="revenue" name="Revenue" stroke="#0052cc" strokeWidth={2} fill="url(#revenueFill)" dot={filteredRevenue.length <= 31} />
+                          <Area type="monotone" dataKey="revenue" name="Income" stroke="#0052cc" strokeWidth={2} fill="url(#revenueFill)" dot={filteredRevenue.length <= 31} />
                         </AreaChart>
                       </ResponsiveContainer>
                     </div>
