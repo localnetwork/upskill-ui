@@ -53,7 +53,7 @@ function LiveSection({ section, index, lessons, isGenerating }) {
   const [open, setOpen] = useState(true);
 
   return (
-    <div className="overflow-hidden [border:1px_solid_oklch(67.22%_0.0355_279.77deg)]">
+    <div className="overflow-hidden border border-[#ddd]">
       <div
         className="flex cursor-pointer items-center justify-between bg-[#F6F7F9] px-[30px] py-[20px]"
         onClick={() => setOpen((previous) => !previous)}
@@ -64,13 +64,16 @@ function LiveSection({ section, index, lessons, isGenerating }) {
             <Typewriter text={section?.title || "Untitled section"} />
           </span>
         </h2>
-        <span>{open ? <ChevronUp size={16} /> : <ChevronDown size={16} />}</span>
+        <span>
+          {open ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+        </span>
       </div>
 
       {open && (
         <div className="space-y-2 px-[30px] py-[20px]">
           {lessons.map((lesson, lessonIndex) => {
-            const Icon = TYPE_ICONS[String(lesson?.type || "").toLowerCase()] || FileText;
+            const Icon =
+              TYPE_ICONS[String(lesson?.type || "").toLowerCase()] || FileText;
             return (
               <div
                 key={`${index}-${lessonIndex}`}
@@ -78,14 +81,18 @@ function LiveSection({ section, index, lessons, isGenerating }) {
               >
                 <Icon size={16} className="shrink-0 text-gray-500" />
                 <span className="font-medium text-slate-800">
-                  <Typewriter text={lesson?.title || "Untitled curriculum"} speed={18} />
+                  <Typewriter
+                    text={lesson?.title || "Untitled curriculum"}
+                    speed={18}
+                  />
                 </span>
               </div>
             );
           })}
           {isGenerating && lessons.length === 0 && (
             <div className="flex items-center gap-2 text-sm text-gray-500">
-              <Loader2 size={14} className="animate-spin" /> Generating curriculum...
+              <Loader2 size={14} className="animate-spin" /> Generating
+              curriculum...
             </div>
           )}
         </div>
@@ -104,7 +111,9 @@ export default function LiveCurriculumAccordion({
   isGenerating = false,
   showAll = false,
 }) {
-  let remaining = showAll ? Number.MAX_SAFE_INTEGER : Number(lessonsCreated || 0);
+  let remaining = showAll
+    ? Number.MAX_SAFE_INTEGER
+    : Number(lessonsCreated || 0);
   const visible = [];
 
   for (const section of sections) {
@@ -118,7 +127,11 @@ export default function LiveCurriculumAccordion({
       }
       break;
     }
-    visible.push({ section, lessons: shown, complete: shown.length === planned.length });
+    visible.push({
+      section,
+      lessons: shown,
+      complete: shown.length === planned.length,
+    });
     if (shown.length < planned.length) break;
   }
 

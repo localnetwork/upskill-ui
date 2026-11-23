@@ -29,7 +29,7 @@ import { Editor } from "@tinymce/tinymce-react";
 function CurriculumItemSkeleton() {
   return (
     <div className="flex items-center gap-2 rounded bg-white">
-      <div className="[border:1px_solid_oklch(67.22%_0.0355_279.77deg)] px-[20px] py-[15px] mb-2 bg-gray-50 w-full animate-pulse">
+      <div className="border border-[#ddd] px-[20px] py-[15px] mb-2 bg-gray-50 w-full animate-pulse">
         <div className="flex justify-between items-center w-full">
           <div className="flex items-center w-full">
             <div className="w-[18px] h-[18px] rounded bg-gray-200 mr-2" />
@@ -312,12 +312,63 @@ export default function CourseSection({
     setItemsLoaded(true);
   };
 
-  const itemTypes = [
-    { label: "Lecture", value: "lecture", icon: BookOpen },
-    { label: "Quiz", value: "quiz", icon: HelpCircle },
-    { label: "Coding Exercise", value: "coding_exercise", icon: Code },
-    { label: "Assignment", value: "assignment", icon: ClipboardCheck },
-    { label: "Role Play", value: "role_play", icon: Drama },
+  const itemTypeGroups = [
+    {
+      title: "Watch or read",
+      items: [
+        {
+          label: "Lecture",
+          value: "lecture",
+          icon: BookOpen,
+          description: "Video or text lesson",
+          tone: "bg-slate-100 text-slate-600",
+        },
+      ],
+    },
+    {
+      title: "Role Play",
+      items: [
+        {
+          label: "Practice Role Play",
+          value: "role_play",
+          icon: Drama,
+          description: "Unscored conversation for free-form skill rehearsal",
+          tone: "bg-violet-100 text-violet-600",
+          ai: true,
+        },
+      ],
+    },
+    {
+      title: "Coding & labs",
+      items: [
+        {
+          label: "Coding exercise",
+          value: "coding_exercise",
+          icon: Code,
+          description: "Code challenges with instant feedback",
+          tone: "bg-emerald-100 text-emerald-600",
+        },
+      ],
+    },
+    {
+      title: "Knowledge checks",
+      items: [
+        {
+          label: "Quiz",
+          value: "quiz",
+          icon: HelpCircle,
+          description: "Quick comprehension check after a lesson",
+          tone: "bg-amber-100 text-amber-600",
+        },
+        {
+          label: "Assignment",
+          value: "assignment",
+          icon: ClipboardCheck,
+          description: "Submit work for review against a brief",
+          tone: "bg-amber-100 text-amber-600",
+        },
+      ],
+    },
   ];
 
   const handleDragStart = (e, index) => {
@@ -576,19 +627,50 @@ export default function CourseSection({
                       <Plus size={16} className="mr-1" /> Add Curriculum
                     </button>
                     {showTypeMenu && (
-                      <div className="mt-2 border rounded p-2 bg-gray-50 space-y-1">
-                        {itemTypes.map((t) => (
-                          <button
-                            key={t.value}
-                            onClick={() => {
-                              handleAddCurriculum(t.value);
-                              setShowTypeMenu(false);
-                            }}
-                            className="flex cursor-pointer items-center gap-2 w-full text-left hover:bg-gray-100 px-2 py-1 rounded"
+                      <div className="mt-2 max-h-80 w-full max-w-md overflow-y-auto rounded-lg border border-[#ddd] bg-white py-2 shadow-lg">
+                        {itemTypeGroups.map((group, groupIndex) => (
+                          <div
+                            key={group.title}
+                            className={
+                              groupIndex > 0
+                                ? "mt-2 border-t border-gray-200 pt-2"
+                                : ""
+                            }
                           >
-                            <t.icon size={16} className="text-gray-600" />
-                            {t.label}
-                          </button>
+                            <p className="px-4 py-1 text-sm font-semibold text-slate-500">
+                              {group.title}
+                            </p>
+                            {group.items.map((t) => (
+                              <button
+                                key={t.value}
+                                type="button"
+                                onClick={() => {
+                                  handleAddCurriculum(t.value);
+                                  setShowTypeMenu(false);
+                                }}
+                                className="flex w-full cursor-pointer items-center gap-3 px-4 py-2 text-left hover:bg-slate-50"
+                              >
+                                <span
+                                  className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-md ${t.tone}`}
+                                >
+                                  <t.icon size={16} />
+                                </span>
+                                <span className="min-w-0">
+                                  <span className="flex items-center gap-2 text-sm font-semibold text-slate-800">
+                                    {t.label}
+                                    {t.ai && (
+                                      <span className="rounded border border-slate-200 px-1.5 py-0.5 text-[11px] font-medium text-slate-600">
+                                        ✦ AI
+                                      </span>
+                                    )}
+                                  </span>
+                                  <span className="block text-xs text-slate-500">
+                                    {t.description}
+                                  </span>
+                                </span>
+                              </button>
+                            ))}
+                          </div>
                         ))}
                       </div>
                     )}

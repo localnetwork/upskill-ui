@@ -387,7 +387,7 @@ export default function CurriculumItem({
 
   return (
     <div
-      className={`${hasMissingContent ? "border-2 border-dashed border-red-500 bg-red-50/40" : "[border:1px_solid_oklch(67.22%_0.0355_279.77deg)] bg-gray-50"} px-3 py-[15px] sm:px-[20px] mb-2 w-full`}
+      className={`${hasMissingContent ? "border-2 border-dashed border-red-500 bg-red-50/40" : "border border-[#ddd] bg-gray-50"} px-3 py-[15px] sm:px-[20px] mb-2 w-full`}
     >
       {/* Header */}
       <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

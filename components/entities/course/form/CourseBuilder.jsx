@@ -8,7 +8,7 @@ import { Plus } from "lucide-react";
 
 function CourseSectionSkeleton() {
   return (
-    <div className="[border:1px_solid_oklch(67.22%_0.0355_279.77deg)] overflow-hidden animate-pulse">
+    <div className="border border-[#ddd] overflow-hidden animate-pulse">
       <div className="flex justify-between items-center bg-[#F6F7F9] px-[30px] py-[20px]">
         <div className="h-6 w-[55%] bg-gray-200 rounded" />
         <div className="h-5 w-5 bg-gray-200 rounded" />
@@ -89,8 +89,7 @@ export default function CourseBuilder({ courseId, liveTick = 0 }) {
       setSections(
         data?.map((s) => ({
           ...s,
-          items:
-            curriculumBySectionId.get(String(s?.id || "").trim()) || [],
+          items: curriculumBySectionId.get(String(s?.id || "").trim()) || [],
           itemsLoaded: curriculumBySectionId.has(String(s?.id || "").trim()),
           tempKey: uuid(),
           isNew: false,
@@ -128,9 +127,12 @@ export default function CourseBuilder({ courseId, liveTick = 0 }) {
     if (!activeCourseId) return;
 
     const storeCourse = courseStore.getState().courseManagement;
-    const storeCourseId = String(storeCourse?.id || storeCourse?.uuid || "").trim();
+    const storeCourseId = String(
+      storeCourse?.id || storeCourse?.uuid || "",
+    ).trim();
     const currentCourseId = String(activeCourseId || "").trim();
-    if (!storeCourse || !storeCourseId || storeCourseId !== currentCourseId) return;
+    if (!storeCourse || !storeCourseId || storeCourseId !== currentCourseId)
+      return;
 
     const nextSections = mapSectionsForCourseStore(sections);
     courseStore.setState({
@@ -157,7 +159,10 @@ export default function CourseBuilder({ courseId, liveTick = 0 }) {
               const response = await BaseApi.get(
                 `${process.env.NEXT_PUBLIC_API_URL}/course-sections/${section.id}/curriculums`,
               );
-              return { section, items: response?.data?.data || response?.data || [] };
+              return {
+                section,
+                items: response?.data?.data || response?.data || [],
+              };
             } catch (_error) {
               return { section, items: null };
             }
