@@ -366,7 +366,7 @@ export default function VideoPreview({
   return (
     <div
       ref={containerRef}
-      className="video-preview w-full h-[500px] rounded-xl overflow-hidden shadow-lg bg-black relative"
+      className="video-preview w-full h-full rounded-xl overflow-hidden shadow-lg bg-black relative"
     >
       {loading && (
         <div className="absolute inset-0 flex items-center justify-center text-gray-400 text-sm z-10">
@@ -381,7 +381,6 @@ export default function VideoPreview({
           className="h-full w-full"
           allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
           allowFullScreen
-          loading="lazy"
         />
       )}
 

@@ -207,7 +207,7 @@ export default function CourseAssetPreview({
               data-tooltip-content={
                 prevLecture ? prevLecture.title : "No previous lecture"
               }
-              className="bg-black z-[100] cursor-pointer absolute top-[50%] translate-y-[-50%] bg-opacity-50 hover:bg-opacity-70 opacity-30 hover:opacity-100 z-[5] text-white px-4 py-2"
+              className="hidden sm:block bg-black z-[100] cursor-pointer absolute left-0 top-[50%] translate-y-[-50%] bg-opacity-50 hover:bg-opacity-70 opacity-30 hover:opacity-100 text-white px-4 py-2"
             >
               <ChevronLeft size={24} />
             </button>
@@ -232,7 +232,7 @@ export default function CourseAssetPreview({
               data-tooltip-content={
                 nextLecture ? nextLecture.title : "No next lecture"
               }
-              className="bg-black cursor-pointer absolute top-[50%] right-0 translate-y-[-50%] bg-opacity-50 hover:bg-opacity-70 opacity-30 hover:opacity-100 z-[5] text-white px-4 py-2"
+              className="hidden sm:block bg-black cursor-pointer absolute top-[50%] right-0 translate-y-[-50%] bg-opacity-50 hover:bg-opacity-70 opacity-30 hover:opacity-100 z-[100] text-white px-4 py-2"
             >
               <ChevronRight size={24} className="" />
               <Tooltip id="next-tooltip" />
