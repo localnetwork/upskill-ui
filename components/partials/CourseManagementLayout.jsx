@@ -3,6 +3,7 @@ import CourseSidebar from "../entities/course/CourseSidebar";
 import CourseStripBar from "../entities/course/CourseStripbar";
 import CourseApprovalReadiness, {
   usePayoutConnected,
+  useSlugAvailable,
 } from "../entities/course/CourseApprovalReadiness";
 import courseStore from "@/lib/store/courseStore";
 
@@ -31,6 +32,8 @@ export default function CourseManagementLayout({
         : { ...courseManagement, ...course }
       : course;
 
+  const slugAvailable = useSlugAvailable(activeCourse);
+
   const readinessCourse = {
     ...(activeCourse || {}),
     sections: Array.isArray(activeCourse?.sections)
@@ -42,6 +45,7 @@ export default function CourseManagementLayout({
       activeCourse?.resources_count || course?.resources_count || {},
     goals: activeCourse?.goals || course?.goals || {},
     payoutConnected,
+    slugAvailable,
   };
 
   const showReadiness = [

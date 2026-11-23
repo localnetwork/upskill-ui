@@ -176,7 +176,9 @@ export default function CourseAssetPreview({
             ? "h-[calc(100vh-60px)] min-h-[480px] md:min-h-[600px]"
             : lecture?.curriculum_resource_type === "quiz"
               ? "h-[500px] md:h-[600px]"
-              : "h-[240px] sm:h-[340px] md:h-[500px]"
+              : lecture?.curriculum_resource_type === "article"
+                ? "h-[70vh] min-h-[320px] sm:h-[420px] md:h-[500px]"
+                : "h-[240px] sm:h-[340px] md:h-[500px]"
       }`}
     >
       {isLoading ? (

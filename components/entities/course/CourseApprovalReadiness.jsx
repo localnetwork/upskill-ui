@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle } from "lucide-react";
+import BaseApi from "@/lib/api/_base.api";
 import modalState from "@/lib/store/modalState";
 import PAYOUTAPI from "@/lib/api/payouts/request";
 
@@ -128,6 +129,14 @@ export function getApprovalChecks(course, baseUuid) {
 
   return [
     {
+      key: "slug",
+      label: "Set a unique course slug (not already taken)",
+      done:
+        /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(String(course?.slug || "")) &&
+        course?.slugAvailable === true,
+      href: `/instructor/courses/${baseUuid}/basics`,
+    },
+    {
       key: "title",
       label: "Add a clear course title",
       done: title.length >= 10,
@@ -218,6 +227,36 @@ export function usePayoutConnected() {
   const { data } = PAYOUTAPI.getSummary();
   if (!data) return undefined;
   return Boolean(data?.data?.payoutAccount?.accountNumber);
+}
+
+export function useSlugAvailable(course) {
+  const slug = String(course?.slug || "").trim();
+  const courseId = String(course?.id || course?.uuid || "");
+  const [state, setState] = useState({ key: "", available: undefined });
+  const key = `${slug}|${courseId}`;
+
+  useEffect(() => {
+    if (!slug || !courseId) return undefined;
+    let cancelled = false;
+    BaseApi.get(
+      `${process.env.NEXT_PUBLIC_API_URL}/courses/slug-availability?slug=${encodeURIComponent(slug)}&excludeCourseId=${encodeURIComponent(courseId)}&nocache=true`,
+    )
+      .then((response) => {
+        if (cancelled) return;
+        setState({
+          key,
+          available: Boolean(response?.data?.data?.isAvailable),
+        });
+      })
+      .catch(() => {
+        if (!cancelled) setState({ key, available: undefined });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [slug, courseId, key]);
+
+  return state.key === key ? state.available : undefined;
 }
 
 export function getApprovalReadinessSummary(course) {

@@ -46,7 +46,7 @@ export default function ArticlePreview({ lecture, course, setCourse }) {
   }, [lecture]);
 
   return (
-    <div className="bg-white overflow-y-auto w-full sm:h-[340px] md:h-[500px] shadow-md absolute top-0 left-0 p-6">
+    <div className="bg-white overflow-y-auto shadow-md absolute inset-0 p-4 sm:p-6 break-words">
       <div
         className="max-w-[800px] rich-content article-preview-description mx-auto"
         dangerouslySetInnerHTML={{

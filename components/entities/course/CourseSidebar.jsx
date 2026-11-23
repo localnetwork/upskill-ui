@@ -9,6 +9,7 @@ import { MoreVertical } from "lucide-react";
 import {
   getApprovalReadinessSummary,
   usePayoutConnected,
+  useSlugAvailable,
 } from "./CourseApprovalReadiness";
 export default function CourseSidebar({ course }) {
   const router = useRouter();
@@ -30,6 +31,8 @@ export default function CourseSidebar({ course }) {
         ? { ...course, ...courseManagement }
         : { ...courseManagement, ...course }
       : course;
+
+  const slugAvailable = useSlugAvailable(activeCourse);
 
   const workflowStatus = String(
     activeCourse?.workflowStatus || activeCourse?.workflow_status || "DRAFT",
@@ -121,6 +124,7 @@ export default function CourseSidebar({ course }) {
     const readiness = getApprovalReadinessSummary({
       ...activeCourse,
       payoutConnected,
+      slugAvailable,
     });
     if (readiness.score < 100) {
       toast.error(
