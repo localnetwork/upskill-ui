@@ -305,7 +305,35 @@ export default function EngagementReport({
               </th>
               <th className="px-6 py-4 text-right font-medium">{metrics[1].label}</th>
               {showConversion ? (
-                <th className="px-6 py-4 text-right font-medium">Conversion</th>
+                <th className="px-6 py-4 text-right font-medium">
+                  <span className="inline-flex items-center gap-1.5">
+                    Conversion
+                    <span className="group relative inline-flex">
+                      <button
+                        type="button"
+                        aria-label="About conversion"
+                        className="flex h-4 w-4 cursor-help items-center justify-center rounded-full border border-slate-400 text-[10px] font-bold leading-none text-slate-500 hover:border-slate-700 hover:text-slate-700"
+                      >
+                        ?
+                      </button>
+                      <span
+                        role="tooltip"
+                        className="pointer-events-none absolute right-0 top-full z-20 mt-2 hidden w-64 rounded-lg bg-slate-900 p-3 text-left text-xs font-normal normal-case leading-relaxed text-white shadow-lg group-focus-within:block group-hover:block"
+                      >
+                        <span className="block font-semibold">
+                          Conversion rate
+                        </span>
+                        Shows how well your course listing turns views into
+                        students.
+                        <span className="mt-2 block font-semibold">
+                          How it&apos;s calculated
+                        </span>
+                        New enrollments ÷ Impressions × 100. Example: 5
+                        enrollments from 200 impressions = 2.5%.
+                      </span>
+                    </span>
+                  </span>
+                </th>
               ) : null}
             </tr>
           </thead>

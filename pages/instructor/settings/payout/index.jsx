@@ -122,7 +122,6 @@ const failedEvents = new Set([
   "PAYMENT.PAYOUTSBATCH.DENIED",
 ]);
 
-const DEFAULT_WITHDRAWAL_FEE_RATE = 0.02;
 
 const PAYOUT_CHANNELS = [
   { code: "PH_GCASH", label: "GCash", type: "EWALLET" },
@@ -407,10 +406,6 @@ export default function PayoutSettingsPage() {
   const currencyCode = DISPLAY_CURRENCY;
   const payoutCycle = String(summary?.payoutCycle || "ANYTIME").toUpperCase();
   const payoutCycleLabel = payoutCycle.toLowerCase();
-  const withdrawalFeeRate = toNumber(
-    summary?.withdrawalFeeRate,
-    DEFAULT_WITHDRAWAL_FEE_RATE,
-  );
 
   const earningsEvents = useMemo(() => {
     const events = [];
@@ -578,15 +573,33 @@ export default function PayoutSettingsPage() {
 
   const payoutRequestPreview = useMemo(() => {
     const grossAmount = Math.max(toNumber(summary?.availableBalance, 0), 0);
-    const feeAmount = Number((grossAmount * withdrawalFeeRate).toFixed(2));
-    const netAmount = Number(Math.max(grossAmount - feeAmount, 0).toFixed(2));
+    const feeRate = toNumber(summary?.transactionFeeRate, 0.01);
+    const feeMin = toNumber(summary?.transactionFeeMinimum, 15);
+    const vatRate = toNumber(summary?.transactionVatRate, 0.12);
+    const percentNet =
+      Math.floor((grossAmount / (1 + feeRate * (1 + vatRate))) * 100) / 100;
+    const netAmount =
+      percentNet * feeRate >= feeMin
+        ? percentNet
+        : Math.max(Math.floor((grossAmount - feeMin * (1 + vatRate)) * 100) / 100, 0);
+    const feeAmount = Number(Math.max(netAmount * feeRate, feeMin).toFixed(2));
+    const vatAmount = Number((feeAmount * vatRate).toFixed(2));
     return {
       grossAmount,
+      feeRate,
+      feeMin,
+      vatRate,
       feeAmount,
-      netAmount,
+      vatAmount,
+      netAmount: Number(netAmount.toFixed(2)),
+      deduction: Number((grossAmount - netAmount).toFixed(2)),
     };
-  }, [summary?.availableBalance, withdrawalFeeRate]);
-
+  }, [
+    summary?.availableBalance,
+    summary?.transactionFeeRate,
+    summary?.transactionFeeMinimum,
+    summary?.transactionVatRate,
+  ]);
   const activePayoutDetails = useMemo(() => {
     if (!activePayout) return null;
     return buildTransactionsForPayout(activePayout, currencyCode);
@@ -728,9 +741,9 @@ export default function PayoutSettingsPage() {
           <p className="mt-2 text-sm text-on-surface-variant">
             Payout availability is currently set to{" "}
             <strong>{payoutCycleLabel}</strong>. Minimum cashout is{" "}
-            {formatCurrency(500, "PHP")}. A{" "}
-            <strong>{(withdrawalFeeRate * 100).toFixed(0)}%</strong> withdrawal fee
-            applies on payout requests.
+            {formatCurrency(500, "PHP")}. Xendit&apos;s transaction fee (1%, minimum
+            {" "}{formatCurrency(15, "PHP")}) plus
+            12% VAT on that fee is deducted from each payout.
           </p>
         </section>
 
@@ -1285,25 +1298,29 @@ export default function PayoutSettingsPage() {
                         )}
                       </td>
                     </tr>
-                    <tr>
-                      <td className="px-4 py-3 text-sm font-semibold text-on-surface" colSpan={4}>
-                        Withdrawal fee
-                      </td>
-                      <td className="px-4 py-3 text-sm font-bold text-orange-600">
-                        -{formatCurrency(
-                          Math.max(
+                    {Number(
+                      (
+                        (activePayoutDetails?.totalAmount || 0) -
+                        toNumber(activePayout?.amount, 0)
+                      ).toFixed(2),
+                    ) > 0 ? (
+                      <tr>
+                        <td className="px-4 py-3 text-sm font-semibold text-on-surface" colSpan={4}>
+                          Transaction fee + VAT
+                        </td>
+                        <td className="px-4 py-3 text-sm font-bold text-orange-600">
+                          -{formatCurrency(
                             Number(
                               (
                                 (activePayoutDetails?.totalAmount || 0) -
                                 toNumber(activePayout?.amount, 0)
                               ).toFixed(2),
                             ),
-                            0,
-                          ),
-                          activePayout.currency || currencyCode,
-                        )}
-                      </td>
-                    </tr>
+                            activePayout.currency || currencyCode,
+                          )}
+                        </td>
+                      </tr>
+                    ) : null}
                     <tr>
                       <td className="px-4 py-3 text-sm font-semibold text-on-surface" colSpan={4}>
                         Net payout
@@ -1365,10 +1382,18 @@ export default function PayoutSettingsPage() {
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-slate-600">
-                  Withdrawal fee ({(withdrawalFeeRate * 100).toFixed(0)}%)
+                  Transaction fee (1%, min {formatCurrency(payoutRequestPreview.feeMin, currencyCode)})
                 </span>
                 <span className="font-semibold text-orange-600">
                   -{formatCurrency(payoutRequestPreview.feeAmount, currencyCode)}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-600">
+                  VAT on fee ({(payoutRequestPreview.vatRate * 100).toFixed(0)}%)
+                </span>
+                <span className="font-semibold text-orange-600">
+                  -{formatCurrency(payoutRequestPreview.vatAmount, currencyCode)}
                 </span>
               </div>
               <div className="border-t border-slate-200 pt-3 flex items-center justify-between">
@@ -1381,7 +1406,8 @@ export default function PayoutSettingsPage() {
 
             <p className="mt-4 text-xs text-slate-500">
               This request will be auto-approved and submitted for Xendit payout
-              processing.
+              processing. The Xendit transaction fee and VAT are deducted from
+              the payout.
             </p>
 
             <div className="mt-5 flex justify-end gap-2">
