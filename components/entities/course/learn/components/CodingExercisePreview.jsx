@@ -576,11 +576,11 @@ export default function CodingExercisePreview({
       </div>
 
       {/* Body */}
-      <div ref={bodyRef} className="flex-1 min-h-0 flex">
+      <div ref={bodyRef} className="flex-1 min-h-0 flex flex-col md:flex-row">
         {/* Instructions panel */}
         <div
-          className="min-w-0 overflow-y-auto p-5 space-y-5 bg-white text-slate-800"
-          style={{ width: `${resizerPercent}%` }}
+          className="min-w-0 overflow-y-auto p-4 md:p-5 space-y-5 bg-white text-slate-800 w-full h-[40%] shrink-0 md:h-auto md:shrink md:[width:var(--instr-w)]"
+          style={{ "--instr-w": `${resizerPercent}%` }}
         >
           {isStepMode && activeStep ? (
             <section>
@@ -751,11 +751,11 @@ export default function CodingExercisePreview({
             document.body.style.cursor = "col-resize";
             document.body.style.userSelect = "none";
           }}
-          className="w-1.5 shrink-0 cursor-col-resize bg-slate-700 hover:bg-blue-500 transition-colors"
+          className="hidden md:block w-1.5 shrink-0 cursor-col-resize bg-slate-700 hover:bg-blue-500 transition-colors"
         />
 
         {/* Editor + output */}
-        <div className="flex-1 min-w-0 flex flex-col">
+        <div className="flex-1 min-w-0 min-h-0 flex flex-col">
           <div className="flex-[3] min-h-0">
             <Editor
               language={activeLanguage}

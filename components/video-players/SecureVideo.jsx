@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { parseCookies } from "nookies";
-import { getAuthTokenFromCookieMap } from "@/lib/services/authToken";
+import BaseApi from "@/lib/api/_base.api";
 import {
   buildStreamEmbedUrlFromPlaybackUrl,
   extractStreamVideoIdFromPlaybackUrl,
@@ -32,33 +31,18 @@ export default function SecureVideo({
         return;
       }
 
-      const cookies = parseCookies();
-      const token = getAuthTokenFromCookieMap(cookies);
-      if (!token) {
-        if (mounted) setIframeUrl(fallbackEmbedUrl || "");
-        return;
-      }
-
       try {
         setLoading(true);
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/stream-token?id=${encodeURIComponent(lessonId)}`,
+        const response = await BaseApi.get(
+          `${process.env.NEXT_PUBLIC_API_URL}/stream-token`,
           {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "x-upskill-stream-intent": "playback",
-            },
+            params: { id: lessonId },
+            headers: { "x-upskill-stream-intent": "playback" },
           },
         );
-
-        if (!response.ok) {
-          throw new Error(
-            `Unable to get secure player URL (${response.status})`,
-          );
-        }
-
-        const payload = await response.json();
-        const signedEmbedUrl = String(payload?.data?.embed_url || "").trim();
+        const signedEmbedUrl = String(
+          response?.data?.data?.embed_url || "",
+        ).trim();
         if (mounted) {
           setIframeUrl(signedEmbedUrl || fallbackEmbedUrl || "");
         }

@@ -1,5 +1,6 @@
 import { postOrQueue } from "@/lib/offline/queue";
 import { useEffect } from "react";
+import LectureResourcesList from "../LectureResourcesList";
 
 export default function ArticlePreview({ lecture, course, setCourse }) {
   // ✅ Add progress when finished
@@ -52,6 +53,9 @@ export default function ArticlePreview({ lecture, course, setCourse }) {
           __html: lecture?.asset?.content || "<p>Loading...</p>",
         }}
       />
+      <div className="max-w-[800px] mx-auto">
+        <LectureResourcesList resources={lecture?.resources} />
+      </div>
     </div>
   );
 }

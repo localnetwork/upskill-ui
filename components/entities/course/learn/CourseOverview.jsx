@@ -14,6 +14,7 @@ import { useRouter } from "next/router";
 import BaseApi from "@/lib/api/_base.api";
 import toast from "react-hot-toast";
 import OfflineDownloadButton from "./OfflineDownloadButton";
+import LectureResourcesList from "./LectureResourcesList";
 
 function ExpandableHtml({ html, className = "", collapsedHeight = 120 }) {
   const ref = useRef(null);
@@ -151,6 +152,14 @@ export default function CourseOverview({ lecture, course }) {
         <div
           className="rich-content text-slate-600"
           dangerouslySetInnerHTML={{ __html: lecture?.curriculum_description }}
+        />
+
+        <LectureResourcesList
+          resources={
+            lecture?.curriculum_resource_type === "article"
+              ? undefined
+              : lecture?.resources
+          }
         />
 
         <OfflineDownloadButton lecture={lecture} course={course} />

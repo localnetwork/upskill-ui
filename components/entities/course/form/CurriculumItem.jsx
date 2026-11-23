@@ -3,6 +3,8 @@ import { confirmModal } from "@/lib/services/confirm";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import {
+  ChevronDown,
+  ChevronUp,
   Code,
   Drama,
   MonitorPlay,
@@ -13,6 +15,7 @@ import {
   Trash,
 } from "lucide-react"; // icons
 import LectureContentSelector from "./LectureContentSelector";
+import LectureResources from "./LectureResources";
 import QuizItem from "./QuizItem";
 import CodingExerciseItem from "./CodingExerciseItem";
 import BaseApi from "@/lib/api/_base.api";
@@ -47,6 +50,7 @@ export default function CurriculumItem({
         : [],
   );
   const [deleting, setDeleting] = useState(false);
+  const [resourcesOpen, setResourcesOpen] = useState(false);
   const [openContentOnSync, setOpenContentOnSync] = useState(false);
   const [unlockType, setUnlockType] = useState(
     String(item?.unlock_type || "immediate")
@@ -332,7 +336,7 @@ export default function CurriculumItem({
 
   if (isRolePlay && currentItem.isNew) {
     return (
-      <div className="mb-2 w-full border border-[#8710d8] bg-white p-6">
+      <div className="mb-2 w-full border border-primary bg-white p-6">
         <h3 className="font-bold text-slate-900">Practice Role Play title</h3>
         <p className="mt-2 text-sm text-slate-500">
           Create a clear and specific title that captures the essence of the
@@ -475,7 +479,7 @@ export default function CurriculumItem({
           )}
         </div>
 
-        <div className="shrink-0 self-start sm:self-auto">
+        <div className="flex shrink-0 items-center gap-2 self-start sm:self-auto">
           {isRolePlay && !currentItem.isNew && (
             <button
               onClick={() =>
@@ -516,6 +520,20 @@ export default function CurriculumItem({
                 <span className="text-[12px] px-4 py-2 cursor-pointer flex items-center justify-center font-bold border-[2px] border-[#0056D2] hover:bg-[#0056D2] hover:text-white text-[#0056D2] rounded">
                   <NotebookText size={16} className="mr-1" /> Content
                 </span>
+              )}
+            </button>
+          )}
+          {isLecture && !currentItem.isNew && (
+            <button
+              type="button"
+              onClick={() => setResourcesOpen((open) => !open)}
+              title={resourcesOpen ? "Collapse resources" : "Expand resources"}
+              className="rounded p-1 hover:bg-gray-200"
+            >
+              {resourcesOpen ? (
+                <ChevronUp size={18} />
+              ) : (
+                <ChevronDown size={18} />
               )}
             </button>
           )}
@@ -685,6 +703,21 @@ export default function CurriculumItem({
             )}
           </div>
         </div>
+      )}
+
+      {/* Resources */}
+      {isLecture && resourcesOpen && mode !== "content" && mode !== "edit" && (
+        <LectureResources
+          lecture={currentItem}
+          allItems={allItems}
+          onChange={(updated) => {
+            setCurrentItem((prev) => ({
+              ...prev,
+              resources: updated.resources || [],
+            }));
+            onUpdate?.({ ...currentItem, resources: updated.resources || [] });
+          }}
+        />
       )}
 
       {/* Content Mode */}

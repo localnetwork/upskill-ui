@@ -1,5 +1,6 @@
 import CourseLearnSidebar from "@/components/entities/course/learn/CourseLearnSidebar";
 import CourseOverview from "@/components/entities/course/learn/CourseOverview";
+import LectureResourcesList from "@/components/entities/course/learn/LectureResourcesList";
 import SecureVideo from "@/components/video-players/SecureVideo";
 import BaseApi from "@/lib/api/_base.api";
 import { setContext } from "@/lib/api/interceptor";
@@ -167,6 +168,9 @@ function LecturePreview({ lecture }) {
               "<p>No article content available.</p>",
           }}
         />
+        <div className="max-w-4xl mx-auto">
+          <LectureResourcesList resources={lecture?.resources} />
+        </div>
       </div>
     );
   }

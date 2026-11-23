@@ -2,6 +2,7 @@ import {
   Check,
   ChevronDown,
   Code,
+  FolderOpen,
   MonitorPlay,
   Newspaper,
   Lock,
@@ -11,8 +12,10 @@ import {
   Sparkles,
   X,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/router";
+import { ResourceLink } from "./LectureResourcesList";
 
 function isCurriculumCompleted(curriculum) {
   return Boolean(
@@ -39,6 +42,65 @@ function formatSectionDuration(totalSeconds) {
   return `${minutes} min${minutes > 1 ? "s" : ""}`;
 }
 
+function SidebarResources({ resources }) {
+  const [pos, setPos] = useState(null);
+  const buttonRef = useRef(null);
+
+  useEffect(() => {
+    if (!pos) return undefined;
+    const close = () => setPos(null);
+    window.addEventListener("scroll", close, true);
+    window.addEventListener("resize", close);
+    document.addEventListener("click", close);
+    return () => {
+      window.removeEventListener("scroll", close, true);
+      window.removeEventListener("resize", close);
+      document.removeEventListener("click", close);
+    };
+  }, [pos]);
+
+  const toggle = (event) => {
+    event.stopPropagation();
+    if (pos) return setPos(null);
+    const rect = buttonRef.current.getBoundingClientRect();
+    setPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+  };
+
+  return (
+    <div className="ml-auto pl-2" onClick={(event) => event.stopPropagation()}>
+      <button
+        ref={buttonRef}
+        type="button"
+        onClick={toggle}
+        className="inline-flex items-center gap-1 rounded border border-primary bg-white px-3 py-1 text-[13px] font-semibold text-primary"
+      >
+        <FolderOpen size={14} /> Resources
+        <ChevronDown size={14} />
+      </button>
+      {pos &&
+        createPortal(
+          <div
+            style={{ position: "fixed", top: pos.top, right: pos.right }}
+            onClick={(event) => event.stopPropagation()}
+            className="z-[1000] w-64 rounded-lg border border-[#d1d2e0] bg-white p-3 shadow-lg text-[#2a2b3f]"
+          >
+            <ul className="space-y-3">
+              {resources.map((resource) => (
+                <li key={resource.id}>
+                  <ResourceLink
+                    resource={resource}
+                    className="text-[14px] hover:underline"
+                  />
+                </li>
+              ))}
+            </ul>
+          </div>,
+          document.body,
+        )}
+    </div>
+  );
+}
+
 export default function CourseLearnSidebar({
   sections,
   setCurrentLecture,
@@ -56,12 +118,12 @@ export default function CourseLearnSidebar({
     if (!activeLectureUuid || !sections?.length) return;
 
     const sectionWithLecture = sections.find((section) =>
-      section.curriculums.some((c) => c.uuid === activeLectureUuid)
+      section.curriculums.some((c) => c.uuid === activeLectureUuid),
     );
 
     if (sectionWithLecture) {
       const foundLecture = sectionWithLecture.curriculums.find(
-        (c) => c.uuid === activeLectureUuid
+        (c) => c.uuid === activeLectureUuid,
       );
       setOpenSection(sectionWithLecture.id);
       setCurrentLecture(foundLecture);
@@ -170,7 +232,7 @@ export default function CourseLearnSidebar({
 
               {/* Accordion Content */}
               <div
-                className={`accordion-content overflow-hidden transition-[max-height] duration-300 ease-in-out bg-white px-[30px] mx-[-30px] ${
+                className={`accordion-content transition-[max-height] duration-300 ease-in-out bg-white px-[30px] mx-[-30px] ${
                   isOpen ? "" : "max-h-0"
                 }`}
               >
@@ -213,7 +275,9 @@ export default function CourseLearnSidebar({
                               lecture: curriculum.uuid,
                             },
                           });
-                          if (window.matchMedia("(max-width: 1023px)").matches) {
+                          if (
+                            window.matchMedia("(max-width: 1023px)").matches
+                          ) {
                             setPanelStatus("closed");
                           }
                         }}
@@ -246,6 +310,9 @@ export default function CourseLearnSidebar({
                         </div>
                         <span className="mr-1">{icon}</span>
                         {curriculum.title}
+                        {!isLocked && curriculum.resources?.length > 0 && (
+                          <SidebarResources resources={curriculum.resources} />
+                        )}
                         {isLocked && (
                           <span className="ml-2 inline-flex items-center">
                             <Lock size={13} />
