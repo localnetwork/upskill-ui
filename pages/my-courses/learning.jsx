@@ -40,8 +40,25 @@ function daysLeft(endsAt) {
   return diff > 0 ? Math.ceil(diff / 86400000) : 0;
 }
 
+function CourseCardSkeleton() {
+  return (
+    <div className="animate-pulse" aria-hidden="true">
+      <div className="mb-4 h-[200px] w-full rounded bg-slate-200" />
+      <div className="h-5 w-11/12 rounded bg-slate-200" />
+      <div className="mt-2 h-5 w-2/3 rounded bg-slate-200" />
+      <div className="mt-3 h-3.5 w-1/3 rounded bg-slate-200" />
+      <div className="mt-4 h-[4px] w-full rounded-full bg-slate-200" />
+      <div className="mt-2 flex justify-between">
+        <div className="h-3 w-1/4 rounded bg-slate-200" />
+        <div className="h-3 w-1/5 rounded bg-slate-200" />
+      </div>
+    </div>
+  );
+}
+
 export default function Page() {
   const [items, setItems] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [source, setSource] = useState("ALL");
   const [progressFilter, setProgressFilter] = useState("ALL");
   const [search, setSearch] = useState("");
@@ -53,6 +70,8 @@ export default function Page() {
         setItems(response?.data?.data || []);
       } catch (error) {
         console.error("Error fetching learnings:", error);
+      } finally {
+        setIsLoading(false);
       }
     }
 
@@ -90,7 +109,8 @@ export default function Page() {
               onClick={() => setSource(filter.key)}
               className={`rounded-full border px-3 py-1.5 text-xs sm:px-4 sm:text-sm font-medium ${source === filter.key ? "border-[#0056d2] bg-[#0056d2] text-white" : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"}`}
             >
-              {filter.label} ({counts[filter.key]})
+              {filter.label}
+              {isLoading ? "" : ` (${counts[filter.key]})`}
             </button>
           ))}
         </div>
@@ -116,7 +136,11 @@ export default function Page() {
         </div>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-[20px]">
-        {filtered.length > 0 ? (
+        {isLoading ? (
+          Array.from({ length: 8 }).map((_, index) => (
+            <CourseCardSkeleton key={index} />
+          ))
+        ) : filtered.length > 0 ? (
           filtered.map((item) => (
             <div
               key={item.id}
